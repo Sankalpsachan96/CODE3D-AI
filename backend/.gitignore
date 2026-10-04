@@ -1,0 +1,7 @@
+.env
+.env.*
+!.env.example
+target/
+*.class
+*.jar
+.mvn/wrapper/maven-wrapper.jar

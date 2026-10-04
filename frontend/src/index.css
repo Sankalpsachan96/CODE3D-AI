@@ -1,0 +1,1909 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans antialiased overflow-hidden select-none transition-colors duration-200;
+  }
+}
+
+/* Custom Minimal Scrollbars for Dark & Bright Modes */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+/* Dark Mode Scrollbar */
+html.dark ::-webkit-scrollbar-track,
+body:not(.bright) ::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+html.dark ::-webkit-scrollbar-thumb,
+body:not(.bright) ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover,
+body:not(.bright) ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Bright Mode Scrollbar */
+html.bright ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.bright ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+html.bright ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Monaco Editor Execution Line Highlight */
+.active-execution-line-bg {
+  background: rgba(6, 182, 212, 0.22) !important;
+  border-left: 3px solid #00f2fe !important;
+}
+
+.active-execution-line-glyph {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") no-repeat center center;
+  background-size: 11px 11px;
+}
+
+/* Monaco Editor Syntax Error Line Highlight */
+.syntax-error-line-bg {
+  background: rgba(239, 68, 68, 0.28) !important;
+  border-left: 3px solid #ef4444 !important;
+}
+
+.syntax-error-glyph {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ef4444'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z'/%3E%3C/svg%3E") no-repeat center center;
+  background-size: 12px 12px;
+}
+
+/* Monaco Editor Breakpoint Glyphs */
+.breakpoint-glyph {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ef4444'%3E%3Ccircle cx='12' cy='12' r='8'/%3E%3C/svg%3E") no-repeat center center;
+  background-size: 12px 12px;
+  cursor: pointer;
+}
+
+.breakpoint-active-glyph {
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fbbf24'%3E%3Ccircle cx='12' cy='12' r='8' stroke='%23ef4444' stroke-width='3'/%3E%3C/svg%3E") no-repeat center center;
+  background-size: 13px 13px;
+}
+
+
+
+
+/* =========================================================
+   CODE3D AI — PRODUCT UI SYSTEM
+   Dark graphite / white surfaces / orange + cyan accents
+   ========================================================= */
+:root {
+  --c3d-bg: #090909;
+  --c3d-surface: #111214;
+  --c3d-surface-2: #17181b;
+  --c3d-border: #27282c;
+  --c3d-border-soft: rgba(255,255,255,.08);
+  --c3d-text: #f5f5f4;
+  --c3d-muted: #929398;
+  --c3d-orange: #ff6a00;
+  --c3d-orange-2: #ff8a24;
+  --c3d-cyan: #13c8bd;
+  --c3d-red: #ff5d5d;
+}
+
+html, body, #root { min-height: 100%; }
+body { overflow-x: hidden !important; overflow-y: auto !important; background: var(--c3d-bg); }
+button, input, textarea, select { font-family: inherit; }
+
+.app-shell { min-height: 100dvh; background: var(--c3d-bg); color: var(--c3d-text); }
+.app-shell.app-light { --c3d-bg:#f7f7f5; --c3d-surface:#fff; --c3d-surface-2:#f2f2ef; --c3d-border:#dfdfdb; --c3d-border-soft:rgba(0,0,0,.08); --c3d-text:#111214; --c3d-muted:#68696d; --c3d-orange:#e95f00; --c3d-orange-2:#ff7515; --c3d-cyan:#0c9f98; background:#f7f7f5; color:#111214; }
+.app-main { min-height: calc(100dvh - 62px); }
+.route-loading { min-height: calc(100dvh - 62px); display:grid; place-items:center; background:var(--c3d-bg); color:var(--c3d-muted); font:600 13px/1.5 Inter, sans-serif; }
+
+/* Navbar */
+.app-navbar { height:62px; position:sticky; top:0; z-index:100; display:flex; align-items:center; gap:28px; padding:0 24px; background:color-mix(in srgb,var(--c3d-bg) 91%,transparent); border-bottom:1px solid var(--c3d-border); backdrop-filter:blur(20px); }
+.app-brand { border:0; background:none; color:inherit; display:flex; align-items:center; gap:10px; cursor:pointer; padding:0; }
+.app-brand-mark { width:30px; height:30px; border-radius:9px; display:grid; place-items:center; background:linear-gradient(135deg,var(--c3d-orange),#ff9d42); box-shadow:0 8px 26px rgba(255,106,0,.22); position:relative; }
+.app-brand-mark:before { content:""; width:11px; height:11px; border:2px solid #fff; transform:rotate(30deg); border-radius:2px; }
+.app-brand-mark span { position:absolute; width:5px; height:5px; border:1px solid #fff; transform:rotate(30deg); }
+.app-brand-name { font-weight:850; letter-spacing:-.02em; font-size:15px; }
+.app-brand-name span { color:var(--c3d-orange); }
+.app-brand-name b { font-size:9px; margin-left:5px; color:var(--c3d-cyan); letter-spacing:.08em; }
+.app-nav-links { display:flex; align-items:center; gap:4px; flex:1; }
+.app-nav-links button { border:0; background:transparent; color:var(--c3d-muted); padding:8px 12px; border-radius:8px; font-size:12px; font-weight:700; display:flex; align-items:center; gap:7px; cursor:pointer; transition:.2s ease; }
+.app-nav-links button:hover { color:var(--c3d-text); background:var(--c3d-surface-2); }
+.app-nav-links button.active { color:var(--c3d-text); background:var(--c3d-surface-2); box-shadow:inset 0 0 0 1px var(--c3d-border); }
+.app-nav-links button.active svg { color:var(--c3d-orange); }
+.app-nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; }
+.system-status { font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--c3d-muted); padding:6px 9px; border:1px solid var(--c3d-border); border-radius:999px; display:flex; align-items:center; gap:6px; }
+.system-status i { width:6px; height:6px; border-radius:50%; background:#777; }
+.system-status.online i { background:#22c55e; box-shadow:0 0 10px rgba(34,197,94,.5); }
+.system-status.offline i { background:var(--c3d-orange); }
+.theme-toggle,.account-trigger { height:34px; border:1px solid var(--c3d-border); background:var(--c3d-surface); color:var(--c3d-muted); border-radius:9px; cursor:pointer; }
+.theme-toggle { width:34px; display:grid; place-items:center; }
+.theme-toggle:hover { color:var(--c3d-text); border-color:#444; }
+.account-anchor { position:relative; }
+.account-trigger { padding:0 9px; display:flex; align-items:center; gap:7px; color:var(--c3d-text); font-size:11px; font-weight:750; }
+.account-trigger:hover { border-color:#444; }
+.avatar { width:21px; height:21px; border-radius:50%; overflow:hidden; border:1px solid var(--c3d-border); display:block; }
+.avatar img { width:100%; height:100%; object-fit:cover; }
+.account-menu { position:absolute; top:42px; right:0; width:255px; padding:7px; background:rgba(17,18,20,.98); color:#f5f5f4; border:1px solid #2c2d31; border-radius:13px; box-shadow:0 28px 70px rgba(0,0,0,.45); backdrop-filter:blur(18px); z-index:200; }
+.app-light .account-menu { background:rgba(255,255,255,.98); color:#111214; border-color:#ddd; box-shadow:0 22px 60px rgba(0,0,0,.14); }
+.account-menu-head { padding:10px 10px 11px; border-bottom:1px solid var(--c3d-border); margin-bottom:5px; display:flex; flex-direction:column; gap:3px; }
+.account-menu-head strong { font-size:12px; }
+.account-menu-head span { color:var(--c3d-muted); font-size:10px; }
+.account-menu-label { padding:8px 9px 5px; color:#696a70; font-size:9px; text-transform:uppercase; letter-spacing:.13em; font-weight:850; }
+.account-menu button { width:100%; border:0; background:transparent; color:inherit; padding:8px 9px; border-radius:8px; display:flex; align-items:center; gap:9px; text-align:left; font-size:11px; font-weight:650; cursor:pointer; }
+.account-menu button:hover { background:#1e1f22; color:#fff; }
+.app-light .account-menu button:hover { background:#f1f1ee; color:#111; }
+.account-menu button svg { color:#888b91; }
+.account-menu button:hover svg { color:var(--c3d-orange); }
+.account-menu kbd { margin-left:auto; font-size:8px; color:#666; }
+.account-menu-divider { height:1px; background:var(--c3d-border); margin:6px 0; }
+.account-menu .danger { color:#ff7777; }
+
+/* Landing page */
+.marketing-home { min-height:100%; background:var(--c3d-bg); color:var(--c3d-text); overflow:hidden; }
+.marketing-light { --m-bg:#f7f7f5; --m-text:#111214; --m-muted:#67686c; --m-line:#deded9; background:#f7f7f5; color:#111214; }
+.marketing-dark { --m-bg:#090909; --m-text:#f5f5f4; --m-muted:#999a9f; --m-line:#292a2e; }
+.marketing-hero { position:relative; min-height:calc(100vh - 62px); padding:90px 28px 100px; display:flex; flex-direction:column; align-items:center; text-align:center; isolation:isolate; }
+.marketing-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px); background-size:46px 46px; mask-image:linear-gradient(to bottom,black,transparent 80%); opacity:.65; pointer-events:none; z-index:-3; }
+.marketing-light .marketing-grid { background-image:linear-gradient(rgba(0,0,0,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.035) 1px,transparent 1px); }
+.marketing-orb { position:absolute; border-radius:50%; filter:blur(100px); pointer-events:none; z-index:-2; }
+.marketing-orb-a { width:420px; height:420px; background:rgba(255,106,0,.08); top:70px; left:-220px; }
+.marketing-orb-b { width:430px; height:430px; background:rgba(19,200,189,.07); right:-220px; top:260px; }
+.marketing-hero-copy { max-width:900px; position:relative; z-index:2; }
+.marketing-eyebrow { display:inline-flex; align-items:center; gap:8px; border:1px solid rgba(255,106,0,.24); color:#ff9956; background:rgba(255,106,0,.06); border-radius:999px; padding:7px 11px; font-size:9px; font-weight:850; letter-spacing:.16em; }
+.marketing-eyebrow span { width:6px; height:6px; border-radius:50%; background:var(--c3d-orange); box-shadow:0 0 12px rgba(255,106,0,.7); }
+.marketing-hero h1 { margin:24px 0 20px; font-size:clamp(52px,7vw,92px); line-height:.94; letter-spacing:-.065em; font-weight:900; }
+.marketing-hero h1 em { font-style:normal; background:linear-gradient(105deg,#fff 10%,#ff8b3d 52%,#20d5c8 95%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.marketing-light .marketing-hero h1 em { background:linear-gradient(105deg,#111 5%,#e95f00 55%,#0c9f98 95%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.marketing-hero-copy > p { max-width:760px; margin:0 auto; color:var(--m-muted); font-size:15px; line-height:1.8; }
+.marketing-actions { margin-top:28px; display:flex; justify-content:center; flex-wrap:wrap; gap:10px; }
+.marketing-btn { border-radius:9px; padding:12px 16px; border:1px solid var(--c3d-border); display:inline-flex; align-items:center; gap:8px; font-size:11px; font-weight:800; cursor:pointer; transition:.2s; }
+.marketing-btn:hover { transform:translateY(-2px); }
+.marketing-btn-primary { background:var(--c3d-orange); border-color:var(--c3d-orange); color:#fff; box-shadow:0 13px 35px rgba(255,106,0,.20); }
+.marketing-btn-primary:hover { background:var(--c3d-orange-2); }
+.marketing-btn-secondary { background:var(--c3d-surface); color:var(--m-text); }
+.marketing-btn-secondary:hover { border-color:#555; }
+.marketing-proof { display:flex; justify-content:center; flex-wrap:wrap; gap:18px; margin-top:20px; color:var(--m-muted); font-size:9px; font-weight:650; }
+.marketing-proof span { display:flex; align-items:center; gap:5px; }
+.marketing-proof svg { color:var(--c3d-cyan); }
+.marketing-showcase-wrap { width:min(1120px,94vw); margin:88px auto 0; position:relative; perspective:1500px; }
+.marketing-showcase-glow { position:absolute; inset:5% -8% -12%; z-index:-1; background:radial-gradient(ellipse at 50% 100%,rgba(255,106,0,.19),transparent 48%),radial-gradient(ellipse at 20% 55%,rgba(255,106,0,.11),transparent 35%),radial-gradient(ellipse at 80% 55%,rgba(19,200,189,.10),transparent 35%); filter:blur(42px); }
+.marketing-showcase { position:relative; overflow:hidden; border-radius:18px; background:#0d0e10; border:1px solid rgba(255,255,255,.13); box-shadow:0 45px 100px rgba(0,0,0,.45),0 0 100px rgba(255,106,0,.07),0 0 90px rgba(19,200,189,.05); transform-origin:center top; will-change:transform,opacity; }
+.marketing-window-bar { height:34px; display:flex; align-items:center; gap:12px; padding:0 12px; color:#888a90; font-size:8px; letter-spacing:.08em; font-weight:800; background:linear-gradient(90deg,#111214,#161719,#111214); border-bottom:1px solid rgba(255,255,255,.08); }
+.window-dots { display:flex; gap:5px; }.window-dots i { width:6px;height:6px;border-radius:50%;background:#44464a; }.window-live { margin-left:auto; display:flex; align-items:center; gap:5px; color:#a9acae; }.window-live b { width:5px;height:5px;border-radius:50%;background:#21c9a0;box-shadow:0 0 9px rgba(33,201,160,.7); }
+.marketing-showcase video { display:block; width:100%; height:auto; border-radius:0 0 18px 18px; }
+.marketing-section { width:min(1180px,92vw); margin:0 auto; padding:105px 0; }
+.marketing-stats { display:grid; grid-template-columns:repeat(4,1fr); border-top:1px solid var(--m-line); border-bottom:1px solid var(--m-line); padding:30px 0; }
+.marketing-stats > div { padding:8px 24px; border-right:1px solid var(--m-line); text-align:center; }.marketing-stats > div:last-child{border-right:0}.marketing-stats strong{display:block;font-size:10px;color:var(--c3d-orange);letter-spacing:.12em}.marketing-stats span{display:block;font-size:17px;font-weight:850;margin-top:5px}.marketing-stats small{display:block;color:var(--m-muted);font-size:9px;margin-top:4px}
+.marketing-section-head { display:flex; justify-content:space-between; align-items:end; gap:30px; margin-bottom:38px; }.marketing-section-head > div{max-width:700px}.marketing-section-head > p{max-width:330px;color:var(--m-muted);font-size:12px;line-height:1.7;margin:0}.marketing-label{font-size:9px;font-weight:850;letter-spacing:.17em;color:var(--c3d-orange);text-transform:uppercase}.marketing-section h2{font-size:clamp(32px,4vw,52px);letter-spacing:-.05em;line-height:1;margin:12px 0 0}.marketing-feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.marketing-card{position:relative;min-height:190px;padding:24px;border:1px solid var(--m-line);border-radius:14px;background:linear-gradient(145deg,rgba(255,255,255,.025),rgba(255,255,255,.008));overflow:hidden;transition:.25s}.marketing-light .marketing-card{background:#fff}.marketing-card:hover{transform:translateY(-4px);border-color:rgba(255,106,0,.32);box-shadow:0 24px 50px rgba(0,0,0,.13)}.marketing-card-icon{width:36px;height:36px;border-radius:9px;display:grid;place-items:center;color:var(--c3d-orange);background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.17);margin-bottom:28px}.marketing-card h3{font-size:14px;margin:0 0 8px}.marketing-card p{color:var(--m-muted);font-size:11px;line-height:1.65;margin:0;max-width:300px}.marketing-card-line{position:absolute;left:24px;bottom:0;width:50px;height:2px;background:linear-gradient(90deg,var(--c3d-orange),transparent)}
+.marketing-workflow{border-top:1px solid var(--m-line)}.centered{text-align:center;display:block}.centered > p{max-width:500px;margin:14px auto 0}.marketing-steps{display:grid;grid-template-columns:repeat(4,1fr);margin-top:50px;border:1px solid var(--m-line);border-radius:16px;overflow:hidden}.marketing-step{padding:28px 24px;min-height:150px;border-right:1px solid var(--m-line)}.marketing-step:last-child{border-right:0}.marketing-step > span{font:700 10px ui-monospace,monospace;color:var(--c3d-orange)}.marketing-step h3{margin:25px 0 6px;font-size:15px}.marketing-step p{margin:0;color:var(--m-muted);font-size:10px;line-height:1.6}
+.marketing-cta{padding-top:40px;padding-bottom:110px}.marketing-cta-inner{text-align:center;border:1px solid var(--m-line);border-radius:20px;padding:72px 24px;position:relative;overflow:hidden;background:radial-gradient(circle at 50% 100%,rgba(255,106,0,.10),transparent 48%)}.marketing-cta-icon{margin:0 auto 18px;width:42px;height:42px;border-radius:12px;display:grid;place-items:center;color:var(--c3d-orange);background:rgba(255,106,0,.08);border:1px solid rgba(255,106,0,.2)}.marketing-cta h2{max-width:700px;margin:12px auto;font-size:clamp(35px,5vw,58px)}.marketing-cta p{color:var(--m-muted);font-size:12px;margin:0 0 24px}.marketing-footer{width:min(1180px,92vw);margin:0 auto;padding:28px 0 36px;border-top:1px solid var(--m-line);display:flex;align-items:center;justify-content:space-between;gap:20px;color:var(--m-muted);font-size:9px}.marketing-footer strong{display:block;color:var(--m-text);font-size:13px;letter-spacing:-.02em}.marketing-footer strong span{color:var(--c3d-orange)}.marketing-footer small{display:block;margin-top:5px}.marketing-footer button{border:0;background:none;color:var(--m-muted);font-size:10px;margin-left:15px;cursor:pointer}.marketing-footer button:hover{color:var(--c3d-orange)}
+
+/* Internal product pages: unify existing Tailwind surfaces without changing behavior */
+.app-shell .bg-slate-950,.app-shell .bg-\[\#070b14\],.app-shell .bg-\[\#090d16\] { background-color:var(--c3d-bg) !important; }
+.app-shell .bg-slate-900,.app-shell .bg-slate-900\/90,.app-shell .bg-slate-900\/80,.app-shell .bg-slate-900\/60,.app-shell .bg-slate-900\/50,.app-shell .bg-slate-900\/40 { background-color:var(--c3d-surface) !important; }
+.app-shell .bg-slate-800,.app-shell .bg-slate-800\/80,.app-shell .bg-slate-800\/60 { background-color:var(--c3d-surface-2) !important; }
+.app-shell .border-slate-800,.app-shell .border-slate-800\/80,.app-shell .border-slate-700,.app-shell .border-slate-700\/60 { border-color:var(--c3d-border) !important; }
+.app-shell .text-white { color:var(--c3d-text) !important; }
+.app-shell .text-slate-100,.app-shell .text-slate-200,.app-shell .text-slate-300 { color:#d7d7d5 !important; }
+.app-shell .text-slate-400,.app-shell .text-slate-500 { color:var(--c3d-muted) !important; }
+.app-shell .text-cyan-400,.app-shell .text-cyan-300,.app-shell .text-cyan-500 { color:var(--c3d-cyan) !important; }
+.app-shell .text-purple-400,.app-shell .text-purple-500,.app-shell .text-indigo-400 { color:var(--c3d-orange) !important; }
+.app-shell .bg-cyan-500,.app-shell .bg-cyan-600 { background-color:var(--c3d-orange) !important; }
+.app-shell .from-cyan-500,.app-shell .from-cyan-600,.app-shell .from-purple-500,.app-shell .from-indigo-600 { --tw-gradient-from:var(--c3d-orange) !important; }
+.app-shell .to-blue-600,.app-shell .to-indigo-600,.app-shell .to-purple-600,.app-shell .to-blue-500 { --tw-gradient-to:#ff8a24 !important; }
+.app-shell .ring-purple-500,.app-shell .ring-cyan-500 { --tw-ring-color:rgba(255,106,0,.35) !important; }
+.app-shell .shadow-cyan-500\/30,.app-shell .shadow-cyan-500\/25,.app-shell .shadow-purple-500\/25 { --tw-shadow-color:rgba(255,106,0,.18) !important; }
+.app-light .text-slate-900 { color:#111214 !important; }
+.app-light .text-slate-600 { color:#68696d !important; }
+.app-light .bg-white { background:#fff !important; }
+.app-light .border-slate-200,.app-light .border-slate-300 { border-color:#dfdfdb !important; }
+
+@media (max-width: 900px) {
+  .app-navbar { padding:0 14px; gap:12px; }.app-nav-links{gap:1px}.app-nav-links button{padding:8px 9px}.system-status{display:none}.account-name{display:none}
+  .marketing-hero{padding-top:70px}.marketing-stats{grid-template-columns:repeat(2,1fr)}.marketing-stats > div:nth-child(2){border-right:0}.marketing-stats > div:nth-child(-n+2){border-bottom:1px solid var(--m-line)}.marketing-feature-grid{grid-template-columns:repeat(2,1fr)}.marketing-steps{grid-template-columns:repeat(2,1fr)}.marketing-step:nth-child(2){border-right:0}.marketing-step:nth-child(-n+2){border-bottom:1px solid var(--m-line)}
+}
+@media (max-width: 640px) {
+  .app-navbar{height:58px}.app-brand-name{font-size:14px}.app-nav-links button{font-size:10px;padding:7px 7px}.app-nav-links button svg{display:none}.theme-toggle{display:none}.account-trigger{padding:0 7px}
+  .marketing-hero{padding:58px 18px 75px}.marketing-hero h1{font-size:48px}.marketing-hero-copy>p{font-size:13px}.marketing-showcase-wrap{width:96vw;margin-top:58px}.marketing-proof{gap:9px}.marketing-section{padding:75px 0}.marketing-section-head{display:block}.marketing-section-head>p{margin-top:15px}.marketing-feature-grid{grid-template-columns:1fr}.marketing-steps{grid-template-columns:1fr}.marketing-step{border-right:0!important;border-bottom:1px solid var(--m-line)}.marketing-step:last-child{border-bottom:0}.marketing-footer{display:block;text-align:center}.marketing-footer>div:last-of-type{margin:15px 0}.marketing-footer button{margin:0 8px}
+}
+@media (prefers-reduced-motion: reduce) { .marketing-showcase { transform:none !important; opacity:1 !important; } }
+
+/* =====================================================
+   CODE3D AI — RICH PREMIUM DARK THEME
+   ===================================================== */
+
+/* ---------- Overall background ---------- */
+
+.marketing-dark {
+  --m-bg: #07080b;
+  --m-text: #f7f7f8;
+  --m-muted: #9b9da5;
+  --m-line: rgba(255,255,255,.10);
+
+  background:
+    radial-gradient(
+      circle at 8% 15%,
+      rgba(255,106,0,.13),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 92% 18%,
+      rgba(19,200,189,.11),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 50% 90%,
+      rgba(125,85,255,.08),
+      transparent 35%
+    ),
+    #07080b;
+}
+
+
+/* ---------- Hero grid ---------- */
+
+.marketing-dark .marketing-grid {
+  opacity: .75;
+
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.045) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.045) 1px,
+      transparent 1px
+    );
+
+  background-size: 46px 46px;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      black 0%,
+      black 55%,
+      transparent 92%
+    );
+}
+
+
+/* ---------- Hero ambient orbs ---------- */
+
+.marketing-dark .marketing-orb-a {
+  width: 520px;
+  height: 520px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255,106,0,.24) 0%,
+      rgba(255,106,0,.10) 32%,
+      transparent 70%
+    );
+
+  filter: blur(95px);
+}
+
+
+.marketing-dark .marketing-orb-b {
+  width: 520px;
+  height: 520px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(19,200,189,.20) 0%,
+      rgba(19,200,189,.08) 35%,
+      transparent 70%
+    );
+
+  filter: blur(95px);
+}
+
+
+/* ---------- Hero gradient text ---------- */
+
+.marketing-dark .marketing-hero h1 em {
+  background:
+    linear-gradient(
+      105deg,
+      #ffffff 5%,
+      #ff9b55 30%,
+      #ff6a00 48%,
+      #9b7cff 68%,
+      #20d5c8 92%
+    );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  background-size: 180% auto;
+
+  animation: code3dHeroGradient 8s ease-in-out infinite;
+}
+
+
+@keyframes code3dHeroGradient {
+
+  0% {
+    background-position: 0% center;
+  }
+
+  50% {
+    background-position: 100% center;
+  }
+
+  100% {
+    background-position: 0% center;
+  }
+
+}
+
+
+/* ---------- Hero paragraph ---------- */
+
+.marketing-dark .marketing-hero-copy > p {
+  color: #a7a9b1;
+}
+
+
+/* ---------- Buttons ---------- */
+
+.marketing-dark .marketing-btn-primary {
+  background:
+    linear-gradient(
+      135deg,
+      #ff7a18,
+      #ff5a00
+    );
+
+  box-shadow:
+    0 12px 35px rgba(255,106,0,.22),
+    0 0 35px rgba(255,106,0,.08);
+}
+
+
+.marketing-dark .marketing-btn-primary:hover {
+  box-shadow:
+    0 16px 45px rgba(255,106,0,.32),
+    0 0 45px rgba(255,106,0,.12);
+}
+
+
+.marketing-dark .marketing-btn-secondary {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.055),
+      rgba(255,255,255,.018)
+    );
+
+  border-color: rgba(255,255,255,.13);
+}
+
+
+/* ---------- Hero proof ---------- */
+
+.marketing-dark .marketing-proof svg {
+  color: #20d5c8;
+
+  filter:
+    drop-shadow(0 0 6px rgba(19,200,189,.5));
+}
+
+
+/* =====================================================
+   VIDEO
+   ===================================================== */
+
+.marketing-dark .marketing-showcase {
+  border-color:
+    rgba(255,255,255,.16);
+
+  box-shadow:
+    0 50px 110px rgba(0,0,0,.55),
+    0 0 80px rgba(255,106,0,.10),
+    0 0 100px rgba(19,200,189,.08);
+}
+
+
+.marketing-dark .marketing-showcase-glow {
+  background:
+
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgba(255,106,0,.25),
+      transparent 45%
+    ),
+
+    radial-gradient(
+      ellipse at 15% 50%,
+      rgba(255,106,0,.15),
+      transparent 38%
+    ),
+
+    radial-gradient(
+      ellipse at 85% 50%,
+      rgba(19,200,189,.14),
+      transparent 38%
+    ),
+
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(139,92,246,.10),
+      transparent 40%
+    );
+
+  filter: blur(45px);
+}
+
+
+/* ---------- Video frame ---------- */
+
+.marketing-dark .marketing-showcase {
+  border-radius: 22px;
+  overflow: hidden;
+
+  background: #0b0c10;
+}
+
+
+.marketing-dark .marketing-showcase video {
+  border-radius: 0 0 22px 22px;
+}
+
+
+/* ---------- Window bar ---------- */
+
+.marketing-dark .marketing-window-bar {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,106,0,.10),
+      rgba(255,255,255,.025),
+      rgba(19,200,189,.09)
+    );
+
+  border-bottom-color:
+    rgba(255,255,255,.10);
+}
+
+
+/* =====================================================
+   FEATURE CARDS
+   ===================================================== */
+
+.marketing-dark .marketing-card {
+
+  background:
+
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(19,200,189,.075),
+      transparent 38%
+    ),
+
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(255,106,0,.065),
+      transparent 38%
+    ),
+
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.012)
+    ),
+
+    #0c0d11;
+
+  border-color:
+    rgba(255,255,255,.105);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.035),
+    0 20px 55px rgba(0,0,0,.20);
+}
+
+
+.marketing-dark .marketing-card:hover {
+
+  border-color:
+    rgba(255,106,0,.34);
+
+  box-shadow:
+    0 25px 65px rgba(0,0,0,.32),
+    0 0 40px rgba(255,106,0,.07),
+    0 0 35px rgba(19,200,189,.04);
+
+  transform: translateY(-6px);
+}
+
+
+/* ---------- Card icons ---------- */
+
+.marketing-dark .marketing-card-icon {
+
+  color: #ff9148;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,106,0,.16),
+      rgba(139,92,246,.10),
+      rgba(19,200,189,.08)
+    );
+
+  border-color:
+    rgba(255,106,0,.20);
+
+  box-shadow:
+    0 8px 25px rgba(255,106,0,.07);
+}
+
+
+/* ---------- Card bottom accent ---------- */
+
+.marketing-dark .marketing-card-line {
+
+  width: 70px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #ff6a00,
+      #ff9b55,
+      #13c8bd,
+      transparent
+    );
+}
+
+
+/* =====================================================
+   WORKFLOW
+   ===================================================== */
+
+.marketing-dark .marketing-steps {
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.025),
+      rgba(255,255,255,.008)
+    );
+
+  box-shadow:
+    0 25px 70px rgba(0,0,0,.18);
+}
+
+
+.marketing-dark .marketing-step:hover {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,106,0,.055),
+      rgba(19,200,189,.035)
+    );
+}
+
+
+.marketing-dark .marketing-step > span {
+  color: #ff7a18;
+}
+
+
+/* =====================================================
+   STATS
+   ===================================================== */
+
+.marketing-dark .marketing-stats strong {
+  color: #ff7a18;
+
+  text-shadow:
+    0 0 18px rgba(255,106,0,.22);
+}
+
+
+/* =====================================================
+   CTA
+   ===================================================== */
+
+.marketing-dark .marketing-cta-inner {
+
+  background:
+
+    radial-gradient(
+      circle at 20% 100%,
+      rgba(255,106,0,.14),
+      transparent 35%
+    ),
+
+    radial-gradient(
+      circle at 80% 100%,
+      rgba(19,200,189,.11),
+      transparent 35%
+    ),
+
+    #0b0c10;
+
+  border-color:
+    rgba(255,255,255,.11);
+
+  box-shadow:
+    0 30px 80px rgba(0,0,0,.25);
+}
+
+
+.marketing-dark .marketing-cta-icon {
+
+  color: #ff9148;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,106,0,.16),
+      rgba(139,92,246,.10)
+    );
+
+  box-shadow:
+    0 0 30px rgba(255,106,0,.08);
+}
+
+
+/* =====================================================
+   ACCENT TEXT
+   ===================================================== */
+
+.marketing-dark .marketing-label {
+  color: #ff7a18;
+
+  text-shadow:
+    0 0 15px rgba(255,106,0,.18);
+}
+
+
+/* =====================================================
+   PREMIUM COLOR DETAILS
+   ===================================================== */
+
+.marketing-dark .marketing-section h2 {
+  color: #f7f7f8;
+}
+
+.marketing-dark .marketing-section h2::selection,
+.marketing-dark .marketing-hero h1::selection {
+  background: rgba(255,106,0,.35);
+}
+
+
+/* Cyan secondary highlights */
+
+.marketing-dark .marketing-showcase-wrap::after {
+  content: "";
+  position: absolute;
+  width: 35%;
+  height: 2px;
+  left: 32.5%;
+  bottom: -18px;
+
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      #ff6a00,
+      #13c8bd,
+      transparent
+    );
+
+  filter: blur(2px);
+  opacity: .7;
+}
+/* =====================================================
+   WORKSPACE — PREMIUM AMBIENT BACKGROUND
+   ===================================================== */
+
+/* Only the section containing the feature/workspace cards */
+.marketing-dark .marketing-section:has(.marketing-feature-grid) {
+  position: relative;
+  isolation: isolate;
+}
+
+/* Fine technical grid */
+.marketing-dark .marketing-section:has(.marketing-feature-grid)::before {
+  content: "";
+  position: absolute;
+
+  top: 0;
+  left: -8vw;
+  right: -8vw;
+  bottom: 0;
+
+  z-index: -3;
+  pointer-events: none;
+
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.028) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.028) 1px,
+      transparent 1px
+    );
+
+  background-size: 42px 42px;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 12%,
+      black 72%,
+      transparent 100%
+    );
+
+  opacity: .9;
+}
+
+
+/* Main ambient lighting */
+.marketing-dark .marketing-section:has(.marketing-feature-grid)::after {
+  content: "";
+  position: absolute;
+
+  top: -120px;
+  left: -10vw;
+  right: -10vw;
+  bottom: -100px;
+
+  z-index: -2;
+  pointer-events: none;
+
+  background:
+
+    /* Orange — left */
+    radial-gradient(
+      ellipse 420px 360px at 4% 35%,
+      rgba(255,106,0,.13),
+      transparent 70%
+    ),
+
+    /* Cyan — right */
+    radial-gradient(
+      ellipse 460px 380px at 96% 42%,
+      rgba(19,200,189,.12),
+      transparent 70%
+    ),
+
+    /* Violet — upper center */
+    radial-gradient(
+      ellipse 500px 260px at 52% 0%,
+      rgba(139,92,246,.075),
+      transparent 72%
+    ),
+
+    /* Orange/cyan mixing near bottom */
+    radial-gradient(
+      ellipse 600px 260px at 50% 100%,
+      rgba(255,106,0,.055),
+      transparent 70%
+    );
+
+  filter: blur(5px);
+}
+
+
+/* Soft light directly behind the heading */
+.marketing-dark .marketing-section:has(.marketing-feature-grid)
+.marketing-section-head::before {
+  content: "";
+
+  position: absolute;
+
+  width: 600px;
+  height: 180px;
+
+  top: -45px;
+  left: 50%;
+  transform: translateX(-50%);
+
+  background:
+    radial-gradient(
+      ellipse,
+      rgba(139,92,246,.075),
+      rgba(19,200,189,.035) 40%,
+      transparent 72%
+    );
+
+  filter: blur(35px);
+
+  pointer-events: none;
+}
+
+
+/* Give workspace heading a little more depth */
+.marketing-dark .marketing-section:has(.marketing-feature-grid)
+.marketing-section-head {
+  position: relative;
+}
+
+
+/* Small orange/cyan atmospheric line */
+.marketing-dark .marketing-section:has(.marketing-feature-grid)
+.marketing-section-head::after {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 1px;
+
+  left: 0;
+  bottom: -22px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #ff6a00,
+      #9b7cff,
+      #13c8bd,
+      transparent
+    );
+
+  opacity: .55;
+  filter: blur(.3px);
+}
+
+
+/* Add subtle glow around workspace cards */
+.marketing-dark .marketing-feature-grid {
+  position: relative;
+}
+
+
+.marketing-dark .marketing-feature-grid::before {
+  content: "";
+
+  position: absolute;
+
+  width: 500px;
+  height: 250px;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  background:
+    radial-gradient(
+      ellipse,
+      rgba(255,106,0,.045),
+      rgba(139,92,246,.025) 45%,
+      transparent 72%
+    );
+
+  filter: blur(45px);
+
+  pointer-events: none;
+  z-index: -1;
+}
+/* =========================================
+   CLEAN PREMIUM LOWER-PAGE BACKGROUND
+   ========================================= */
+
+.marketing-dark {
+  background:
+    radial-gradient(
+      700px 500px at 0% 35%,
+      rgba(255, 106, 0, 0.075),
+      transparent 70%
+    ),
+    radial-gradient(
+      700px 500px at 100% 42%,
+      rgba(19, 200, 189, 0.065),
+      transparent 70%
+    ),
+    radial-gradient(
+      800px 500px at 50% 75%,
+      rgba(139, 92, 246, 0.045),
+      transparent 72%
+    ),
+    #09090b;
+}
+
+
+/* Keep sections transparent so the ambient background
+   flows naturally through the entire page */
+
+.marketing-dark .marketing-section,
+.marketing-dark .marketing-workflow,
+.marketing-dark .marketing-cta {
+  background: transparent;
+}
+
+
+/* Very subtle grid — no pseudo-element blocks */
+
+.marketing-dark .marketing-section {
+  background-image:
+    linear-gradient(
+      rgba(255,255,255,.012) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,.012) 1px,
+      transparent 1px
+    );
+
+  background-size: 52px 52px;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent,
+      black 15%,
+      black 85%,
+      transparent
+    );
+}
+
+
+/* Workflow gets a very subtle violet atmosphere */
+
+.marketing-dark .marketing-workflow {
+  background:
+    radial-gradient(
+      650px 280px at 50% 20%,
+      rgba(139,92,246,.045),
+      transparent 75%
+    );
+}
+
+
+/* CTA gets soft orange + cyan atmosphere */
+
+.marketing-dark .marketing-cta {
+  background:
+    radial-gradient(
+      500px 300px at 20% 55%,
+      rgba(255,106,0,.055),
+      transparent 72%
+    ),
+    radial-gradient(
+      500px 300px at 80% 55%,
+      rgba(19,200,189,.05),
+      transparent 72%
+    );
+}
+/* =====================================================
+   PREMIUM WORKFLOW CARDS
+   Same visual language as feature cards
+   ===================================================== */
+
+.marketing-dark .marketing-step {
+  position: relative;
+  overflow: hidden;
+
+  background:
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(255,106,0,.065),
+      transparent 45%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(19,200,189,.055),
+      transparent 45%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.045),
+      rgba(255,255,255,.012)
+    ),
+    #0c0d11;
+
+  border-right: 1px solid rgba(255,255,255,.10);
+
+  transition:
+    transform .28s ease,
+    background .28s ease,
+    border-color .28s ease,
+    box-shadow .28s ease;
+}
+
+
+/* First card needs the outer left border */
+.marketing-dark .marketing-step:first-child {
+  border-left: 0;
+}
+
+
+/* Orange → cyan accent line at bottom */
+.marketing-dark .marketing-step::after {
+  content: "";
+
+  position: absolute;
+
+  left: 24px;
+  bottom: 0;
+
+  width: 85px;
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #ff6a00,
+      #ff9b55,
+      #13c8bd,
+      transparent
+    );
+
+  opacity: .85;
+
+  filter:
+    drop-shadow(0 0 5px rgba(255,106,0,.20));
+
+  transition:
+    width .3s ease,
+    opacity .3s ease;
+}
+
+
+/* Subtle ambient glow inside every card */
+.marketing-dark .marketing-step::before {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 140px;
+
+  right: -70px;
+  top: -70px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(139,92,246,.055),
+      transparent 70%
+    );
+
+  filter: blur(20px);
+
+  pointer-events: none;
+}
+
+
+/* Hover */
+.marketing-dark .marketing-step:hover {
+  background:
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(255,106,0,.10),
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(19,200,189,.08),
+      transparent 48%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.055),
+      rgba(255,255,255,.018)
+    ),
+    #0c0d11;
+
+  border-color: rgba(255,106,0,.22);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.035),
+    0 20px 50px rgba(0,0,0,.22),
+    0 0 30px rgba(255,106,0,.035);
+}
+
+
+/* Accent grows on hover */
+.marketing-dark .marketing-step:hover::after {
+  width: 120px;
+  opacity: 1;
+}
+
+
+/* Number */
+.marketing-dark .marketing-step > span {
+  position: relative;
+  z-index: 2;
+
+  color: #ff7a18;
+
+  text-shadow:
+    0 0 14px rgba(255,106,0,.18);
+}
+
+
+/* Heading */
+.marketing-dark .marketing-step h3 {
+  position: relative;
+  z-index: 2;
+
+  color: #f5f5f5;
+}
+
+
+/* Description */
+.marketing-dark .marketing-step p {
+  position: relative;
+  z-index: 2;
+
+  color: #9699a2;
+}
+
+
+/* Mobile */
+@media (max-width: 700px) {
+  .marketing-dark .marketing-step {
+    border-right: 0;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+  }
+
+  .marketing-dark .marketing-step:last-child {
+    border-bottom: 0;
+  }
+}
+/* =========================================================
+   CODE3D AI — PREMIUM LIGHT THEME
+   Bright counterpart of the premium dark theme
+   ========================================================= */
+
+
+/* =========================================================
+   OVERALL LIGHT BACKGROUND
+   ========================================================= */
+
+.marketing-light {
+  --m-bg: #f7f8f6;
+  --m-text: #111214;
+  --m-muted: #64676d;
+  --m-line: rgba(17,18,20,.10);
+
+  background:
+    radial-gradient(
+      circle at 5% 12%,
+      rgba(255,106,0,.105),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 95% 18%,
+      rgba(19,200,189,.085),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 50% 92%,
+      rgba(139,92,246,.065),
+      transparent 34%
+    ),
+    #f7f8f6;
+
+  color: #111214;
+}
+
+
+/* =========================================================
+   HERO GRID
+   ========================================================= */
+
+.marketing-light .marketing-grid {
+  opacity: .7;
+
+  background-image:
+    linear-gradient(
+      rgba(17,18,20,.035) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(17,18,20,.035) 1px,
+      transparent 1px
+    );
+
+  background-size: 46px 46px;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      black 0%,
+      black 55%,
+      transparent 92%
+    );
+}
+
+
+/* =========================================================
+   HERO AMBIENT ORBS
+   ========================================================= */
+
+.marketing-light .marketing-orb-a {
+  width: 520px;
+  height: 520px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(255,106,0,.16) 0%,
+      rgba(255,106,0,.06) 35%,
+      transparent 70%
+    );
+
+  filter: blur(95px);
+}
+
+
+.marketing-light .marketing-orb-b {
+  width: 520px;
+  height: 520px;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(19,200,189,.14) 0%,
+      rgba(19,200,189,.05) 35%,
+      transparent 70%
+    );
+
+  filter: blur(95px);
+}
+
+
+/* =========================================================
+   HERO GRADIENT TEXT
+   ========================================================= */
+
+.marketing-light .marketing-hero h1 em {
+  background:
+    linear-gradient(
+      105deg,
+      #17181a 5%,
+      #d95300 30%,
+      #e85f00 48%,
+      #755bd6 68%,
+      #079f98 92%
+    );
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+  background-size: 180% auto;
+
+  animation:
+    code3dLightHeroGradient 8s ease-in-out infinite;
+}
+
+
+@keyframes code3dLightHeroGradient {
+
+  0% {
+    background-position: 0% center;
+  }
+
+  50% {
+    background-position: 100% center;
+  }
+
+  100% {
+    background-position: 0% center;
+  }
+
+}
+
+
+/* =========================================================
+   HERO TEXT
+   ========================================================= */
+
+.marketing-light .marketing-hero-copy > p {
+  color: #64676d;
+}
+
+
+/* =========================================================
+   EYEBROW
+   ========================================================= */
+
+.marketing-light .marketing-eyebrow {
+  color: #c9550b;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,106,0,.08),
+      rgba(255,255,255,.65)
+    );
+
+  border-color: rgba(255,106,0,.24);
+
+  box-shadow:
+    0 8px 25px rgba(255,106,0,.06);
+}
+
+
+/* =========================================================
+   PRIMARY BUTTON
+   ========================================================= */
+
+.marketing-light .marketing-btn-primary {
+  background:
+    linear-gradient(
+      135deg,
+      #ff7615,
+      #e95b00
+    );
+
+  border-color: #e95b00;
+
+  color: #fff;
+
+  box-shadow:
+    0 12px 30px rgba(255,106,0,.20),
+    0 0 35px rgba(255,106,0,.07);
+}
+
+
+.marketing-light .marketing-btn-primary:hover {
+  background:
+    linear-gradient(
+      135deg,
+      #ff852e,
+      #ef6508
+    );
+
+  box-shadow:
+    0 16px 42px rgba(255,106,0,.27);
+}
+
+
+/* =========================================================
+   SECONDARY BUTTON
+   ========================================================= */
+
+.marketing-light .marketing-btn-secondary {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.95),
+      rgba(243,244,241,.90)
+    );
+
+  color: #17181a;
+
+  border-color: rgba(17,18,20,.12);
+
+  box-shadow:
+    0 8px 25px rgba(0,0,0,.045);
+}
+
+
+.marketing-light .marketing-btn-secondary:hover {
+  border-color: rgba(255,106,0,.35);
+
+  box-shadow:
+    0 12px 30px rgba(255,106,0,.08);
+}
+
+
+/* =========================================================
+   PROOF
+   ========================================================= */
+
+.marketing-light .marketing-proof {
+  color: #73767c;
+}
+
+.marketing-light .marketing-proof svg {
+  color: #079f98;
+
+  filter:
+    drop-shadow(0 0 5px rgba(19,200,189,.25));
+}
+
+
+/* =========================================================
+   VIDEO SHOWCASE
+   ========================================================= */
+
+.marketing-light .marketing-showcase {
+  background: #111318;
+
+  border-color:
+    rgba(17,18,20,.16);
+
+  box-shadow:
+    0 45px 100px rgba(0,0,0,.18),
+    0 0 75px rgba(255,106,0,.08),
+    0 0 90px rgba(19,200,189,.055);
+
+  border-radius: 22px;
+}
+
+
+.marketing-light .marketing-showcase-glow {
+  background:
+
+    radial-gradient(
+      ellipse at 50% 100%,
+      rgba(255,106,0,.18),
+      transparent 45%
+    ),
+
+    radial-gradient(
+      ellipse at 15% 50%,
+      rgba(255,106,0,.10),
+      transparent 38%
+    ),
+
+    radial-gradient(
+      ellipse at 85% 50%,
+      rgba(19,200,189,.09),
+      transparent 38%
+    ),
+
+    radial-gradient(
+      ellipse at 50% 0%,
+      rgba(139,92,246,.07),
+      transparent 40%
+    );
+
+  filter: blur(45px);
+}
+
+
+.marketing-light .marketing-window-bar {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255,106,0,.08),
+      rgba(255,255,255,.92),
+      rgba(19,200,189,.07)
+    );
+
+  border-bottom-color:
+    rgba(255,255,255,.12);
+}
+
+
+/* =========================================================
+   STATS
+   ========================================================= */
+
+.marketing-light .marketing-stats {
+  border-color: rgba(17,18,20,.10);
+}
+
+.marketing-light .marketing-stats > div {
+  border-color: rgba(17,18,20,.10);
+}
+
+.marketing-light .marketing-stats strong {
+  color: #d85b08;
+
+  text-shadow:
+    0 0 15px rgba(255,106,0,.12);
+}
+
+
+/* =========================================================
+   WORKSPACE SECTION
+   ========================================================= */
+
+.marketing-light .marketing-section {
+  background: transparent;
+}
+
+
+/* subtle technical grid */
+
+.marketing-light .marketing-section:has(.marketing-feature-grid) {
+  position: relative;
+  isolation: isolate;
+}
+
+.marketing-light
+.marketing-section:has(.marketing-feature-grid)::before {
+
+  content: "";
+
+  position: absolute;
+
+  top: 0;
+  left: -8vw;
+  right: -8vw;
+  bottom: 0;
+
+  z-index: -3;
+  pointer-events: none;
+
+  background-image:
+    linear-gradient(
+      rgba(17,18,20,.018) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      rgba(17,18,20,.018) 1px,
+      transparent 1px
+    );
+
+  background-size: 42px 42px;
+
+  mask-image:
+    linear-gradient(
+      to bottom,
+      transparent,
+      black 12%,
+      black 72%,
+      transparent
+    );
+}
+
+
+/* =========================================================
+   WORKSPACE AMBIENT LIGHT
+   ========================================================= */
+
+.marketing-light
+.marketing-section:has(.marketing-feature-grid)::after {
+
+  content: "";
+
+  position: absolute;
+
+  top: -100px;
+  left: -10vw;
+  right: -10vw;
+  bottom: -100px;
+
+  z-index: -2;
+  pointer-events: none;
+
+  background:
+
+    radial-gradient(
+      ellipse 420px 360px at 4% 35%,
+      rgba(255,106,0,.075),
+      transparent 70%
+    ),
+
+    radial-gradient(
+      ellipse 460px 380px at 96% 42%,
+      rgba(19,200,189,.065),
+      transparent 70%
+    ),
+
+    radial-gradient(
+      ellipse 500px 260px at 52% 0%,
+      rgba(139,92,246,.045),
+      transparent 72%
+    );
+
+  filter: blur(5px);
+}
+
+
+/* =========================================================
+   SECTION HEADING
+   ========================================================= */
+
+.marketing-light .marketing-label {
+  color: #d85b08;
+
+  text-shadow:
+    0 0 14px rgba(255,106,0,.12);
+}
+
+
+.marketing-light .marketing-section h2 {
+  color: #111214;
+}
+
+
+/* =========================================================
+   FEATURE CARDS
+   ========================================================= */
+
+.marketing-light .marketing-card {
+
+  background:
+
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(19,200,189,.065),
+      transparent 38%
+    ),
+
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(255,106,0,.055),
+      transparent 38%
+    ),
+
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.98),
+      rgba(246,247,244,.92)
+    );
+
+  border-color:
+    rgba(17,18,20,.11);
+
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.85),
+    0 16px 40px rgba(0,0,0,.055);
+}
+
+
+.marketing-light .marketing-card:hover {
+
+  border-color:
+    rgba(255,106,0,.28);
+
+  transform:
+    translateY(-6px);
+
+  box-shadow:
+    0 24px 55px rgba(0,0,0,.10),
+    0 0 35px rgba(255,106,0,.055);
+}
+
+
+/* Card icons */
+
+.marketing-light .marketing-card-icon {
+
+  color: #d95e0a;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,106,0,.11),
+      rgba(139,92,246,.065),
+      rgba(19,200,189,.055)
+    );
+
+  border-color:
+    rgba(255,106,0,.20);
+
+  box-shadow:
+    0 8px 22px rgba(255,106,0,.06);
+}
+
+
+/* Card text */
+
+.marketing-light .marketing-card h3 {
+  color: #18191b;
+}
+
+.marketing-light .marketing-card p {
+  color: #686b72;
+}
+
+
+/* Card accent */
+
+.marketing-light .marketing-card-line {
+  background:
+    linear-gradient(
+      90deg,
+      #ff6a00,
+      #ff9b55,
+      #13c8bd,
+      transparent
+    );
+}
+
+
+/* =========================================================
+   WORKFLOW
+   ========================================================= */
+
+.marketing-light .marketing-workflow {
+  background: transparent;
+}
+
+
+.marketing-light .marketing-steps {
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,255,255,.92),
+      rgba(244,245,242,.88)
+    );
+
+  border-color:
+    rgba(17,18,20,.11);
+
+  box-shadow:
+    0 20px 60px rgba(0,0,0,.06);
+}
+
+
+.marketing-light .marketing-step {
+  background:
+
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(255,106,0,.045),
+      transparent 45%
+    ),
+
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(19,200,189,.04),
+      transparent 45%
+    ),
+
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.75),
+      rgba(245,246,243,.55)
+    );
+
+  border-right-color:
+    rgba(17,18,20,.09);
+
+  transition:
+    transform .28s ease,
+    background .28s ease,
+    border-color .28s ease,
+    box-shadow .28s ease;
+}
+
+
+.marketing-light .marketing-step:hover {
+
+  background:
+
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(255,106,0,.08),
+      transparent 48%
+    ),
+
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(19,200,189,.06),
+      transparent 48%
+    ),
+
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.98),
+      rgba(242,244,241,.90)
+    );
+
+  border-color:
+    rgba(255,106,0,.22);
+
+  box-shadow:
+    0 18px 45px rgba(0,0,0,.08),
+    0 0 30px rgba(255,106,0,.035);
+}
+
+
+.marketing-light .marketing-step > span {
+  color: #d85b08;
+
+  text-shadow:
+    0 0 12px rgba(255,106,0,.12);
+}
+
+
+.marketing-light .marketing-step h3 {
+  color: #17181a;
+}
+
+.marketing-light .marketing-step p {
+  color: #6c6f76;
+}
+
+
+/* =========================================================
+   CTA
+   ========================================================= */
+
+.marketing-light .marketing-cta {
+  background: transparent;
+}
+
+
+.marketing-light .marketing-cta-inner {
+
+  background:
+
+    radial-gradient(
+      circle at 20% 100%,
+      rgba(255,106,0,.075),
+      transparent 35%
+    ),
+
+    radial-gradient(
+      circle at 80% 100%,
+      rgba(19,200,189,.065),
+      transparent 35%
+    ),
+
+    linear-gradient(
+      145deg,
+      rgba(255,255,255,.98),
+      rgba(244,245,242,.94)
+    );
+
+  border-color:
+    rgba(17,18,20,.11);
+
+  box-shadow:
+    0 30px 75px rgba(0,0,0,.08);
+}
+
+
+.marketing-light .marketing-cta-icon {
+
+  color: #d85b08;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255,106,0,.11),
+      rgba(139,92,246,.065)
+    );
+
+  border-color:
+    rgba(255,106,0,.20);
+
+  box-shadow:
+    0 0 25px rgba(255,106,0,.07);
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+.marketing-light .marketing-footer {
+  border-top-color:
+    rgba(17,18,20,.10);
+
+  color: #70737a;
+}
+
+.marketing-light .marketing-footer strong {
+  color: #17181a;
+}
+
+.marketing-light .marketing-footer strong span {
+  color: #d85b08;
+}
+
+.marketing-light .marketing-footer button:hover {
+  color: #d85b08;
+}

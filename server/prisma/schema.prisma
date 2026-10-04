@@ -1,0 +1,365 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum ExecutionStatus {
+  COMPLETED
+  ERROR
+  TIMEOUT
+  MEMORY_LIMIT
+  SYNTAX_ERROR
+}
+
+enum ProblemDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  ATTEMPTED
+  SOLVED
+  REVISION
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  username            String               @unique
+  email               String               @unique
+  passwordHash        String               @map("password_hash")
+  role                Role                 @default(USER)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @map("updated_at")
+
+  sessions            Session[]
+  settings            UserSettings?
+  executions          AlgorithmExecution[]
+  savedVisualizations SavedVisualization[]
+  projects            Project[]
+  executionsList      Execution[]
+  historyList         History[]
+  quizAttempts        QuizAttempt[]
+  progress            UserProblemProgress[]
+  notes               UserProblemNote[]
+  submissions         UserSubmission[]
+
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@map("sessions")
+}
+
+model UserSettings {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  theme          String   @default("dark")
+  animationSpeed Float    @default(1.0) @map("animation_speed")
+  reducedMotion  Boolean  @default(false) @map("reduced_motion")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_settings")
+}
+
+model AlgorithmExecution {
+  id              String          @id @default(uuid())
+  userId          String?         @map("user_id")
+  title           String
+  language        String
+  code            String          @db.Text
+  input           String?
+  status          ExecutionStatus @default(COMPLETED)
+  stepCount       Int             @default(0) @map("step_count")
+  executionTimeMs Int             @default(0) @map("execution_time_ms")
+  traceJson       Json            @map("trace_json")
+  errorMessage    String?         @map("error_message") @db.Text
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  user            User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("algorithm_executions")
+}
+
+model SavedVisualization {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  title      String
+  language   String
+  code       String   @db.Text
+  algorithm  String
+  input      String?
+  configJson Json?    @map("config_json")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_visualizations")
+}
+
+model Project {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  name              String
+  code              String   @db.Text
+  language          String   @default("java")
+  visualizationType String?  @default("array") @map("visualization_type")
+  metadata          Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([updatedAt])
+  @@map("projects")
+}
+
+model Execution {
+  id                String          @id @default(uuid())
+  userId            String?         @map("user_id")
+  title             String
+  language          String
+  code              String          @db.Text
+  stdin             String?
+  stdout            String?
+  stderr            String?
+  status            String          @default("COMPLETED")
+  stepCount         Int             @default(0) @map("step_count")
+  executionTimeMs   Int             @default(0) @map("execution_time_ms")
+  traceJson         Json?           @map("trace_json")
+  complexityJson    Json?           @map("complexity_json")
+  errorMessage      String?         @map("error_message") @db.Text
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  user              User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps             ExecutionStep[]
+  historyItems      History[]
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("executions")
+}
+
+model ExecutionStep {
+  id                 String    @id @default(uuid())
+  executionId        String    @map("execution_id")
+  stepNumber         Int       @map("step_number")
+  lineNumber         Int?      @map("line_number")
+  eventType          String    @map("event_type")
+  variables          Json?
+  callStack          Json?     @map("call_stack")
+  condition          Json?
+  output             String?
+  dataStructureState Json?     @map("data_structure_state")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  execution          Execution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId, stepNumber])
+  @@map("execution_steps")
+}
+
+model History {
+  id                  String     @id @default(uuid())
+  userId              String     @map("user_id")
+  executionId         String?    @map("execution_id")
+  programName         String     @map("program_name")
+  language            String
+  executionStatus     String     @default("COMPLETED") @map("execution_status")
+  visualizationType   String     @default("array") @map("visualization_type")
+  executionDurationMs Int        @default(0) @map("execution_duration_ms")
+  codeSnapshot        String?    @map("code_snapshot") @db.Text
+  createdAt           DateTime   @default(now()) @map("created_at")
+
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  execution           Execution? @relation(fields: [executionId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("history")
+}
+
+model QuizAttempt {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  quizMode       String   @map("quiz_mode")
+  category       String
+  score          Int      @default(0)
+  totalQuestions Int      @default(0) @map("total_questions")
+  percentage     Float    @default(0.0)
+  answersJson    Json?    @map("answers_json")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("quiz_attempts")
+}
+
+model DsaTopic {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  slug        String       @unique
+  description String       @db.Text
+  icon        String?
+  orderIndex  Int          @default(0) @map("order_index")
+
+  patterns    DsaPattern[]
+  problems    DsaProblem[]
+
+  @@map("dsa_topics")
+}
+
+model DsaPattern {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  description String       @db.Text
+  topicId     String       @map("topic_id")
+
+  topic       DsaTopic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  problems    DsaProblem[]
+
+  @@index([topicId])
+  @@map("dsa_patterns")
+}
+
+model DsaProblem {
+  id                 String               @id @default(uuid())
+  title              String
+  slug               String               @unique
+  difficulty         ProblemDifficulty
+  topicId            String               @map("topic_id")
+  patternId          String?              @map("pattern_id")
+  archetype          String               @default("array")
+  timeComplexity     String               @map("time_complexity")
+  spaceComplexity    String               @map("space_complexity")
+  description        String               @db.Text
+  examples           Json?
+  hints              Json?
+  defaultInput       String?              @map("default_input")
+  starterCode        Json?                @map("starter_code")
+  solutionCode       Json?                @map("solution_code")
+  supportedLanguages Json?                @map("supported_languages")
+  sourceUrl          String?              @map("source_url")
+  createdAt          DateTime             @default(now()) @map("created_at")
+
+  topic              DsaTopic             @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  pattern            DsaPattern?          @relation(fields: [patternId], references: [id], onDelete: SetNull)
+  sheetProblems      DsaSheetProblem[]
+  progress           UserProblemProgress[]
+  notes              UserProblemNote[]
+  submissions        UserSubmission[]
+
+  @@index([topicId])
+  @@index([difficulty])
+  @@map("dsa_problems")
+}
+
+model DsaSheet {
+  id            String            @id @default(uuid())
+  name          String            @unique
+  slug          String            @unique
+  description   String            @db.Text
+  totalProblems Int               @default(0) @map("total_problems")
+
+  problems      DsaSheetProblem[]
+
+  @@map("dsa_sheets")
+}
+
+model DsaSheetProblem {
+  id         String     @id @default(uuid())
+  sheetId    String     @map("sheet_id")
+  problemId  String     @map("problem_id")
+  dayNumber  Int        @default(1) @map("day_number")
+  orderIndex Int        @default(0) @map("order_index")
+
+  sheet      DsaSheet   @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  problem    DsaProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([sheetId, problemId])
+  @@index([sheetId])
+  @@index([problemId])
+  @@map("dsa_sheet_problems")
+}
+
+model UserProblemProgress {
+  id               String         @id @default(uuid())
+  userId           String         @map("user_id")
+  problemId        String         @map("problem_id")
+  status           ProgressStatus @default(NOT_STARTED)
+  attemptCount     Int            @default(0) @map("attempt_count")
+  firstAttemptedAt DateTime?      @map("first_attempted_at")
+  lastAttemptedAt  DateTime?      @map("last_attempted_at")
+  solvedAt         DateTime?      @map("solved_at")
+
+  user             User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem          DsaProblem     @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([userId])
+  @@index([problemId])
+  @@map("user_problem_progress")
+}
+
+model UserProblemNote {
+  id        String     @id @default(uuid())
+  userId    String     @map("user_id")
+  problemId String     @map("problem_id")
+  content   String     @db.Text
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem   DsaProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([userId])
+  @@map("user_problem_notes")
+}
+
+model UserSubmission {
+  id        String          @id @default(uuid())
+  userId    String          @map("user_id")
+  problemId String          @map("problem_id")
+  language  String
+  code      String          @db.Text
+  status    ExecutionStatus @default(COMPLETED)
+  stepCount Int             @default(0) @map("step_count")
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem   DsaProblem      @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([problemId])
+  @@map("user_submissions")
+}
