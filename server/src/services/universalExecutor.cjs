@@ -339,7 +339,7 @@ async function executePython(code, input = "") {
     const startTime = Date.now();
 
     const executionResult = await runProcess(
-      "python",
+      "python3",
       [sourceFile],
       {
         cwd: tempDirectory,
