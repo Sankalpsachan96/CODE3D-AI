@@ -1,6 +1,6 @@
 FROM node:22-bookworm
 
-# Install all programming-language runtimes/compilers
+# Install Java, C++, C, Python and required system tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         openjdk-17-jdk \
@@ -9,18 +9,22 @@ RUN apt-get update && \
         python3 \
         python3-pip \
         ca-certificates \
-        && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install Node dependencies
+# Copy package files
 COPY package*.json ./
+
+# IMPORTANT: Prisma schema must exist before npm install
+COPY prisma ./prisma
+
+# Install Node dependencies
 RUN npm install
 
 # Copy backend source
 COPY . .
 
-# Render provides PORT dynamically
 ENV NODE_ENV=production
 
 EXPOSE 10000
