@@ -6,6 +6,26 @@ import { useTheme } from '../context/ThemeContext';
 
 import { getExecutionHistory, clearExecutionHistory } from '../services/apiService';
 
+const formatISTDateTime = (value) => {
+  if (!value) return '-';
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  }).format(date);
+};
+
 
 
 export default function HistoryPage({ onRerunProgram }) {
@@ -366,7 +386,7 @@ export default function HistoryPage({ onRerunProgram }) {
 
                     </td>
 
-                    <td className={`py-2.5 px-3 text-[11px] ${isBright ? 'text-slate-500' : 'text-slate-400'}`}>{String(rec.executedAt).slice(0, 22)}</td>
+                    <td className={`py-2.5 px-3 text-[11px] ${isBright ? 'text-slate-500' : 'text-slate-400'}`}>{formatISTDateTime(rec.executedAt)}</td>
 
                     <td className="py-2.5 px-3 text-right">
 
@@ -496,7 +516,7 @@ export default function HistoryPage({ onRerunProgram }) {
 
                     </td>
 
-                    <td className={`py-2.5 px-3 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{String(q.completedAt).slice(0, 19)}</td>
+                    <td className={`py-2.5 px-3 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{formatISTDateTime(q.completedAt)}</td>
 
                   </tr>
 
