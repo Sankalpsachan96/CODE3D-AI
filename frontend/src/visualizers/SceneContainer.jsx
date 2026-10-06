@@ -216,7 +216,7 @@ function CameraPresetHandler({ preset, onApplied, controlsRef }) {
   useEffect(() => {
     if (!preset) return;
     if (controlsRef?.current) {
-      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.target.set(0, targetY, 0);
     }
     if (preset === 'top') {
       camera.position.set(0, 18, 0.01);
@@ -253,7 +253,7 @@ function CameraPresetHandler({ preset, onApplied, controlsRef }) {
  * - position camera smoothly without clipping
  * - update OrbitControls limits
  */
-function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default' }) {
+function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default', sceneType = '' }) {
   const { camera, size } = useThree();
   const prevSceneKeyRef = useRef(null);
 
@@ -266,8 +266,9 @@ function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default' })
 
     const n = Math.max(1, count || 4);
     const spacing = n > 25 ? 1.6 : 2.1;
+    const isHierarchy = ['tree', 'bst', 'avl', 'avl-tree', 'heap', 'heaps'].includes(sceneType);
     const estWidth = Math.max(5.5, (n - 1) * spacing + 3.0);
-    const estHeight = 3.8;
+    const estHeight = isHierarchy ? Math.max(6.0, Math.min(8.5, 3.6 + Math.ceil(Math.log2(n + 1)) * 1.9)) : 3.8;
 
     const fovRad = (camera.fov * Math.PI) / 180;
     const aspect = size.width / Math.max(size.height, 1);
@@ -276,8 +277,9 @@ function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default' })
     const distH = (estWidth / 2) / Math.tan((fovRad * aspect) / 2);
     const targetDist = Math.max(distV, distH, 6.8) * 1.28;
 
-    camera.position.set(0, Math.max(2.8, targetDist * 0.35), Math.max(7.5, targetDist * 0.92));
-    camera.lookAt(0, 0, 0);
+    const targetY = sceneType === 'heap' || sceneType === 'heaps' ? -0.45 : isHierarchy ? -1.15 : 0;
+    camera.position.set(0, targetY + Math.max(2.8, targetDist * 0.35), Math.max(7.5, targetDist * 0.92));
+    camera.lookAt(0, targetY, 0);
 
     if (controlsRef?.current) {
       controlsRef.current.target.set(0, 0, 0);
@@ -671,6 +673,7 @@ export default function SceneContainer({
               count={elementCount}
               controlsRef={controlsRef}
               sceneKey={sceneKey}
+              sceneType={sceneType}
             />
 
             <Center
@@ -728,35 +731,36 @@ export default function SceneContainer({
               />
             )}
 
-            {/* Realistic Cyber Pedestal Stage */}
-            <group position={[0, -0.04, 0]}>
-              <mesh receiveShadow>
-                <cylinderGeometry args={[10.2, 10.8, 0.1, 64]} />
-                <meshStandardMaterial
-                  color={isBright ? '#e2e8f0' : '#080d1a'}
-                  roughness={0.2}
-                  metalness={0.85}
-                />
-              </mesh>
-              {/* Primary Glowing Perimeter Ring */}
-              <mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[10.0, 10.18, 64]} />
-                <meshBasicMaterial
-                  color={isBright ? '#0284c7' : '#00f2fe'}
-                  transparent
-                  opacity={0.85}
-                />
-              </mesh>
-              {/* Secondary Inner Cyan Pulsing Ring */}
-              <mesh position={[0, 0.061, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[7.2, 7.28, 64]} />
-                <meshBasicMaterial
-                  color={isBright ? '#6366f1' : '#38bdf8'}
-                  transparent
-                  opacity={0.4}
-                />
-              </mesh>
-            </group>
+            {/* Studio floor is intentionally hidden for tree/heap scenes so it cannot intersect
+                or visually compete with hierarchy levels. */}
+            {!centerHierarchyScene && (
+              <group position={[0, -0.04, 0]}>
+                <mesh receiveShadow>
+                  <cylinderGeometry args={[10.2, 10.8, 0.1, 64]} />
+                  <meshStandardMaterial
+                    color={isBright ? '#e2e8f0' : '#080d1a'}
+                    roughness={0.2}
+                    metalness={0.85}
+                  />
+                </mesh>
+                <mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                  <ringGeometry args={[10.0, 10.18, 64]} />
+                  <meshBasicMaterial
+                    color={isBright ? '#0284c7' : '#00f2fe'}
+                    transparent
+                    opacity={0.85}
+                  />
+                </mesh>
+                <mesh position={[0, 0.061, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                  <ringGeometry args={[7.2, 7.28, 64]} />
+                  <meshBasicMaterial
+                    color={isBright ? '#6366f1' : '#38bdf8'}
+                    transparent
+                    opacity={0.4}
+                  />
+                </mesh>
+              </group>
+            )}
 
             {/* Cinematic Ambient Particle Sparkles */}
             <Sparkles
@@ -768,29 +772,30 @@ export default function SceneContainer({
               color={isBright ? '#0284c7' : '#38bdf8'}
             />
 
-            {/* Soft Grounding Contact Shadows */}
-            <ContactShadows
-              position={[0, -0.02, 0]}
-              opacity={isBright ? 0.5 : 0.85}
-              scale={26}
-              blur={2.5}
-              far={4.8}
-              color={isBright ? '#64748b' : '#000000'}
-            />
-
-            {/* Floor Depth Grid */}
-            <Grid
-              position={[0, -0.01, 0]}
-              args={[32, 32]}
-              cellSize={0.75}
-              cellThickness={0.7}
-              cellColor={isBright ? '#cbd5e1' : '#1e293b'}
-              sectionSize={2.25}
-              sectionThickness={1.2}
-              sectionColor={isBright ? '#94a3b8' : '#334155'}
-              fadeDistance={20}
-              fadeStrength={1.5}
-            />
+            {!centerHierarchyScene && (
+              <>
+                <ContactShadows
+                  position={[0, -0.02, 0]}
+                  opacity={isBright ? 0.5 : 0.85}
+                  scale={26}
+                  blur={2.5}
+                  far={4.8}
+                  color={isBright ? '#64748b' : '#000000'}
+                />
+                <Grid
+                  position={[0, -0.01, 0]}
+                  args={[32, 32]}
+                  cellSize={0.75}
+                  cellThickness={0.7}
+                  cellColor={isBright ? '#cbd5e1' : '#1e293b'}
+                  sectionSize={2.25}
+                  sectionThickness={1.2}
+                  sectionColor={isBright ? '#94a3b8' : '#334155'}
+                  fadeDistance={20}
+                  fadeStrength={1.5}
+                />
+              </>
+            )}
           </Suspense>
 
           <OrbitControls
