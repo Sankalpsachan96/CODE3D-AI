@@ -89,7 +89,7 @@ export async function executeProgram(
   conceptId = null,
   language = 'java',
   input = null,
-  universal = false
+  universal = true
 ) {
   try {
     const res = await smartFetch('/execute', {
