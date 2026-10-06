@@ -8297,7 +8297,7 @@ function generateCatalogProblemTrace({ id = '', title = '', archetype = '', inpu
  * at line 3 instead of the for statement on line 6). This pass keeps the rich
  * 3D state but resolves each step to a semantically matching source line.
  */
-function alignTraceLinesWithSource(code, steps, language = 'java') {
+export function alignTraceLinesWithSource(code, steps, language = 'java') {
   if (typeof code !== 'string' || !code.trim() || !Array.isArray(steps) || !steps.length) {
     return steps;
   }
