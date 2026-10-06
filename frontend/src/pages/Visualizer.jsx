@@ -48,7 +48,6 @@ import {
 } from 'lucide-react';
 export default function Visualizer({ initialConcept, initialOpenStriver = false, universalOnly = false }) {
   const { isBright } = useTheme();
-  const striverTraceKey = (problem) => problem ? `striver|${problem.striverId || problem.id}|${String(problem.shortTitle || problem.title || '').replace(/\|/g, ' ')}|${problem.archetype || 'array'}` : null;
 
   // Build a semantic visualization hint without changing the code sent to the
   // compiler. This lets the deterministic simulator select the correct
