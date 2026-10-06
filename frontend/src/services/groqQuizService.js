@@ -83,8 +83,6 @@ Rules:
       }),
     });
 
-    const data = await response.json();
-
     if (!data?.success) {
       throw new Error(data?.message || 'Quiz generation failed.');
     }
