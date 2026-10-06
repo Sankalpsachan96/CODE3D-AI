@@ -35,6 +35,73 @@ test('all 49 DSA curriculum programs produce a registered visualization trace', 
   }
 });
 
+
+const EXPECTED_TOPIC_VISUALIZERS = {
+  'student-result': ['universal-execution', 'universal'],
+  'array-loop': ['array'],
+  'matrix': ['matrix'],
+  'two-pointer-reverse': ['array'],
+  'sliding-window': ['array'],
+  'linked-list': ['linked-list'],
+  'doubly-linked-list': ['linked-list'],
+  'circular-linked-list': ['linked-list'],
+  'cycle-detection': ['linked-list'],
+  'stack': ['stack'],
+  'parentheses-stack': ['stack'],
+  'queue': ['queue'],
+  'circular-queue': ['queue'],
+  'deque': ['queue'],
+  'bst': ['tree'],
+  'tree-traversals': ['tree'],
+  'avl-tree': ['avl'],
+  'trie': ['trie'],
+  'bubble-sort': ['sorting'],
+  'insertion-sort': ['sorting'],
+  'merge-sort': ['sorting'],
+  'quick-sort': ['sorting'],
+  'binary-search': ['searching'],
+  'hash-table': ['hash-table'],
+  'graph-bfs': ['graph'],
+  'graph-dfs': ['graph'],
+  'dijkstra': ['graph'],
+  'recursion': ['recursion'],
+  'fibonacci-memo': ['dp'],
+  'dp-knapsack': ['matrix'],
+  'lcs': ['dp'],
+  'container-most-water': ['container-water'],
+  'monotonic-stack': ['stack'],
+  'heap-priority-queue': ['heap'],
+  'topological-sort-dag': ['graph'],
+  'coin-change-dp': ['array'],
+  'trapping-rain-water': ['trapping-rain-water'],
+  'lru-cache': ['hash-table', 'lru-cache'],
+  'trie-prefix-tree': ['trie'],
+  'disjoint-set-union': ['graph', 'dsu'],
+  'longest-increasing-subsequence': ['lis'],
+  'n-queens': ['recursion'],
+  'sudoku-solver': ['matrix'],
+  'dijkstra-shortest-path': ['graph'],
+  'merge-intervals': ['array'],
+  'rotten-oranges': ['matrix', 'graph'],
+  'word-search': ['matrix', 'graph', 'recursion'],
+  'knapsack-01': ['matrix'],
+  'sliding-window-max': ['array'],
+};
+
+test('49 DSA topics use the intended visualizer family', () => {
+  for (const program of SAMPLE_PROGRAMS) {
+    const selector = `topic|${program.id}|${program.title.replace(/\|/g, '/')}|${program.category}`;
+    const trace = getExecutionTrace(program.code || '', program.language || 'java', null, selector);
+    const expected = EXPECTED_TOPIC_VISUALIZERS[program.id];
+    assert.ok(expected, `Topic ${program.id}: missing visualizer expectation`);
+    const actualTypes = [...new Set(trace.map((step) => step.dataStructureState?.type).filter(Boolean))];
+    assert.ok(
+      actualTypes.some((type) => expected.includes(type)),
+      `Topic ${program.id}: expected one of [${expected.join(', ')}], got [${actualTypes.join(', ')}]`
+    );
+  }
+});
+
 test('all 14 algorithm catalog entries produce execution steps', async () => {
   const { ALGORITHM_CATALOG } = await import('../src/algorithms/index.js');
   assert.equal(ALGORITHM_CATALOG.length, 14);
