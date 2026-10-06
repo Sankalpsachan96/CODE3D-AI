@@ -62,7 +62,7 @@ STUDENT QUESTION:
 ${clean(question, 3000)}`;
 }
 
-async function callGroq(model, messages, jsonMode = false) {
+async function callGroq(model, messages, jsonMode = false, jsonSchema = null) {
   const apiKey = String(process.env.GROQ_API_KEY || '').trim();
   if (!apiKey) {
     const error = new Error('GROQ_API_KEY is not configured on the server.');
@@ -80,7 +80,22 @@ async function callGroq(model, messages, jsonMode = false) {
       model,
       temperature: 0.2,
       messages,
-      ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+      ...(jsonMode
+        ? {
+            response_format: jsonSchema
+              ? {
+                  type: 'json_schema',
+                  json_schema: {
+                    name: 'code3d_quiz',
+                    strict: true,
+                    schema: jsonSchema,
+                  },
+                }
+              : { type: 'json_object' },
+            // GPT-OSS reasoning must be hidden/parsed when JSON mode is used.
+            reasoning_format: 'hidden',
+          }
+        : {}),
     }),
   });
 
@@ -113,12 +128,47 @@ export async function askCodeTutor({
   ];
 
   const jsonMode = action === 'ANALYZE_CODE' || action === 'QUIZ_GENERATE';
+  const quizSchema = action === 'QUIZ_GENERATE'
+    ? {
+        type: 'object',
+        properties: {
+          questions: {
+            type: 'array',
+            minItems: 10,
+            maxItems: 10,
+            items: {
+              type: 'object',
+              properties: {
+                question: { type: 'string' },
+                options: {
+                  type: 'array',
+                  minItems: 4,
+                  maxItems: 4,
+                  items: { type: 'string' },
+                },
+                correctIndex: {
+                  type: 'integer',
+                  minimum: 0,
+                  maximum: 3,
+                },
+                explanation: { type: 'string' },
+              },
+              required: ['question', 'options', 'correctIndex', 'explanation'],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ['questions'],
+        additionalProperties: false,
+      }
+    : null;
+
   let answer;
   try {
-    answer = await callGroq(DEFAULT_MODEL, messages, jsonMode);
+    answer = await callGroq(DEFAULT_MODEL, messages, jsonMode, quizSchema);
   } catch (primaryError) {
     if (primaryError.code === 'AI_NOT_CONFIGURED') throw primaryError;
-    answer = await callGroq(FALLBACK_MODEL, messages, jsonMode);
+    answer = await callGroq(FALLBACK_MODEL, messages, jsonMode, quizSchema);
   }
 
   if (jsonMode) {
