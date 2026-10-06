@@ -340,6 +340,13 @@ export default function SceneContainer({
   // Compute data structure scale to dynamically auto-fit camera distance
   const dsState = currentStep?.dataStructureState;
   const elementCount = dsState?.values?.length ?? dsState?.nodes?.length ?? (dsState?.matrix ? dsState.matrix.length * (dsState.matrix[0]?.length || 1) : 4);
+  const sceneType = String(dsState?.type || '').toLowerCase().replace(/_/g, '-');
+  // Tree/heap scenes use a vertical hierarchy. <Center top> pins their root
+  // to the viewport center and pushes lower levels out of frame, which can
+  // make BSTs appear split and can hide the heap entirely. Center those
+  // hierarchy scenes as a complete object while preserving the existing
+  // alignment for the other visualizers.
+  const centerHierarchyScene = ['tree', 'bst', 'avl', 'avl-tree', 'heap', 'heaps'].includes(sceneType);
 
   // Extract the exact line of code currently being executed for the 3D dry run
   const codeLines = code ? code.split('\n') : [];
@@ -666,7 +673,10 @@ export default function SceneContainer({
               sceneKey={sceneKey}
             />
 
-            <Center top position={[0, -0.3, 0]}>
+            <Center
+              {...(centerHierarchyScene ? {} : { top: true })}
+              position={[0, -0.3, 0]}
+            >
               {React.isValidElement(children)
                 ? React.cloneElement(children, {
                     isXRayMode,
