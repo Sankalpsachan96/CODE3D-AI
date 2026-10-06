@@ -484,17 +484,63 @@ public class Main {
     difficulty: 'Advanced',
     timeComplexity: 'O(log n)',
     spaceComplexity: 'O(n)',
-    code: `public class Main {
-    // Inserts 30, 20, 10 causing LL imbalance (Balance Factor = +2)
-    // A single Right Rotation restores balance with root 20:
-    //      20
-    //     /  \\
-    //   10    30
+    code: `class Node {
+    int key, height;
+    Node left, right;
+    Node(int key) { this.key = key; height = 1; }
+}
+
+public class Main {
+    static int height(Node n) { return n == null ? 0 : n.height; }
+    static int balance(Node n) { return n == null ? 0 : height(n.left) - height(n.right); }
+
+    static Node rightRotate(Node y) {
+        Node x = y.left;
+        Node t2 = x.right;
+        x.right = y;
+        y.left = t2;
+        y.height = Math.max(height(y.left), height(y.right)) + 1;
+        x.height = Math.max(height(x.left), height(x.right)) + 1;
+        return x;
+    }
+
+    static Node leftRotate(Node x) {
+        Node y = x.right;
+        Node t2 = y.left;
+        y.left = x;
+        x.right = t2;
+        x.height = Math.max(height(x.left), height(x.right)) + 1;
+        y.height = Math.max(height(y.left), height(y.right)) + 1;
+        return y;
+    }
+
+    static Node insert(Node node, int key) {
+        if (node == null) return new Node(key);
+        if (key < node.key) node.left = insert(node.left, key);
+        else node.right = insert(node.right, key);
+
+        node.height = Math.max(height(node.left), height(node.right)) + 1;
+        int bf = balance(node);
+
+        if (bf > 1 && key < node.left.key) return rightRotate(node); // LL
+        if (bf < -1 && key > node.right.key) return leftRotate(node); // RR
+        if (bf > 1 && key > node.left.key) {
+            node.left = leftRotate(node.left);
+            return rightRotate(node); // LR
+        }
+        if (bf < -1 && key < node.right.key) {
+            node.right = rightRotate(node.right);
+            return leftRotate(node); // RL
+        }
+        return node;
+    }
+
     public static void main(String[] args) {
-        int root = 30;
-        int left = 20;
-        int leftLeft = 10;
-        System.out.println("Imbalance detected. Right-rotating around node " + root);
+        Node root = null;
+        root = insert(root, 30);
+        root = insert(root, 20);
+        root = insert(root, 10); // LL imbalance -> right rotation
+        System.out.println("Root after right rotation = " + root.key);
     }
 }`,
   },
@@ -589,20 +635,31 @@ public class Main {
     timeComplexity: 'O(n log n)',
     spaceComplexity: 'O(n)',
     code: `public class Main {
-    public static void merge(int[] arr, int l, int m, int r) {
-        int[] left = java.util.Arrays.copyOfRange(arr, l, m + 1);
-        int[] right = java.util.Arrays.copyOfRange(arr, m + 1, r + 1);
-        int i = 0, j = 0, k = l;
-        while (i < left.length && j < right.length) {
-            if (left[i] <= right[j]) arr[k++] = left[i++];
-            else arr[k++] = right[j++];
+    static void merge(int[] arr, int left, int mid, int right) {
+        int[] temp = new int[right - left + 1];
+        int i = left, j = mid + 1, k = 0;
+
+        while (i <= mid && j <= right) {
+            temp[k++] = arr[i] <= arr[j] ? arr[i++] : arr[j++];
         }
-        while (i < left.length) arr[k++] = left[i++];
-        while (j < right.length) arr[k++] = right[j++];
+        while (i <= mid) temp[k++] = arr[i++];
+        while (j <= right) temp[k++] = arr[j++];
+
+        for (int p = 0; p < temp.length; p++) arr[left + p] = temp[p];
     }
+
+    static void mergeSort(int[] arr, int left, int right) {
+        if (left >= right) return;
+        int mid = left + (right - left) / 2;
+        mergeSort(arr, left, mid);
+        mergeSort(arr, mid + 1, right);
+        merge(arr, left, mid, right);
+    }
+
     public static void main(String[] args) {
         int[] arr = {38, 27, 43, 3, 9, 82, 10};
-        System.out.println("Merge sort running in O(n log n) time.");
+        mergeSort(arr, 0, arr.length - 1);
+        System.out.println("Sorted = " + java.util.Arrays.toString(arr));
     }
 }`,
   },
@@ -671,15 +728,23 @@ public class Main {
     difficulty: 'Intermediate',
     timeComplexity: 'O(1) avg',
     spaceComplexity: 'O(n)',
-    code: `public class Main {
+    code: `import java.util.ArrayList;
+import java.util.List;
+
+public class Main {
     public static void main(String[] args) {
         int capacity = 5;
-        // Keys 12, 22, 42 hash to bucket 2: collision resolved via chaining
-        int k1 = 12 % capacity; // 2
-        int k2 = 22 % capacity; // 2 (Chained in bucket 2)
-        int k3 = 35 % capacity; // 0
-        int k4 = 42 % capacity; // 2 (Chained in bucket 2)
-        System.out.println("Collision resolved for keys 12, 22, 42 in bucket 2");
+        List<List<Integer>> buckets = new ArrayList<>();
+        for (int i = 0; i < capacity; i++) buckets.add(new ArrayList<>());
+
+        int[] keys = {12, 22, 42, 35};
+        for (int key : keys) {
+            int bucket = Math.floorMod(key, capacity);
+            buckets.get(bucket).add(key);
+        }
+
+        System.out.println("Bucket 2 chain = " + buckets.get(2));
+        System.out.println("Bucket 0 chain = " + buckets.get(0));
     }
 }`,
   },
@@ -756,16 +821,46 @@ public class Main {
     timeComplexity: 'O((V + E) log V)',
     spaceComplexity: 'O(V)',
     code: `import java.util.*;
+
 public class Main {
+    static class Edge {
+        int to, weight;
+        Edge(int to, int weight) { this.to = to; this.weight = weight; }
+    }
+
     public static void main(String[] args) {
-        int[] dist = new int[5];
+        int V = 5;
+        List<List<Edge>> graph = new ArrayList<>();
+        for (int i = 0; i < V; i++) graph.add(new ArrayList<>());
+
+        graph.get(0).add(new Edge(1, 4));
+        graph.get(0).add(new Edge(2, 2));
+        graph.get(1).add(new Edge(2, 1));
+        graph.get(1).add(new Edge(3, 5));
+        graph.get(2).add(new Edge(4, 8));
+        graph.get(3).add(new Edge(4, 2));
+
+        int[] dist = new int[V];
         Arrays.fill(dist, Integer.MAX_VALUE);
-        dist[0] = 0; // Start at vertex 0
+        dist[0] = 0;
 
         PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingInt(a -> a[1]));
-        pq.add(new int[]{0, 0}); // {vertex, distance}
+        pq.offer(new int[]{0, 0});
 
-        System.out.println("Dijkstra relaxed shortest path to vertex 0 with distance 0.");
+        while (!pq.isEmpty()) {
+            int[] current = pq.poll();
+            int u = current[0], d = current[1];
+            if (d != dist[u]) continue;
+
+            for (Edge edge : graph.get(u)) {
+                if (dist[u] != Integer.MAX_VALUE && dist[u] + edge.weight < dist[edge.to]) {
+                    dist[edge.to] = dist[u] + edge.weight;
+                    pq.offer(new int[]{edge.to, dist[edge.to]});
+                }
+            }
+        }
+
+        System.out.println("Shortest distances = " + Arrays.toString(dist));
     }
 }`,
   },
@@ -928,19 +1023,35 @@ public class Main {
     difficulty: 'Intermediate',
     timeComplexity: 'O(log n)',
     spaceComplexity: 'O(n)',
-    code: `import java.util.PriorityQueue;
+    code: `public class Main {
+    static class MinHeap {
+        int[] heap = new int[32];
+        int size = 0;
 
-public class Main {
-    public static void main(String[] args) {
-        PriorityQueue<Integer> minHeap = new PriorityQueue<>();
-        int[] elements = {10, 15, 20, 17, 25, 30};
-
-        for (int val : elements) {
-            minHeap.add(val);
+        void add(int value) {
+            heap[size] = value;
+            int i = size++;
+            while (i > 0) {
+                int parent = (i - 1) / 2;
+                if (heap[parent] <= heap[i]) break;
+                int temp = heap[parent];
+                heap[parent] = heap[i];
+                heap[i] = temp;
+                i = parent;
+            }
         }
-        // Insert new element triggering bubble-up
-        minHeap.add(8);
 
+        int peek() {
+            return heap[0];
+        }
+    }
+
+    public static void main(String[] args) {
+        MinHeap minHeap = new MinHeap();
+        int[] elements = {10, 15, 20, 17, 25, 30};
+        for (int value : elements) minHeap.add(value);
+
+        minHeap.add(8); // Bubble 8 upward to restore min-heap property
         System.out.println("Root Minimum Key = " + minHeap.peek());
     }
 }`,
@@ -957,21 +1068,38 @@ public class Main {
 
 public class Main {
     public static void main(String[] args) {
-        // Kahn's DAG Algorithm: in-degrees of nodes A, B, C, D, E
         int numNodes = 5;
-        int[] inDegree = {0, 1, 1, 2, 1};
-        Queue<Integer> queue = new LinkedList<>();
+        List<List<Integer>> graph = new ArrayList<>();
+        int[] inDegree = new int[numNodes];
+        for (int i = 0; i < numNodes; i++) graph.add(new ArrayList<>());
 
+        addEdge(graph, inDegree, 0, 1);
+        addEdge(graph, inDegree, 0, 2);
+        addEdge(graph, inDegree, 1, 3);
+        addEdge(graph, inDegree, 2, 3);
+        addEdge(graph, inDegree, 3, 4);
+
+        Queue<Integer> queue = new ArrayDeque<>();
         for (int i = 0; i < numNodes; i++) {
-            if (inDegree[i] == 0) queue.add(i);
+            if (inDegree[i] == 0) queue.offer(i);
         }
 
-        List<Integer> topoOrder = new ArrayList<>();
+        List<Integer> order = new ArrayList<>();
         while (!queue.isEmpty()) {
             int node = queue.poll();
-            topoOrder.add(node);
+            order.add(node);
+
+            for (int next : graph.get(node)) {
+                if (--inDegree[next] == 0) queue.offer(next);
+            }
         }
-        System.out.println("Topological Order = " + topoOrder);
+
+        System.out.println("Topological Order = " + order);
+    }
+
+    static void addEdge(List<List<Integer>> graph, int[] inDegree, int from, int to) {
+        graph.get(from).add(to);
+        inDegree[to]++;
     }
 }`,
   },
@@ -1074,19 +1202,33 @@ public class Main {
 }
 
 public class Main {
+    static void insert(TrieNode root, String word) {
+        TrieNode curr = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (curr.children[idx] == null) curr.children[idx] = new TrieNode();
+            curr = curr.children[idx];
+        }
+        curr.isEndOfWord = true;
+    }
+
+    static boolean search(TrieNode root, String word) {
+        TrieNode curr = root;
+        for (char c : word.toCharArray()) {
+            int idx = c - 'a';
+            if (curr.children[idx] == null) return false;
+            curr = curr.children[idx];
+        }
+        return curr.isEndOfWord;
+    }
+
     public static void main(String[] args) {
         TrieNode root = new TrieNode();
         String[] words = {"cat", "car", "cart", "dog"};
-        for (String w : words) {
-            TrieNode curr = root;
-            for (char c : w.toCharArray()) {
-                int idx = c - 'a';
-                if (curr.children[idx] == null) curr.children[idx] = new TrieNode();
-                curr = curr.children[idx];
-            }
-            curr.isEndOfWord = true;
-        }
-        System.out.println("Trie built with words: " + String.join(", ", words));
+        for (String word : words) insert(root, word);
+
+        System.out.println("Search cart = " + search(root, "cart"));
+        System.out.println("Search cap = " + search(root, "cap"));
     }
 }`,
   },
