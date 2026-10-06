@@ -34,7 +34,61 @@ export function generateStriverTrace({ id, title, archetype, input = '', languag
     }, i === frames.length - 1 ? `${name} backtracks and returns.` : `${name}: exploring the next decision.`));
   }
 
-  if (/sort/.test(arch) || /inversion|interval|meeting|knapsack|cookies|job sequencing/.test(name.toLowerCase())) {
+  if (/lru-cache|lru/.test(arch) || /lru cache/.test(name.toLowerCase())) {
+    const cache = [];
+    return base.slice(0, 5).map((value, i) => {
+      cache.push(value);
+      if (cache.length > 3) cache.shift();
+      return step(
+        i + 1,
+        i + 1,
+        name,
+        'HASH_TABLE_OPERATION',
+        {
+          variables: { value, cacheSize: cache.length },
+          dataStructureState: {
+            type: 'hash-table',
+            values: [...cache],
+            activeIndex: cache.length - 1,
+            label: name,
+            focusInfo: `Cache access/update with ${value}`,
+          },
+        },
+        `${name}: update the LRU cache ordering.`
+      );
+    });
+  }
+
+  if (/hash-table|hash|two-sum/.test(arch)) {
+    const table = [];
+    return base.slice(0, 5).map((value, i) => {
+      table.push(value);
+      return step(
+        i + 1,
+        i + 1,
+        name,
+        'HASH_TABLE_OPERATION',
+        {
+          variables: { value, bucket: Math.abs(value) % 7 },
+          dataStructureState: {
+            type: 'hash-table',
+            values: [...table],
+            activeIndex: i,
+            label: name,
+            focusInfo: `Insert/lookup value ${value}`,
+          },
+        },
+        `${name}: perform the hash-table lookup/update.`
+      );
+    });
+  }
+
+  if (/dp|dynamic-programming|kadane|lis/.test(arch)) {
+    const dp = base.map((v, i) => i === 0 ? v : Math.max(v, (base[i - 1] || 0) + v));
+    return dp.slice(0, 5).map((value, i) => step(i + 1, i + 1, name, 'DP_UPDATE', { variables: { index: i, value }, dataStructureState: { type: 'dp', values: dp, activeIndex: i, label: name, focusInfo: `DP state at index ${i}` } }, `${name}: update the dynamic-programming state.`));
+  }
+
+  if (/sort/.test(arch) || /inversion|interval|meeting|cookies|job sequencing/.test(name.toLowerCase())) {
     const a = [...base];
     const steps = [step(1, 1, name, 'INITIAL_STATE', { dataStructureState: { type: 'array', values: a, activeIndex: 0, label: name, focusInfo: 'Initial input state' } }, `${name}: input initialized.`)];
     for (let i = 0; i < Math.min(4, a.length - 1); i++) {
@@ -88,11 +142,6 @@ export function generateStriverTrace({ id, title, archetype, input = '', languag
   if (/trie/.test(arch)) {
     const chars = ['C', 'O', 'D', 'E'];
     return chars.map((char, i) => step(i + 1, i + 1, name, 'TRIE_STEP', { variables: { char }, dataStructureState: { type: 'trie', values: chars.slice(0, i + 1), activeIndex: i, label: name, focusInfo: `Process character ${char}` } }, `${name}: process trie character ${char}.`));
-  }
-
-  if (/dp|dynamic-programming|kadane|lis/.test(arch)) {
-    const dp = base.map((v, i) => i === 0 ? v : Math.max(v, (base[i - 1] || 0) + v));
-    return dp.slice(0, 5).map((value, i) => step(i + 1, i + 1, name, 'DP_UPDATE', { variables: { index: i, value }, dataStructureState: { type: 'array', values: dp, activeIndex: i, label: name, focusInfo: `DP state at index ${i}` } }, `${name}: update the dynamic-programming state.`));
   }
 
   if (/matrix|grid/.test(arch)) {
