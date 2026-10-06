@@ -102,22 +102,34 @@ Rules:
       throw new Error('AI returned an empty quiz response.');
     }
 
-    // Remove accidental markdown fences if the model adds them
-    const cleaned = String(content)
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/\s*```$/i, '')
+    // Models can still wrap valid JSON in markdown or add a short sentence.
+    // Extract the JSON object before parsing so Quiz Arena is resilient to that output.
+    const rawContent = String(content).trim();
+    const cleaned = rawContent
+      .replace(/^\`\`\`(?:json)?\s*/i, '')
+      .replace(/\s*\`\`\`$/i, '')
       .trim();
 
     let parsed;
 
     try {
       parsed = JSON.parse(cleaned);
-    } catch (error) {
-      console.error('AI raw quiz response:', content);
-      throw new Error(
-        'AI returned invalid quiz JSON. Please try again.'
-      );
+    } catch {
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+
+      if (firstBrace === -1 || lastBrace <= firstBrace) {
+        throw new Error('AI returned invalid quiz JSON. Please try again.');
+      }
+
+      try {
+        parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+      } catch (error) {
+        console.error('AI raw quiz response:', content);
+        throw new Error(
+          'AI returned invalid quiz JSON. Please try again.'
+        );
+      }
     }
 
     if (
