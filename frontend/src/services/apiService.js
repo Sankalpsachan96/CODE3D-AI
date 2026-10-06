@@ -129,7 +129,9 @@ export async function executeProgram(
       err
     );
 
-    return null;
+    // Do not convert execution failures into null. The AI Tutor needs the
+    // real runtime/compile error so it can explain what actually happened.
+    throw err;
   }
 }
 
