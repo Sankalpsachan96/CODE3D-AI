@@ -108,7 +108,7 @@ async function executeCpp(code, input = "") {
     const compileResult = await runProcess(
       "g++",
       [
-        "-std=c++17",
+        "-std=c++20",
         "-O2",
         sourceFile,
         "-o",
@@ -420,7 +420,14 @@ async function executePython(code, input = "") {
 async function executeJava(code, input = "") {
   const tempDirectory = createTempDirectory();
 
-  const sourceFile = path.join(tempDirectory, "Main.java");
+  // Java requires a public class to live in a file with the same name.
+  // Support normal editor code such as "public class Solution" instead
+  // of forcing every program to be named Main.
+  const publicClassMatch = code.match(
+    /\bpublic\s+class\s+([A-Za-z_$][\w$]*)/
+  );
+  const mainClass = publicClassMatch?.[1] || "Main";
+  const sourceFile = path.join(tempDirectory, `${mainClass}.java`);
 
   try {
     fs.writeFileSync(sourceFile, code, "utf8");
@@ -449,7 +456,7 @@ async function executeJava(code, input = "") {
 
     const executionResult = await runProcess(
       "java",
-      ["-cp", tempDirectory, "Main"],
+      ["-cp", tempDirectory, mainClass],
       {
         cwd: tempDirectory,
         input,
