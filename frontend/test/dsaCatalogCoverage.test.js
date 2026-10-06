@@ -138,6 +138,60 @@ test('49 DSA topics use the intended visualizer family', () => {
   }
 });
 
+test('all DSA trace steps point to real source lines', () => {
+  const catalogs = [
+    ...STRIVER_PROBLEMS.map((problem) => ({
+      label: `Striver #${problem.id} ${problem.shortTitle}`,
+      code: problem.javaCode || problem.cppCode || '',
+      language: 'java',
+      selector: `striver|${problem.id}|${problem.title.replace(/\|/g, '/')}|${problem.archetype}`,
+    })),
+    ...SAMPLE_PROGRAMS.map((program) => ({
+      label: `Topic ${program.id}`,
+      code: program.code || '',
+      language: program.language || 'java',
+      selector: `topic|${program.id}|${program.title.replace(/\|/g, '/')}|${program.category}`,
+    })),
+  ];
+
+  for (const item of catalogs) {
+    const lines = item.code.split(/\r?\n/);
+    const trace = getExecutionTrace(item.code, item.language, null, item.selector);
+
+    for (const step of trace) {
+      assert.ok(
+        Number.isInteger(step.lineNumber) &&
+        step.lineNumber >= 1 &&
+        step.lineNumber <= lines.length,
+        `${item.label}: invalid source line ${step.lineNumber}`
+      );
+
+      const sourceLine = String(lines[step.lineNumber - 1] || '').trim();
+      assert.ok(sourceLine && !sourceLine.startsWith('//') && sourceLine !== '*',
+        `${item.label}: step ${step.stepNumber} points to blank/comment line ${step.lineNumber}`
+      );
+    }
+  }
+});
+
+test('array traversal execution steps point at the actual Java statements', () => {
+  const program = SAMPLE_PROGRAMS.find((item) => item.id === 'array-loop');
+  assert.ok(program);
+
+  const trace = getExecutionTrace(
+    program.code,
+    'java',
+    null,
+    `topic|${program.id}|${program.title}|${program.category}`
+  );
+
+  const access = trace.find((step) => step.eventType === 'ARRAY_ACCESS');
+  const increment = trace.find((step) => step.eventType === 'LOOP_INCREMENT');
+
+  assert.equal(access?.lineNumber, 7);
+  assert.equal(increment?.lineNumber, 6);
+});
+
 test('all 14 algorithm catalog entries produce execution steps', async () => {
   const { ALGORITHM_CATALOG } = await import('../src/algorithms/index.js');
   assert.equal(ALGORITHM_CATALOG.length, 14);
