@@ -125,181 +125,55 @@ export default function TreeVisualizer3D({ dataStructureState }) {
     return buildBstFromValues(values);
   }, [rawNodes, values]);
 
-  // Compute collision-free layout using Reingold-Tilford / Tidy Tree algorithm
+  // Deterministic tidy layout: inorder gives stable horizontal ordering and
+  // depth gives a strict horizontal level. This avoids modifier/contour drift
+  // that could move nodes from the same level onto different Y coordinates.
   const layoutData = useMemo(() => {
     if (!treeNodes || treeNodes.length === 0) {
-      return { positionedNodes: [], branches: [], levels: [], treeScale: 1.0, minX: -2 };
+      return { positionedNodes: [], branches: [], levels: [], treeScale: 1.0, minX: -2, maxX: 2 };
     }
 
-    const nodeMap = new Map();
-    treeNodes.forEach((n) => nodeMap.set(n.id, { ...n, x: 0, y: 0, mod: 0 }));
-
-    // Find root (node with no parent or parent === null)
+    const nodeMap = new Map(treeNodes.map((n) => [n.id, { ...n }]));
     let root = treeNodes.find((n) => n.parent === null || n.parent === undefined);
     if (!root) root = treeNodes[0];
-    const rootNode = nodeMap.get(root.id);
 
-    const totalN = Math.max(treeNodes.length, 1);
-    // Dynamic horizontal spacing: contracts gracefully for wide trees
-    const siblingDistance = Math.max(1.8, Math.min(2.4, 16.0 / totalN));
     const levelHeight = 1.95;
+    const nodeSpacing = 1.75;
+    const xById = new Map();
+    let inorderIndex = 0;
 
-    // Pass 1: Post-order traversal to calculate initial X and modifiers
-    function firstPass(nodeId, depth = 0, leftSiblingId = null) {
-      const node = nodeMap.get(nodeId);
+    const assignX = (id, depth = 0) => {
+      const node = nodeMap.get(id);
       if (!node) return;
       node.depth = depth;
-      node.y = -depth * levelHeight;
+      if (node.left !== null && nodeMap.has(node.left)) assignX(node.left, depth + 1);
+      xById.set(id, (inorderIndex++) * nodeSpacing);
+      if (node.right !== null && nodeMap.has(node.right)) assignX(node.right, depth + 1);
+    };
 
-      const leftId = node.left;
-      const rightId = node.right;
-      const hasLeft = leftId !== null && nodeMap.has(leftId);
-      const hasRight = rightId !== null && nodeMap.has(rightId);
+    assignX(root.id, 0);
 
-      if (hasLeft) firstPass(leftId, depth + 1, null);
-      if (hasRight) firstPass(rightId, depth + 1, hasLeft ? leftId : null);
+    const rootX = xById.get(root.id) ?? 0;
+    let minX = Infinity;
+    let maxX = -Infinity;
 
-      if (!hasLeft && !hasRight) {
-        if (leftSiblingId !== null && nodeMap.has(leftSiblingId)) {
-          node.x = nodeMap.get(leftSiblingId).x + siblingDistance;
-        } else {
-          node.x = 0;
-        }
-      } else if (hasLeft && !hasRight) {
-        const leftChild = nodeMap.get(leftId);
-        const mid = leftChild.x;
-        if (leftSiblingId !== null && nodeMap.has(leftSiblingId)) {
-          node.x = nodeMap.get(leftSiblingId).x + siblingDistance;
-          node.mod = node.x - mid;
-        } else {
-          node.x = mid;
-        }
-      } else if (!hasLeft && hasRight) {
-        const rightChild = nodeMap.get(rightId);
-        const mid = rightChild.x;
-        if (leftSiblingId !== null && nodeMap.has(leftSiblingId)) {
-          node.x = nodeMap.get(leftSiblingId).x + siblingDistance;
-          node.mod = node.x - mid;
-        } else {
-          node.x = mid;
-        }
-      } else {
-        const leftChild = nodeMap.get(leftId);
-        const rightChild = nodeMap.get(rightId);
-        const mid = (leftChild.x + rightChild.x) / 2;
-        if (leftSiblingId !== null && nodeMap.has(leftSiblingId)) {
-          node.x = nodeMap.get(leftSiblingId).x + siblingDistance;
-          node.mod = node.x - mid;
-        } else {
-          node.x = mid;
-        }
-      }
-
-      // Contour collision resolution between subtrees
-      if (hasLeft && hasRight) {
-        resolveContourCollisions(nodeId);
-      }
-    }
-
-    function resolveContourCollisions(nodeId) {
-      const node = nodeMap.get(nodeId);
-      if (!node.left || !node.right) return;
-
-      let maxOverlap = 0;
-      const leftContour = [];
-      const rightContour = [];
-
-      function getRightmostContour(id, currDepth, modSum) {
-        const n = nodeMap.get(id);
-        if (!n) return;
-        const x = n.x + modSum;
-        if (leftContour[currDepth] === undefined || x > leftContour[currDepth]) {
-          leftContour[currDepth] = x;
-        }
-        if (n.right) getRightmostContour(n.right, currDepth + 1, modSum + n.mod);
-        if (n.left) getRightmostContour(n.left, currDepth + 1, modSum + n.mod);
-      }
-
-      function getLeftmostContour(id, currDepth, modSum) {
-        const n = nodeMap.get(id);
-        if (!n) return;
-        const x = n.x + modSum;
-        if (rightContour[currDepth] === undefined || x < rightContour[currDepth]) {
-          rightContour[currDepth] = x;
-        }
-        if (n.left) getLeftmostContour(n.left, currDepth + 1, modSum + n.mod);
-        if (n.right) getLeftmostContour(n.right, currDepth + 1, modSum + n.mod);
-      }
-
-      getRightmostContour(node.left, 0, 0);
-      getLeftmostContour(node.right, 0, 0);
-
-      const minDepth = Math.min(leftContour.length, rightContour.length);
-      for (let d = 0; d < minDepth; d++) {
-        const distance = rightContour[d] - leftContour[d];
-        if (distance < siblingDistance) {
-          const overlap = siblingDistance - distance;
-          if (overlap > maxOverlap) maxOverlap = overlap;
-        }
-      }
-
-      if (maxOverlap > 0) {
-        const rightChild = nodeMap.get(node.right);
-        rightChild.x += maxOverlap;
-        rightChild.mod += maxOverlap;
-        const leftChild = nodeMap.get(node.left);
-        node.x = (leftChild.x + rightChild.x) / 2;
-      }
-    }
-
-    // Pass 2: Pre-order traversal to apply modifier sums
-    function secondPass(nodeId, modSum = 0) {
-      const node = nodeMap.get(nodeId);
-      if (!node) return;
-      node.x += modSum;
-      if (node.left) secondPass(node.left, modSum + node.mod);
-      if (node.right) secondPass(node.right, modSum + node.mod);
-    }
-
-    firstPass(rootNode.id);
-    secondPass(rootNode.id);
-
-    // Center root on X = 0
-    const rootX = rootNode.x;
-    nodeMap.forEach((n) => { n.x -= rootX; });
-
-    let minX = Infinity, maxX = -Infinity;
-    let minY = Infinity, maxY = -Infinity;
-    nodeMap.forEach((node) => {
-      if (node.x < minX) minX = node.x;
-      if (node.x > maxX) maxX = node.x;
-      if (node.y < minY) minY = node.y;
-      if (node.y > maxY) maxY = node.y;
+    const positionedNodes = treeNodes.map((original) => {
+      const node = nodeMap.get(original.id) || original;
+      const x = (xById.get(node.id) ?? 0) - rootX;
+      const y = -node.depth * levelHeight;
+      minX = Math.min(minX, x);
+      maxX = Math.max(maxX, x);
+      return { ...original, depth: node.depth, pos: [x, y, 0] };
     });
 
-    // Dynamic scale for large trees to avoid camera clipping
-    const treeWidth = Math.max(maxX - minX, 1);
-    const treeScale = treeWidth > 11 ? Math.min(1.0, 11.0 / treeWidth) : 1.0;
-
-    const positionedNodes = treeNodes.map((node) => {
-      const n = nodeMap.get(node.id);
-      return {
-        ...node,
-        pos: [n.x, n.y, 0],
-      };
-    });
-
-    const posMap = new Map();
-    positionedNodes.forEach((n) => posMap.set(n.id, n.pos));
-
-    // Build branches connecting parent -> child
+    const posMap = new Map(positionedNodes.map((n) => [n.id, n.pos]));
     const branches = [];
     positionedNodes.forEach((node) => {
       if (node.parent !== null && node.parent !== undefined) {
         const parentPos = posMap.get(node.parent);
         if (parentPos) {
           branches.push({
-            id: `b-${node.parent}-${node.id}`,
+            id: 'b-' + node.parent + '-' + node.id,
             parentId: node.parent,
             childId: node.id,
             start: parentPos,
@@ -309,23 +183,18 @@ export default function TreeVisualizer3D({ dataStructureState }) {
       }
     });
 
-    // Extract unique levels for level markers
     const maxDepth = Math.max(...positionedNodes.map((n) => n.depth), 0);
-    const levels = [];
-    for (let d = 0; d <= maxDepth; d++) {
-      const sample = positionedNodes.find((n) => n.depth === d);
-      if (sample) {
-        levels.push({
-          depth: d,
-          y: sample.pos[1],
-          label: d === 0 ? 'Level 0 (Root)' : `Level ${d}`,
-        });
-      }
-    }
+    const levels = Array.from({ length: maxDepth + 1 }, (_, depth) => ({
+      depth,
+      y: -depth * levelHeight,
+      label: depth === 0 ? 'Level 0 (Root)' : 'Level ' + depth,
+    })).filter((level) => positionedNodes.some((n) => n.depth === level.depth));
+
+    const treeWidth = Math.max(maxX - minX, 1);
+    const treeScale = treeWidth > 11 ? Math.min(1, 11 / treeWidth) : 1;
 
     return { positionedNodes, branches, levels, minX, maxX, treeScale };
   }, [treeNodes]);
-
   const { positionedNodes, branches, levels, minX = -4, maxX = 4, treeScale = 1.0 } = layoutData;
   const hoveredNode = positionedNodes.find((n) => n.id === hoveredNodeId);
 
