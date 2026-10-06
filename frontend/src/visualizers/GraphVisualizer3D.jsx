@@ -51,6 +51,9 @@ export default function GraphVisualizer3D({ dataStructureState }) {
     activeIndex = null,
     pointers = {},
     swappedIndices = [],
+    visited = [],
+    edges: stateEdges = [],
+    traversal = 'BFS',
   } = dataStructureState || {};
 
   // Standard graph topology (5 vertices: 0, 1, 2, 3, 4)
@@ -73,22 +76,22 @@ export default function GraphVisualizer3D({ dataStructureState }) {
   });
 
   // Default graph edges: 0-1, 0-2, 1-3, 2-4, 1-2
-  const edges = [
+  const edges = (Array.isArray(stateEdges) && stateEdges.length > 0 ? stateEdges : [
     { from: 0, to: 1, weight: 4 },
     { from: 0, to: 2, weight: 2 },
     { from: 1, to: 2, weight: 1 },
     { from: 1, to: 3, weight: 5 },
     { from: 2, to: 4, weight: 8 },
     { from: 3, to: 4, weight: 2 },
-  ].filter(e => e.from < numVertices && e.to < numVertices);
+  ]).filter(e => e.from < numVertices && e.to < numVertices);
 
   return (
-    <group position={[0, 0.2, 0]}>
+    <group position={[0, 0.2, 0]} userData={{ traversal }}>
       {/* 3D Connecting Edges */}
       {edges.map((e, idx) => {
         const v1 = vertices[e.from];
         const v2 = vertices[e.to];
-        const isEdgeActive = activeIndex === e.from || activeIndex === e.to;
+        const isEdgeActive = activeIndex === e.from || activeIndex === e.to || (visited.includes(e.from) && visited.includes(e.to));
         return (
           <GraphEdge
             key={`edge-${idx}`}
@@ -103,7 +106,7 @@ export default function GraphVisualizer3D({ dataStructureState }) {
       {/* 3D Graph Nodes */}
       {vertices.map((v) => {
         const isActive = activeIndex === v.id;
-        const isVisited = (swappedIndices && swappedIndices.includes(v.id)) || (v.dist !== null && v.dist < 900);
+        const isVisited = visited.includes(v.id) || (swappedIndices && swappedIndices.includes(v.id)) || (v.dist !== null && v.dist < 900);
 
         let color = '#1e293b';
         let emissive = '#0f172a';
