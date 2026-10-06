@@ -2904,7 +2904,7 @@ export function generateDynamicDpTrace(values = [1, 2, 3, 5, 8], language = 'jav
     variables: { 'dp[0]': 1, 'dp[1]': 2 },
     output: [],
     dataStructureState: {
-      type: 'array',
+      type: 'dp',
       values: [...dp],
       activeIndex: 1,
       label: 'DP Base Cases: dp[0]=1, dp[1]=2',
@@ -2925,7 +2925,7 @@ export function generateDynamicDpTrace(values = [1, 2, 3, 5, 8], language = 'jav
       variables: { i, 'dp[i-1]': dp[i - 1], 'dp[i-2]': dp[i - 2], 'dp[i]': val },
       output: [],
       dataStructureState: {
-        type: 'array',
+        type: 'dp',
         values: [...dp],
         activeIndex: i,
         comparedIndices: [i - 2, i - 1],
