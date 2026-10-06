@@ -54,7 +54,7 @@ test('all 49 DSA topic code examples compile and execute successfully', () => {
       const mainClassMatch = program.code.match(/(?:public\s+)?class\s+([A-Za-z_$][\w$]*)[\s\S]*?public\s+static\s+void\s+main\s*\(/);
       const mainClass = mainClassMatch?.[1] || 'Main';
       const runtimeInput = program.id === 'student-result'
-        ? 'Alice\\n90\\n80\\n70\\n'
+        ? 'Alice\n90\n80\n70\n'
         : '';
       execFileSync('java', ['-cp', dir, mainClass], {
         stdio: 'pipe',
