@@ -1,5 +1,5 @@
-import React from 'react';
-import { Variable, CheckCircle2, XCircle, Sparkles, Layers, Cpu, ArrowRight } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { CheckCircle2, XCircle, Sparkles, Layers, Cpu, Maximize2, Minimize2, X } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import StepInspector from './StepInspector';
 import ComplexityPanel from './ComplexityPanel';
@@ -7,8 +7,35 @@ import VariableInspector from './VariableInspector';
 
 export default function StatePanel({ currentStep, totalSteps, correctOutput = null, isAtEnd = false, complexity = null, algorithmName = 'Algorithm' }) {
   const { isBright } = useTheme();
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, originX: 0, originY: 0 });
 
   if (!currentStep) return null;
+
+  const handlePointerDown = (event) => {
+    if (!isExpanded || event.button !== 0) return;
+    dragRef.current = { active: true, startX: event.clientX, startY: event.clientY, originX: position.x, originY: position.y };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!dragRef.current.active) return;
+    setPosition({
+      x: dragRef.current.originX + (event.clientX - dragRef.current.startX),
+      y: dragRef.current.originY + (event.clientY - dragRef.current.startY),
+    });
+  };
+
+  const handlePointerUp = (event) => {
+    dragRef.current.active = false;
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+  };
+
+  const toggleExpanded = () => {
+    setIsExpanded((prev) => !prev);
+    setPosition({ x: 0, y: 0 });
+  };
 
   const {
     stepNumber,
@@ -23,27 +50,45 @@ export default function StatePanel({ currentStep, totalSteps, correctOutput = nu
   } = currentStep;
 
   return (
-    <div className={`flex flex-col h-full border-l overflow-y-auto transition-colors duration-200 ${
-      isBright
-        ? 'bg-white text-slate-800 border-slate-200'
-        : 'bg-[#0b101d] text-slate-200 border-slate-800/80'
-    }`}>
+    <div
+      className={isExpanded
+        ? `fixed z-[120] w-[min(860px,calc(100vw-32px))] h-[min(720px,calc(100vh-32px))] left-1/2 top-1/2 rounded-2xl border shadow-2xl overflow-hidden ${
+            isBright
+              ? 'bg-white text-slate-800 border-slate-200 shadow-slate-900/20'
+              : 'bg-[#0b101d] text-slate-200 border-slate-700/80 shadow-black/60'
+          }`
+        : `flex flex-col h-full border-l overflow-y-auto transition-colors duration-200 ${
+            isBright
+              ? 'bg-white text-slate-800 border-slate-200'
+              : 'bg-[#0b101d] text-slate-200 border-slate-800/80'
+          }`
+      }
+      style={isExpanded ? { transform: `translate(calc(-50% + ${position.x}px), calc(-50% + ${position.y}px))` } : undefined}
+    >
       {/* State Panel Header */}
-      <div className={`h-10 border-b px-3.5 flex items-center justify-between sticky top-0 z-10 transition-colors ${
-        isBright
-          ? 'bg-slate-50/95 border-slate-200 text-slate-800'
-          : 'bg-slate-900/90 border-slate-800/80 text-slate-200'
-      }`}>
-        <div className="flex items-center gap-2">
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className={`h-10 border-b px-3.5 flex items-center justify-between sticky top-0 z-20 select-none ${isExpanded ? 'cursor-move' : ''} ${
+          isBright
+            ? 'bg-slate-50/95 border-slate-200 text-slate-800'
+            : 'bg-slate-900/90 border-slate-800/80 text-slate-200'
+        }`}
+        title={isExpanded ? 'Drag to move Program State' : undefined}
+      >
+        <div className="flex items-center gap-2 min-w-0">
           <Cpu size={14} className={isBright ? 'text-cyan-600' : 'text-cyan-400'} />
-          <span className={`text-xs font-semibold uppercase tracking-wider ${isBright ? 'text-slate-700' : 'text-slate-300'}`}>
-            Program State
-          </span>
+          <span className={`text-xs font-semibold uppercase tracking-wider ${isBright ? 'text-slate-700' : 'text-slate-300'}`}>Program State</span>
+          {isExpanded && <span className={`hidden sm:inline text-[9px] font-medium ${isBright ? 'text-slate-400' : 'text-slate-500'}`}>Drag header to move</span>}
         </div>
-        <div className="flex items-center gap-2">
-          <span className={`text-[11px] font-mono ${isBright ? 'text-slate-500' : 'text-slate-400'}`}>
-            Step <strong className={`font-bold ${isBright ? 'text-cyan-700' : 'text-cyan-400'}`}>{stepNumber}</strong> of {totalSteps}
-          </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className={`text-[11px] font-mono ${isBright ? 'text-slate-500' : 'text-slate-400'}`}>Step <strong className={`font-bold ${isBright ? 'text-cyan-700' : 'text-cyan-400'}`}>{stepNumber}</strong> of {totalSteps}</span>
+          <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={toggleExpanded} title={isExpanded ? 'Restore Program State' : 'Expand Program State'} aria-label={isExpanded ? 'Restore Program State' : 'Expand Program State'} className={`w-7 h-7 rounded-md flex items-center justify-center border transition ${isBright ? 'border-slate-300 text-slate-600 hover:bg-white hover:text-slate-900' : 'border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
+            {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+          </button>
+          {isExpanded && <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={toggleExpanded} title="Close expanded view" aria-label="Close expanded view" className={`w-7 h-7 rounded-md flex items-center justify-center border transition ${isBright ? 'border-slate-300 text-slate-600 hover:bg-rose-50 hover:text-rose-700' : 'border-slate-700 text-slate-300 hover:bg-rose-950/50 hover:text-rose-300'}`}><X size={14} /></button>}
         </div>
       </div>
 
