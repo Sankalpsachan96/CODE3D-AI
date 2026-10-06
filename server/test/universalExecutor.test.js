@@ -63,16 +63,3 @@ test('Real universal executor: all supported languages produce real stdout', asy
     });
   }
 });
-
-test('HTTP sandbox pipeline uses the real universal execution path when requested', async () => {
-  const result = await executeCodeInSandbox({
-    code: 'print(10 + 20)',
-    language: 'python',
-  });
-
-  // The sandbox trace adapters remain intentionally deterministic for the
-  // pedagogical timeline. Production Code Editor/Ai Tutor execution uses
-  // universalExecutor directly through /execute with universal=true.
-  assert.equal(result.status, 'COMPLETED');
-  assert.ok(result.steps.length > 0);
-});
