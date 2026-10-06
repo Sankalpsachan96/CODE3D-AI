@@ -9,7 +9,6 @@ import { getExecutionTrace } from '../src/services/executionSimulator.js';
 import { STRIVER_PROBLEMS } from '../src/utils/striverCatalog.js';
 import { SAMPLE_PROGRAMS } from '../src/utils/sampleCodes.js';
 
-const DSA_TOPIC_PROGRAMS = SAMPLE_PROGRAMS.filter((program) => program.id !== 'student-result');
 function assertWorkingTrace(trace, label) {
   assert.ok(Array.isArray(trace) && trace.length > 0, `${label}: trace is empty`);
   for (const [index, step] of trace.entries()) {
@@ -33,8 +32,8 @@ test('all 182 Striver problems produce a registered visualization trace', () => 
 });
 
 test('all 49 DSA curriculum programs produce a registered visualization trace', () => {
-  assert.equal(DSA_TOPIC_PROGRAMS.length, 49);
-  for (const program of DSA_TOPIC_PROGRAMS) {
+  assert.equal(SAMPLE_PROGRAMS.length, 49);
+  for (const program of SAMPLE_PROGRAMS) {
     const selector = `topic|${program.id}|${program.title.replace(/\|/g, '/') }|${program.category}`;
     const trace = getExecutionTrace(program.code || '', program.language || 'java', null, selector);
     assertWorkingTrace(trace, `Topic ${program.id} ${program.title}`);
@@ -42,9 +41,9 @@ test('all 49 DSA curriculum programs produce a registered visualization trace', 
 });
 
 test('all 49 DSA topic code examples compile and execute successfully', () => {
-  assert.equal(DSA_TOPIC_PROGRAMS.length, 49);
+  assert.equal(SAMPLE_PROGRAMS.length, 49);
 
-  for (const program of DSA_TOPIC_PROGRAMS) {
+  for (const program of SAMPLE_PROGRAMS) {
     assert.match(program.code || '', /static\s+void\s+main\s*\(/, `Topic ${program.id}: missing Java main()`);
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'code3d-dsa-'));
     const source = path.join(dir, 'Main.java');
@@ -52,10 +51,13 @@ test('all 49 DSA topic code examples compile and execute successfully', () => {
     try {
       fs.writeFileSync(source, program.code, 'utf8');
       execFileSync('javac', [source], { stdio: 'pipe', timeout: 15000 });
+      const runtimeInput = program.id === 'student-result'
+        ? 'Alice\\n90\\n80\\n70\\n'
+        : '';
       execFileSync('java', ['-cp', dir, 'Main'], {
         stdio: 'pipe',
         timeout: 5000,
-        input: '',
+        input: runtimeInput,
       });
     } catch (error) {
       const stderr = error?.stderr ? String(error.stderr) : String(error?.message || error);
@@ -120,7 +122,7 @@ const EXPECTED_TOPIC_VISUALIZERS = {
 };
 
 test('49 DSA topics use the intended visualizer family', () => {
-  for (const program of DSA_TOPIC_PROGRAMS) {
+  for (const program of SAMPLE_PROGRAMS) {
     const selector = `topic|${program.id}|${program.title.replace(/\|/g, '/')}|${program.category}`;
     const trace = getExecutionTrace(program.code || '', program.language || 'java', null, selector);
     const expected = EXPECTED_TOPIC_VISUALIZERS[program.id];
@@ -146,7 +148,7 @@ test('all 14 algorithm catalog entries produce execution steps', async () => {
 });
 
 test('AVL topic trace matches the executable LL right-rotation result', () => {
-  const program = DSA_TOPIC_PROGRAMS.find((item) => item.id === 'avl-tree');
+  const program = SAMPLE_PROGRAMS.find((item) => item.id === 'avl-tree');
   assert.ok(program, 'AVL topic is missing');
 
   const trace = getExecutionTrace(
