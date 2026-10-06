@@ -1,5 +1,5 @@
 /**
- * API Client connecting the CODE3D AI frontend to the Spring Boot REST backend.
+ * API Client connecting the CODE3D AI frontend to the active Node.js/Express backend.
  */
 
 import { solvePersonalProblem, correctPersonalCode } from './personalProblemSolver';
