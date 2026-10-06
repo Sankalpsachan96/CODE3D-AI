@@ -46,3 +46,12 @@ test('all 14 algorithm catalog entries produce execution steps', async () => {
     assert.ok(Array.isArray(result?.steps) && result.steps.length > 0, `Algorithm ${algorithm.id}: no steps`);
   }
 });
+
+test('Graph algorithm produces both BFS and DFS traversals', async () => {
+  const { generateGraphSteps } = await import('../src/algorithms/dataStructures/graphOps.js');
+  const result = generateGraphSteps(5);
+  assert.deepEqual(result.traversalResults.bfs, [0, 1, 2, 3, 4]);
+  assert.deepEqual(result.traversalResults.dfs, [0, 1, 3, 4, 2]);
+  assert.ok(result.steps.some((step) => step.metadata?.operation === 'BFS_VISIT'));
+  assert.ok(result.steps.some((step) => step.metadata?.operation === 'DFS_VISIT'));
+});
