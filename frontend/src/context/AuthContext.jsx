@@ -15,27 +15,7 @@ export function AuthProvider({ children }) {
       try {
         const res = await getCurrentUser();
         if (!cancelled && res?.success && res?.user) {
-          // Never silently restore the old demo/Alex account after a refresh.
-          // This removes the legacy student.alex session without affecting
-          // normal users who intentionally logged in.
-          const username = String(res.user.username || '').trim().toLowerCase();
-          const email = String(res.user.email || '').trim().toLowerCase();
-          const isLegacyAlexAccount =
-            username === 'student.alex' ||
-            username === 'alex' ||
-            email === 'student.alex' ||
-            email.startsWith('student.alex@');
-
-          if (isLegacyAlexAccount) {
-            try {
-              await logoutUser();
-            } catch {
-              // The UI must still remain signed out if cleanup fails.
-            }
-            setUser(null);
-          } else {
-            setUser(res.user);
-          }
+          setUser(res.user);
         }
       } catch {
         // No valid session is expected for a signed-out user.
