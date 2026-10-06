@@ -1164,6 +1164,11 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 output={cumulativeOutput}
                 correctOutput={null}
                 isAtEnd={isAtEnd}
+                input={formInputValues}
+                currentStep={currentStep}
+                executionStatus={executionState}
+                error={executionError}
+                language={language}
               />
             </div>
           </div>
