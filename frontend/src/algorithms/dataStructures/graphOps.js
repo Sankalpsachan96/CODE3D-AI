@@ -88,120 +88,137 @@ def bfs(adj, start):
 };
 
 export function generateGraphSteps(numNodes = 5) {
-  const count = Math.max(3, Math.min(6, numNodes || 5));
+  const count = Math.max(3, Math.min(5, Number(numNodes) || 5));
   const nodes = Array.from({ length: count }, (_, i) => i);
-  // Default circular / star graph edges
-  const adj = {
+
+  const baseAdj = {
     0: [1, 2],
-    1: [0, 3],
+    1: [0, 3, 4],
     2: [0, 4],
     3: [1, 4],
-    4: [2, 3],
+    4: [1, 2, 3],
   };
+  const adj = Object.fromEntries(nodes.map((node) => [
+    node,
+    (baseAdj[node] || []).filter((neighbor) => neighbor < count),
+  ]));
 
   const steps = [];
   let stepNumber = 1;
-  const visited = new Set();
-  const queue = [0];
-  visited.add(0);
+  const bfsVisited = new Set();
+  const dfsVisited = new Set();
+  const bfsOrder = [];
+  const dfsOrder = [];
+  const queue = [];
+  const stack = [];
 
   const createStep = ({
-    lineNumber,
-    eventType,
-    variables,
-    activeIndex = null,
-    pointers = {},
-    explanation,
-    aiHint,
-    operation,
+    lineNumber, eventType, variables = {}, activeIndex = null, pointers = {},
+    explanation, aiHint, operation, traversal = 'BFS',
   }) => {
+    const visited = traversal === 'DFS' ? dfsVisited : bfsVisited;
+    const traversalOrder = traversal === 'DFS' ? dfsOrder : bfsOrder;
     const dsState = {
       type: 'graph',
       name: 'graph',
       values: [...nodes],
       nodes: [...nodes],
+      edges: Object.entries(adj).flatMap(([from, neighbors]) =>
+        neighbors.filter((to) => Number(from) < to).map((to) => ({ from: Number(from), to }))
+      ),
       visited: Array.from(visited),
+      bfsVisited: Array.from(bfsVisited),
+      dfsVisited: Array.from(dfsVisited),
+      bfsOrder: [...bfsOrder],
+      dfsOrder: [...dfsOrder],
       queue: [...queue],
+      stack: [...stack],
       activeIndex,
-      pointers: { ...pointers, VISITED: Array.from(visited).join(', ') },
+      traversal,
+      pointers: { ...pointers, CURRENT: activeIndex, VISITED: Array.from(visited).join(', ') },
     };
-
     steps.push({
-      stepNumber: stepNumber++,
-      lineNumber,
-      eventType,
-      variables: { ...variables, visited: Array.from(visited), queue: [...queue] },
-      changedVariable: 'graph',
-      previousValue: null,
-      currentValue: Array.from(visited),
-      dataStructure: dsState,
-      dataStructureState: dsState,
-      output: [],
-      metadata: { operation, pointers },
-      explanation,
-      aiHint,
+      stepNumber: stepNumber++, lineNumber, eventType,
+      variables: { ...variables, visited: Array.from(visited), bfsOrder: [...bfsOrder], dfsOrder: [...dfsOrder], queue: [...queue], stack: [...stack], traversal },
+      changedVariable: traversal === 'DFS' ? 'stack' : 'queue',
+      previousValue: null, currentValue: [...traversalOrder],
+      dataStructure: dsState, dataStructureState: dsState, output: [],
+      metadata: { operation, traversal, pointers, bfsOrder: [...bfsOrder], dfsOrder: [...dfsOrder] },
+      explanation, aiHint,
     });
   };
 
-  createStep({
-    lineNumber: 2,
-    eventType: AlgorithmEventType.START,
-    variables: { startNode: 0 },
-    activeIndex: 0,
-    pointers: { CURRENT: 0 },
-    explanation: 'Breadth-First Search (BFS) initialized at source vertex 0.',
-    aiHint: 'Vertex 0 marked as visited and enqueued.',
-    operation: 'INIT',
-  });
+  // BFS: FIFO queue, level by level.
+  bfsVisited.add(0);
+  queue.push(0);
+  createStep({ lineNumber: 2, eventType: AlgorithmEventType.START, variables: { startNode: 0 },
+    activeIndex: 0, pointers: { CURRENT: 0 },
+    explanation: 'BFS initialized at source vertex 0.',
+    aiHint: 'BFS uses a FIFO queue and explores the graph level by level.',
+    operation: 'BFS_INIT', traversal: 'BFS' });
 
   while (queue.length > 0) {
     const u = queue.shift();
-
-    createStep({
-      lineNumber: 5,
-      eventType: AlgorithmEventType.TRAVERSE,
-      variables: { currentNode: u },
-      activeIndex: u,
-      pointers: { CURRENT: u },
-      explanation: `Dequeued vertex ${u}. Inspecting outgoing neighbor edges.`,
-      aiHint: `Visiting all unvisited adjacent neighbors of vertex ${u}.`,
-      operation: 'VISIT_VERTEX',
-    });
-
-    const neighbors = adj[u] || [];
-    for (const v of neighbors) {
-      if (!visited.has(v)) {
-        visited.add(v);
+    bfsOrder.push(u);
+    createStep({ lineNumber: 5, eventType: AlgorithmEventType.TRAVERSE, variables: { currentNode: u },
+      activeIndex: u, pointers: { CURRENT: u },
+      explanation: `BFS dequeued vertex ${u} and is inspecting its neighbors.`,
+      aiHint: `Current BFS order: [${bfsOrder.join(', ')}].`, operation: 'BFS_VISIT', traversal: 'BFS' });
+    for (const v of adj[u] || []) {
+      if (!bfsVisited.has(v)) {
+        bfsVisited.add(v);
         queue.push(v);
+        createStep({ lineNumber: 8, eventType: AlgorithmEventType.DISCOVER, variables: { from: u, discovered: v },
+          activeIndex: v, pointers: { CURRENT: u, DISCOVERED: v },
+          explanation: `BFS discovered vertex ${v} from ${u} and enqueued it.`,
+          aiHint: `Queue: [${queue.join(', ')}].`, operation: 'BFS_ENQUEUE', traversal: 'BFS' });
+      }
+    }
+  }
+  createStep({ lineNumber: 12, eventType: AlgorithmEventType.SORTED, variables: { bfsOrder: [...bfsOrder] },
+    activeIndex: bfsOrder[bfsOrder.length - 1] ?? 0, pointers: { ORDER: bfsOrder.join(' -> ') },
+    explanation: `BFS complete. Traversal order: [${bfsOrder.join(', ')}].`,
+    aiHint: 'All reachable vertices were explored using the queue.', operation: 'BFS_COMPLETE', traversal: 'BFS' });
 
-        createStep({
-          lineNumber: 8,
-          eventType: AlgorithmEventType.DISCOVER,
-          variables: { from: u, discovered: v },
-          activeIndex: v,
-          pointers: { CURRENT: u, DISCOVERED: v },
-          explanation: `Discovered unvisited neighbor vertex ${v} from ${u}. Added to BFS queue.`,
-          aiHint: `Queue now contains: [${queue.join(', ')}].`,
-          operation: 'ENQUEUE_NEIGHBOR',
-        });
+  // DFS: LIFO stack, depth first.
+  dfsVisited.add(0);
+  stack.push(0);
+  createStep({ lineNumber: 15, eventType: AlgorithmEventType.START, variables: { startNode: 0 },
+    activeIndex: 0, pointers: { CURRENT: 0 },
+    explanation: 'DFS initialized at source vertex 0.',
+    aiHint: 'DFS uses a LIFO stack and follows one branch deeply before backtracking.',
+    operation: 'DFS_INIT', traversal: 'DFS' });
+
+  while (stack.length > 0) {
+    const u = stack.pop();
+    if (dfsOrder.includes(u)) continue;
+    dfsOrder.push(u);
+    createStep({ lineNumber: 18, eventType: AlgorithmEventType.TRAVERSE, variables: { currentNode: u },
+      activeIndex: u, pointers: { CURRENT: u },
+      explanation: `DFS visited vertex ${u} by taking the deepest available branch.`,
+      aiHint: `Current DFS order: [${dfsOrder.join(', ')}].`, operation: 'DFS_VISIT', traversal: 'DFS' });
+    for (const v of [...(adj[u] || [])].reverse()) {
+      if (!dfsVisited.has(v)) {
+        dfsVisited.add(v);
+        stack.push(v);
+        createStep({ lineNumber: 21, eventType: AlgorithmEventType.DISCOVER, variables: { from: u, discovered: v },
+          activeIndex: v, pointers: { CURRENT: u, DISCOVERED: v },
+          explanation: `DFS discovered vertex ${v} from ${u} and pushed it onto the stack.`,
+          aiHint: `Stack: [${stack.join(', ')}].`, operation: 'DFS_PUSH', traversal: 'DFS' });
       }
     }
   }
 
-  createStep({
-    lineNumber: 12,
-    eventType: AlgorithmEventType.COMPLETE,
-    variables: { totalVisited: visited.size },
-    explanation: `BFS complete. All ${visited.size} connected vertices explored.`,
-    aiHint: 'Radial 3D graph vertex network rendered.',
-    operation: 'COMPLETE',
-  });
+  createStep({ lineNumber: 25, eventType: AlgorithmEventType.COMPLETE,
+    variables: { totalNodes: nodes.length, bfsOrder: [...bfsOrder], dfsOrder: [...dfsOrder] },
+    activeIndex: dfsOrder[dfsOrder.length - 1] ?? 0,
+    pointers: { BFS_ORDER: bfsOrder.join(' -> '), DFS_ORDER: dfsOrder.join(' -> ') },
+    explanation: `Graph traversal complete. BFS: [${bfsOrder.join(', ')}] | DFS: [${dfsOrder.join(', ')}].`,
+    aiHint: 'Both BFS and DFS are available in the same interactive 3D graph trace.',
+    operation: 'COMPLETE', traversal: 'DFS' });
 
   return {
-    initialState: nodes,
-    steps,
-    finalState: Array.from(visited),
-    complexity: graphOpsDetails.complexity,
-    details: graphOpsDetails,
+    initialState: nodes, steps, finalState: [...dfsOrder], complexity: graphOpsDetails.complexity,
+    details: graphOpsDetails, traversalResults: { bfs: [...bfsOrder], dfs: [...dfsOrder] },
   };
 }
