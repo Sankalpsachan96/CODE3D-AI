@@ -3794,7 +3794,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { root: 'ROOT', totalWords: 0 },
     output: ['Trie (Prefix Tree) root initialized.'],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: [trieNodes[0]],
       activeIndex: 0,
@@ -3813,7 +3813,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { word: 'cat', path: 'ROOT → c → a → t', isEndOfWord: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: [trieNodes[0], trieNodes[1], trieNodes[3], trieNodes[4]],
       activeIndex: 4,
@@ -3832,7 +3832,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { word: 'car', sharedPrefix: 'ca', path: 'ROOT → c → a → r', isEndOfWord: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: [trieNodes[0], trieNodes[1], trieNodes[3], trieNodes[4], trieNodes[5]],
       activeIndex: 5,
@@ -3851,7 +3851,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { word: 'cart', path: 'ROOT → c → a → r → t', isEndOfWord: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: [trieNodes[0], trieNodes[1], trieNodes[3], trieNodes[4], trieNodes[5], trieNodes[6]],
       activeIndex: 6,
@@ -3870,7 +3870,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { word: 'dog', path: 'ROOT → d → o → g', isEndOfWord: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: trieNodes,
       activeIndex: 8,
@@ -3889,7 +3889,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { query: 'car', result: true, finalNode: 'r', isEnd: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: trieNodes,
       activeIndex: 5,
@@ -3908,7 +3908,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { query: 'can', result: false, stoppedAt: 'a', missingChar: 'n' },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: trieNodes,
       activeIndex: 3,
