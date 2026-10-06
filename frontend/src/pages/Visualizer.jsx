@@ -86,7 +86,9 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
 
     const selector = isStriverProblem
       ? `striver|${problemId}|${title}|${archetype}`
-      : archetype;
+      : problem?.id
+        ? `topic|${problemId}|${title}|${problem?.category || archetype}`
+        : archetype;
 
     return getExecutionTrace(
       source || '',
@@ -94,6 +96,19 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       input,
       selector || null
     );
+  };
+
+  const normalizeAlgorithmTrace = (steps, algorithm) => {
+    const visualizerType = String(algorithm?.visualizerType || 'array').toLowerCase();
+    return (Array.isArray(steps) ? steps : []).map((step, index) => ({
+      ...step,
+      stepNumber: step.stepNumber || index + 1,
+      algorithm: step.algorithm || algorithm?.id || algorithm?.name || 'algorithm',
+      dataStructureState: {
+        ...(step.dataStructureState || {}),
+        type: visualizerType,
+      },
+    }));
   };
 
   // The backend is authoritative for execution/output. The frontend trace is
@@ -304,6 +319,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     const input = Array.isArray(algo.defaultInput) ? algo.defaultInput : [45, 12, 89, 23, 7, 64, 31];
     const target = algo.defaultTarget !== undefined ? algo.defaultTarget : 23;
     const res = algo.generator(input, target);
+    const normalizedSteps = normalizeAlgorithmTrace(res?.steps, algo);
     setSelectedSample({
       id: algo.id,
       title: algo.name,
@@ -322,14 +338,14 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     setTimeComplexity(algo.complexity?.time?.average || 'O(n)');
     setSpaceComplexity(algo.complexity?.space || 'O(1)');
     setFormInputValues(Array.isArray(input) ? input.join(', ') : String(input));
-    setTrace(res.steps);
+    setTrace(normalizedSteps);
     reset();
     setTimeout(() => play(), 100);
     recordExecutionHistory({
       programTitle: algo.name,
       conceptId: algo.id,
       language: 'java',
-      totalSteps: res.steps.length,
+      totalSteps: normalizedSteps.length,
       status: 'COMPLETED',
       code: algo.code?.java || '',
     });
