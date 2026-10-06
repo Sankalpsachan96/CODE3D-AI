@@ -73,7 +73,7 @@ Rules:
     const data = await apiRequest('/ai/explain', {
       method: 'POST',
       body: JSON.stringify({
-        action: 'CHAT',
+        action: 'QUIZ_GENERATE',
         level: 'Intermediate',
         language: 'javascript',
         code: '',
@@ -87,12 +87,16 @@ Rules:
       throw new Error(data?.message || 'Quiz generation failed.');
     }
 
-    // Backend AI response can be returned as answer/explanation
-    const content =
-      data?.answer ||
-      data?.explanation ||
-      data?.keyTakeaway ||
-      '';
+    // Prefer the structured quiz returned by the backend.
+    // Keep the answer fallback for compatibility with older deployments.
+    const content = data?.questions
+      ? JSON.stringify({ questions: data.questions })
+      : (
+          data?.answer ||
+          data?.explanation ||
+          data?.keyTakeaway ||
+          ''
+        );
 
     if (!content) {
       throw new Error('AI returned an empty quiz response.');
