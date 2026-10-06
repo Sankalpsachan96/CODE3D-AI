@@ -17,9 +17,7 @@ const topicNames = {
   'js-lang': 'JavaScript ES6+ and Event Loop',
 };
 
-const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL ||
-  'https://code3d-ai-oscc.onrender.com/api';
+import { apiRequest } from './api.js';
 
 export async function generateAIQuiz(conceptId, questionCount = 10) {
   const topic = topicNames[conceptId] || conceptId;
@@ -72,11 +70,8 @@ Rules:
 `;
 
   try {
-    const response = await fetch(`${BACKEND_URL}/ai/explain`, {
+    const data = await apiRequest('/ai/explain', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         action: 'CHAT',
         level: 'Intermediate',
@@ -90,13 +85,8 @@ Rules:
 
     const data = await response.json();
 
-    if (!response.ok || !data?.success) {
-      throw new Error(
-        data?.error?.message ||
-          data?.error ||
-          data?.message ||
-          'Quiz generation failed.'
-      );
+    if (!data?.success) {
+      throw new Error(data?.message || 'Quiz generation failed.');
     }
 
     // Backend AI response can be returned as answer/explanation
