@@ -731,71 +731,7 @@ export default function SceneContainer({
               />
             )}
 
-            {/* Studio floor is intentionally hidden for tree/heap scenes so it cannot intersect
-                or visually compete with hierarchy levels. */}
-            {!centerHierarchyScene && (
-              <group position={[0, -0.04, 0]}>
-                <mesh receiveShadow>
-                  <cylinderGeometry args={[10.2, 10.8, 0.1, 64]} />
-                  <meshStandardMaterial
-                    color={isBright ? '#e2e8f0' : '#080d1a'}
-                    roughness={0.2}
-                    metalness={0.85}
-                  />
-                </mesh>
-                <mesh position={[0, 0.06, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                  <ringGeometry args={[10.0, 10.18, 64]} />
-                  <meshBasicMaterial
-                    color={isBright ? '#0284c7' : '#00f2fe'}
-                    transparent
-                    opacity={0.85}
-                  />
-                </mesh>
-                <mesh position={[0, 0.061, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-                  <ringGeometry args={[7.2, 7.28, 64]} />
-                  <meshBasicMaterial
-                    color={isBright ? '#6366f1' : '#38bdf8'}
-                    transparent
-                    opacity={0.4}
-                  />
-                </mesh>
-              </group>
-            )}
-
-            {/* Cinematic Ambient Particle Sparkles */}
-            <Sparkles
-              count={65}
-              scale={18}
-              size={3.2}
-              speed={0.4}
-              opacity={isBright ? 0.3 : 0.7}
-              color={isBright ? '#0284c7' : '#38bdf8'}
-            />
-
-            {!centerHierarchyScene && (
-              <>
-                <ContactShadows
-                  position={[0, -0.02, 0]}
-                  opacity={isBright ? 0.5 : 0.85}
-                  scale={26}
-                  blur={2.5}
-                  far={4.8}
-                  color={isBright ? '#64748b' : '#000000'}
-                />
-                <Grid
-                  position={[0, -0.01, 0]}
-                  args={[32, 32]}
-                  cellSize={0.75}
-                  cellThickness={0.7}
-                  cellColor={isBright ? '#cbd5e1' : '#1e293b'}
-                  sectionSize={2.25}
-                  sectionThickness={1.2}
-                  sectionColor={isBright ? '#94a3b8' : '#334155'}
-                  fadeDistance={20}
-                  fadeStrength={1.5}
-                />
-              </>
-            )}
+            {/* 3D floor/pedestal surface removed. */}
           </Suspense>
 
           <OrbitControls
