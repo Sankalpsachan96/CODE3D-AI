@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 import { getExecutionTrace } from '../src/services/executionSimulator.js';
 import { STRIVER_PROBLEMS } from '../src/utils/striverCatalog.js';
@@ -121,4 +122,43 @@ test('Graph algorithm produces both BFS and DFS traversals', async () => {
   assert.deepEqual(result.traversalResults.dfs, [0, 1, 3, 4, 2]);
   assert.ok(result.steps.some((step) => step.metadata?.operation === 'BFS_VISIT'));
   assert.ok(result.steps.some((step) => step.metadata?.operation === 'DFS_VISIT'));
+});
+
+test('every 3D trace type is backed by a real visualizer registry entry', () => {
+  const registrySource = fs.readFileSync(
+    new URL('../src/visualizers/visualizerRegistry.js', import.meta.url),
+    'utf8'
+  );
+  const registeredTypes = new Set();
+  const keyPattern = /^\s*(?:['"]([^'"]+)['"]|([A-Za-z_$][\w$]*))\s*:/gm;
+  for (const match of registrySource.matchAll(keyPattern)) {
+    registeredTypes.add((match[1] || match[2]).toLowerCase().replace(/_/g, '-'));
+  }
+
+  const allTraces = [
+    ...STRIVER_PROBLEMS.map((problem) => getExecutionTrace(
+      problem.javaCode || problem.cppCode || '',
+      'java',
+      problem.defaultInput || '',
+      'striver|' + problem.id + '|' + problem.title.replace(/\|/g, '/') + '|' + problem.archetype
+    )),
+    ...SAMPLE_PROGRAMS.map((program) => getExecutionTrace(
+      program.code || '',
+      program.language || 'java',
+      null,
+      'topic|' + program.id + '|' + program.title.replace(/\|/g, '/') + '|' + program.category
+    )),
+  ];
+
+  const traceTypes = [...new Set(
+    allTraces.flatMap((trace) => trace.map((step) => step.dataStructureState?.type).filter(Boolean))
+  )];
+  assert.ok(traceTypes.length > 0, 'No 3D trace types were generated');
+  for (const type of traceTypes) {
+    const normalized = String(type).toLowerCase().replace(/_/g, '-');
+    assert.ok(
+      registeredTypes.has(normalized),
+      '3D trace type "' + type + '" is not registered in visualizerRegistry.js'
+    );
+  }
 });
