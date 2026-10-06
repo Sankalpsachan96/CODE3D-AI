@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { executeCodeInSandbox } from '../src/sandbox/executionEngine.js';
 import universalExecutor from '../src/services/universalExecutor.cjs';
 
 const cases = [
