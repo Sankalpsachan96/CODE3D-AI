@@ -48,7 +48,50 @@ import {
 } from 'lucide-react';
 export default function Visualizer({ initialConcept, initialOpenStriver = false, universalOnly = false }) {
   const { isBright } = useTheme();
-  const striverTraceKey = (problem) => problem ? `striver|${problem.striverId || problem.id}|${String(problem.shortTitle || problem.title || '').replace(/\|/g, ' ')}|${problem.archetype || 'array'}` : null;
+
+  // Build a semantic visualization hint without changing the code sent to the
+  // compiler. This lets the deterministic simulator select the correct
+  // algorithm trace for all 49 curriculum programs and 182 Striver problems.
+  const buildVisualizationCode = (source, problem = null) => {
+    const hintParts = [
+      problem?.title,
+      problem?.shortTitle,
+      problem?.id,
+      problem?.striverId,
+      problem?.archetype,
+      selectedSample?.title,
+      selectedSample?.id,
+    ].filter(Boolean);
+
+    if (hintParts.length === 0) return source || '';
+    return `${source || ''}\n// CODE3D_VISUAL_HINT: ${hintParts.join(' | ')}`;
+  };
+
+  const buildSemanticTrace = (source, lang, input = null, problem = null) => {
+    return getExecutionTrace(
+      buildVisualizationCode(source, problem),
+      lang,
+      input,
+      null
+    );
+  };
+
+  // The backend is authoritative for execution/output. The frontend trace is
+  // authoritative only for the pedagogical 3D state machine. Never display
+  // simulated stdout as if it came from the real program.
+  const attachRuntimeOutput = (steps, backendResult) => {
+    if (!Array.isArray(steps) || steps.length === 0) return [];
+    const runtimeOutput = Array.isArray(backendResult?.output)
+      ? backendResult.output
+      : String(backendResult?.output || '').split(/\r?\n/).filter(Boolean);
+
+    return steps.map((step, index) => ({
+      ...step,
+      output: index === steps.length - 1 ? runtimeOutput : [],
+      runtimeStatus: backendResult?.status || null,
+      runtimeOutput,
+    }));
+  };
   const universalStarter = { id: 'universal-editor', title: 'Universal Code Editor', category: 'Universal Engine', description: 'Write your own DSA code and execute it with runtime tracing.', difficulty: 'Custom', timeComplexity: '—', spaceComplexity: '—', code: LANGUAGE_DEFAULTS.java || DEFAULT_JAVA_CODE, language: 'java' };
   const [selectedSample, setSelectedSample] = useState(initialConcept || (universalOnly ? universalStarter : SAMPLE_PROGRAMS[0]));
   const [code, setCode] = useState(initialConcept?.code || (universalOnly ? universalStarter.code : DEFAULT_JAVA_CODE));
@@ -192,17 +235,17 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       } else if (backendOnline && initialConcept.id && initialConcept.id !== 'custom') {
         executeProgram(initialConcept.code, initialConcept.id, initialConcept.language || 'java')
           .then(() => {
-            setTrace(getExecutionTrace(initialConcept.code, initialConcept.language || 'java', initialConcept.defaultInput, universalOnly ? null : (striverTraceKey(initialConcept) || initialConcept.archetype || initialConcept.id)));
+            setTrace(buildSemanticTrace(initialConcept.code, initialConcept.language || 'java', initialConcept.defaultInput, initialConcept));
             reset();
             setTimeout(() => play(), 100);
           })
           .catch(() => {
-            setTrace(getExecutionTrace(initialConcept.code, initialConcept.language || 'java', initialConcept.defaultInput, universalOnly ? null : (striverTraceKey(initialConcept) || initialConcept.archetype || initialConcept.id)));
+            setTrace(buildSemanticTrace(initialConcept.code, initialConcept.language || 'java', initialConcept.defaultInput, initialConcept));
             reset();
             setTimeout(() => play(), 100);
           });
       } else {
-        setTrace(getExecutionTrace(initialConcept.code, initialConcept.language || 'java', initialConcept.defaultInput, universalOnly ? null : (striverTraceKey(initialConcept) || initialConcept.archetype || initialConcept.id)));
+        setTrace(buildSemanticTrace(initialConcept.code, initialConcept.language || 'java', initialConcept.defaultInput, initialConcept));
         reset();
         setTimeout(() => play(), 100);
       }
@@ -222,18 +265,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     if (nums && nums.length > 0) {
       setFormInputValues(nums.join(', '));
     }
-    let finalSteps = null;
-    if (backendOnline) {
-      try {
-        const res = await executeProgram(prog.code, prog.id, 'java');
-        if (res && res.steps && res.steps.length > 0) {
-          finalSteps = res.steps;
-        }
-      } catch (e) {}
-    }
-    if (!finalSteps || finalSteps.length === 0) {
-      finalSteps = getExecutionTrace(prog.code, 'java', null, prog.archetype || prog.id);
-    }
+    const finalSteps = buildSemanticTrace(prog.code, 'java', null, prog);
     setTrace(finalSteps);
     reset();
     setTimeout(() => play(), 100);
@@ -341,11 +373,11 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       }
     }
     // Run dynamic trace with new input values preserving the algorithm
-    let newSteps = getExecutionTrace(
+    let newSteps = buildSemanticTrace(
       updatedCode,
       language,
       inputStr,
-      activeStriverProblem?.archetype
+      activeStriverProblem || selectedSample
     );
     if (newSteps && newSteps.length > 0) {
       setTrace(newSteps);
@@ -442,16 +474,21 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         return false;
       }
 
-      // IMPORTANT: do NOT replace the real backend execution with the
-      // frontend regex simulator. backendResult.steps comes from the
-      // universal executor + universal trace engine and carries the
-      // authoritative stdout for the selected language.
-      const visualTrace = Array.isArray(backendResult.steps)
-        ? backendResult.steps
-        : [];
+      // The backend result is the source of truth for compilation,
+      // runtime behaviour and stdout. For the 3D scene, however, use the
+      // problem-aware deterministic trace so a Striver/DSA problem does not
+      // collapse into the generic "array" visualizer.
+      const visualProblem = activeStriverProblem || selectedSample;
+      const semanticTrace = buildSemanticTrace(
+        code,
+        language,
+        formInputValues,
+        visualProblem
+      );
+      const visualTrace = attachRuntimeOutput(semanticTrace, backendResult);
 
       if (visualTrace.length === 0) {
-        throw new Error('Backend execution completed without a trace.');
+        throw new Error('Execution completed but no semantic 3D trace was generated.');
       }
 
       setTrace(visualTrace);
@@ -590,7 +627,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     setCode(templateCode);
     setLastExecutedCode(templateCode);
     setExecutionError(null);
-        const traceSteps = getExecutionTrace(templateCode, language, formInputValues, universalOnly ? null : (striverTraceKey(activeStriverProblem) || selectedSample?.id));
+        const traceSteps = buildSemanticTrace(templateCode, language, formInputValues, activeStriverProblem || selectedSample);
     setTrace(traceSteps);
     reset();
   };
@@ -620,11 +657,11 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       setFormInputValues(problem.defaultInput);
     }
     // Synthesize verified 3D execution trace with matched archetype and accurate inputs/outputs
-    const newSteps = getExecutionTrace(
+    const newSteps = buildSemanticTrace(
       starterCode,
       problem.language || language,
       problem.defaultInput,
-      striverTraceKey(problem) || problem.archetype
+      problem
     );
     // Enrich complexity metrics in background if backend is online
     if (backendOnline) {
