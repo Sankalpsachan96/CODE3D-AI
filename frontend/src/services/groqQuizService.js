@@ -143,6 +143,19 @@ Rules:
 
     const validQuestions = parsed.questions
       .filter((question) => {
+        const questionText = String(question?.question || '').trim().toLowerCase();
+        const options = Array.isArray(question?.options)
+          ? question.options.map((option) => String(option).trim().toLowerCase())
+          : [];
+
+        // Never allow the JSON schema example itself to appear as a real quiz.
+        if (
+          questionText === 'question text' ||
+          options.length === 4 &&
+          options.every((option, index) => option === `option ${String.fromCharCode(97 + index)}`)
+        ) {
+          return false;
+        }
         return (
           typeof question?.question === 'string' &&
           Array.isArray(question?.options) &&
@@ -165,13 +178,13 @@ Rules:
         explanation: question.explanation.trim(),
       }));
 
-    if (validQuestions.length === 0) {
+    if (validQuestions.length !== questionCount) {
       throw new Error(
-        'No valid questions were generated.'
+        `AI returned ${validQuestions.length} valid questions instead of ${questionCount}.`
       );
     }
 
-    return validQuestions.slice(0, questionCount);
+    return validQuestions;
   } catch (error) {
     console.error('AI Quiz Error:', error);
 
