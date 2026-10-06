@@ -4,7 +4,7 @@
 
 import { solvePersonalProblem, correctPersonalCode } from './personalProblemSolver';
 
-const LIVE_RENDER_URL = 'https://code3d-ai.onrender.com/api';
+const LIVE_RENDER_URL = 'https://code3d-ai-oscc.onrender.com/api';
 const LOCAL_URL = 'http://localhost:5000/api';
 
 // When accessed from phone, GitHub Pages, or Vercel, always use the live Render backend!
