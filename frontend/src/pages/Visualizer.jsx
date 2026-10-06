@@ -14,7 +14,7 @@ import CompareModeModal from '../components/CompareModeModal';
 import InputGenerator from '../components/InputGenerator';
 import { ALGORITHM_CATALOG, generateAlgorithmSteps } from '../algorithms/index';
 import { useExecutionTimeline } from '../hooks/useExecutionTimeline';
-import { getExecutionTrace, extractNumbersFromCode } from '../services/executionSimulator';
+import { getExecutionTrace, extractNumbersFromCode, alignTraceLinesWithSource } from '../services/executionSimulator';
 import { validateSourceCode } from '../services/codeValidator';
 import { DEFAULT_JAVA_CODE, SAMPLE_PROGRAMS, LANGUAGE_DEFAULTS, CURRICULUM_CATEGORIES } from '../utils/sampleCodes';
 import { STRIVER_PROBLEMS } from '../utils/striverCatalog';
@@ -319,7 +319,11 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     const input = Array.isArray(algo.defaultInput) ? algo.defaultInput : [45, 12, 89, 23, 7, 64, 31];
     const target = algo.defaultTarget !== undefined ? algo.defaultTarget : 23;
     const res = algo.generator(input, target);
-    const normalizedSteps = normalizeAlgorithmTrace(res?.steps, algo);
+    const normalizedSteps = alignTraceLinesWithSource(
+      algo.code?.java || '',
+      normalizeAlgorithmTrace(res?.steps, algo),
+      'java'
+    );
     setSelectedSample({
       id: algo.id,
       title: algo.name,
