@@ -961,7 +961,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 breakpoints={breakpoints}
                 onToggleBreakpoint={toggleBreakpoint}
                 onSelectLine={handleSelectLineFromEditor}
-                readOnly={!universalOnly && !activeStriverProblem}
+                readOnly={!universalOnly}
               />
             </EditorErrorBoundary>
           </div>
@@ -982,6 +982,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         )}
         {/* 3D */}
         <div className={`${mobileTab === '3d' ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden`}>
+          {universalOnly && (
           <div className={`shrink-0 border-b px-2 py-1.5 flex items-center gap-2 ${
             isBright ? 'bg-white border-slate-200' : 'bg-[#0b0f19] border-slate-800/80'
           }`}>
@@ -1004,6 +1005,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
               }}
             />
           </div>
+          )}
           {/* 3D canvas + controls live together */}
           <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0 relative">
