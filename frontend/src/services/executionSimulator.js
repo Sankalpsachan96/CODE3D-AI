@@ -2331,7 +2331,584 @@ export function generateDynamicArrayCreationTrace(code, values = [5, 2, 8, 1], l
 /**
  * Dynamic 3D Graph Generator
  */
-export function generateDynamicGraphTrace(values = [0, 1, 2, 3, 4], language = 'java') {
+export 
+/**
+ * Topic-specific Two-Pointer Reverse Trace
+ */
+export function generateDynamicTwoPointerReverseTrace(values = [10, 20, 30, 40, 50], language = 'java') {
+  const arr = values.length >= 2 ? [...values] : [10, 20, 30, 40, 50];
+  const steps = [];
+  let left = 0;
+  let right = arr.length - 1;
+  let step = 1;
+
+  steps.push({
+    stepNumber: step++,
+    lineNumber: 4,
+    eventType: 'TWO_POINTER_INIT',
+    variables: { left, right, arr: `[${arr.join(', ')}]` },
+    output: [],
+    dataStructureState: {
+      type: 'array',
+      values: [...arr],
+      activeIndex: left,
+      pointers: { left, right },
+      label: `Two Pointers: left=${left}, right=${right}`,
+      focusInfo: `Compare outer elements ${arr[left]} and ${arr[right]}`,
+    },
+    explanation: 'Two pointers start at opposite ends and move toward the center.',
+    aiHint: 'Each iteration swaps arr[left] and arr[right], then left++ and right--.'
+  });
+
+  while (left < right) {
+    const leftValue = arr[left];
+    const rightValue = arr[right];
+    [arr[left], arr[right]] = [arr[right], arr[left]];
+
+    steps.push({
+      stepNumber: step++,
+      lineNumber: 6,
+      eventType: 'TWO_POINTER_SWAP',
+      variables: { left, right, leftValue, rightValue },
+      output: [],
+      dataStructureState: {
+        type: 'array',
+        values: [...arr],
+        activeIndex: left,
+        comparedIndices: [left, right],
+        swappedIndices: [left, right],
+        pointers: { left, right },
+        label: `Swap [${left}] ${leftValue} ↔ [${right}] ${rightValue}`,
+        focusInfo: `Reversed outer pair; pointers now converge inward`,
+      },
+      explanation: `Swapped the elements at indexes ${left} and ${right}.`,
+      aiHint: 'The array is reversed in-place using O(n) time and O(1) extra space.'
+    });
+
+    left++;
+    right--;
+
+    if (left <= right) {
+      steps.push({
+        stepNumber: step++,
+        lineNumber: 7,
+        eventType: 'TWO_POINTER_ADVANCE',
+        variables: { left, right },
+        output: [],
+        dataStructureState: {
+          type: 'array',
+          values: [...arr],
+          activeIndex: left,
+          pointers: { left, right },
+          label: `Pointers moved: left=${left}, right=${right}`,
+          focusInfo: left < right ? 'Continue until pointers meet/cross.' : 'Pointers have met at the center.'
+        },
+        explanation: 'Both pointers move one position toward the center after the swap.',
+        aiHint: 'The loop performs at most floor(n/2) swaps.'
+      });
+    }
+  }
+
+  steps.push({
+    stepNumber: step,
+    lineNumber: 10,
+    eventType: 'PROGRAM_END',
+    variables: { result: `[${arr.join(', ')}]` },
+    output: [`Reversed: [${arr.join(', ')}]`],
+    dataStructureState: {
+      type: 'array',
+      values: [...arr],
+      activeIndex: null,
+      pointers: { left, right },
+      label: 'Two-Pointer Reversal Complete',
+      focusInfo: `Final array: [${arr.join(', ')}]`
+    },
+    explanation: 'The two pointers met or crossed, so the in-place reversal is complete.',
+    aiHint: 'Time O(n), auxiliary space O(1).'
+  });
+
+  return steps;
+}
+
+/**
+ * Topic-specific Sliding Window Subarray Sum Trace
+ */
+export function generateDynamicSlidingWindowTrace(values = [2, 1, 5, 1, 3, 2], language = 'java') {
+  const arr = values.length >= 3 ? [...values] : [2, 1, 5, 1, 3, 2];
+  const k = Math.min(3, arr.length);
+  const steps = [];
+  let step = 1;
+  let sum = arr.slice(0, k).reduce((a, b) => a + b, 0);
+  let maxSum = sum;
+
+  steps.push({
+    stepNumber: step++,
+    lineNumber: 4,
+    eventType: 'WINDOW_INIT',
+    variables: { k, left: 0, right: k - 1, windowSum: sum, maxSum },
+    output: [`Initial window sum = ${sum}`],
+    dataStructureState: {
+      type: 'array',
+      values: [...arr],
+      activeIndex: k - 1,
+      pointers: { left: 0, right: k - 1 },
+      window: { start: 0, end: k - 1, size: k },
+      label: `Window [0..${k - 1}] Sum = ${sum}`,
+      focusInfo: `Fixed-size window k=${k}`,
+    },
+    explanation: `Computed the first window of ${k} elements with sum ${sum}.`,
+    aiHint: 'A sliding window reuses the previous sum instead of recalculating every element.'
+  });
+
+  for (let right = k; right < arr.length; right++) {
+    const left = right - k + 1;
+    const outgoing = arr[left - 1];
+    const incoming = arr[right];
+    sum += incoming - outgoing;
+    maxSum = Math.max(maxSum, sum);
+
+    steps.push({
+      stepNumber: step++,
+      lineNumber: 8,
+      eventType: 'WINDOW_SLIDE',
+      variables: { left, right, outgoing, incoming, windowSum: sum, maxSum },
+      output: [`Window [${left}..${right}] Sum = ${sum}`],
+      dataStructureState: {
+        type: 'array',
+        values: [...arr],
+        activeIndex: right,
+        comparedIndices: [left - 1, right],
+        pointers: { left, right },
+        window: { start: left, end: right, size: k },
+        label: `Slide to [${left}..${right}] → Sum ${sum}`,
+        focusInfo: `Remove ${outgoing}, add ${incoming}; maxSum=${maxSum}`,
+      },
+      explanation: `Removed outgoing value ${outgoing} and added incoming value ${incoming}, updating the window sum to ${sum}.`,
+      aiHint: 'Each slide takes O(1), so the complete algorithm is O(n).'
+    });
+  }
+
+  steps.push({
+    stepNumber: step,
+    lineNumber: 12,
+    eventType: 'PROGRAM_END',
+    variables: { k, maxSum },
+    output: [`Maximum sum for window size ${k} = ${maxSum}`],
+    dataStructureState: {
+      type: 'array',
+      values: [...arr],
+      activeIndex: null,
+      label: `Sliding Window Complete: maxSum = ${maxSum}`,
+      focusInfo: `Fixed window size ${k}`,
+    },
+    explanation: `Sliding-window scan finished. Maximum subarray sum among windows of size ${k} is ${maxSum}.`,
+    aiHint: 'Time O(n), auxiliary space O(1).'
+  });
+
+  return steps;
+}
+
+/**
+ * Topic-specific Hash Table Collision Chaining Trace
+ */
+export function generateDynamicHashTableTrace(values = [10, 18, 26, 7, 15], language = 'java') {
+  const arr = values.length >= 2 ? [...values.slice(0, 8)] : [10, 18, 26, 7, 15];
+  const bucketCount = 5;
+  const table = {};
+  const steps = [];
+  let step = 1;
+
+  const snapshot = () => Object.fromEntries(Object.entries(table).map(([k, v]) => [k, [...v]]));
+
+  steps.push({
+    stepNumber: step++,
+    lineNumber: 3,
+    eventType: 'HASH_INIT',
+    variables: { bucketCount, values: `[${arr.join(', ')}]` },
+    output: [],
+    dataStructureState: {
+      type: 'hash-table',
+      values: [...arr],
+      hashTable: {},
+      activeIndex: null,
+      target: null,
+      label: `Hash Table Initialized: ${bucketCount} buckets`,
+      focusInfo: 'Hash function: index = abs(key) % bucketCount'
+    },
+    explanation: 'Created fixed hash buckets. Each integer key is mapped to a bucket using modulo hashing.',
+    aiHint: 'Collisions are handled by chaining multiple keys inside the same bucket.'
+  });
+
+  arr.forEach((key, index) => {
+    const bucket = Math.abs(key) % bucketCount;
+    const collision = Array.isArray(table[bucket]) && table[bucket].length > 0;
+    if (!table[bucket]) table[bucket] = [];
+    table[bucket].push(key);
+
+    steps.push({
+      stepNumber: step++,
+      lineNumber: 6,
+      eventType: collision ? 'HASH_COLLISION' : 'HASH_INSERT',
+      variables: { index, key, bucket, collision },
+      output: [collision ? `Collision: key ${key} joins bucket ${bucket}` : `Insert key ${key} into bucket ${bucket}`],
+      dataStructureState: {
+        type: 'hash-table',
+        values: [...arr],
+        hashTable: Object.fromEntries(Object.entries(snapshot()).flatMap(([b, keys]) => keys.map((v) => [String(v), Number(b)]))),
+        activeIndex: index,
+        comparedIndices: [bucket],
+        target: key,
+        label: collision ? `Collision at Bucket ${bucket}: key ${key}` : `Hash ${key} → Bucket ${bucket}`,
+        focusInfo: collision ? 'Separate chaining keeps both keys in the same bucket.' : `Bucket ${bucket} was empty.`
+      },
+      explanation: `Computed abs(${key}) % ${bucketCount} = ${bucket}. ${collision ? 'A collision occurred, so chaining was used.' : 'The key was inserted into an empty bucket.'}`,
+      aiHint: 'Average insertion/search is O(1); collisions can degrade a bucket to O(n).'
+    });
+  });
+
+  const lookupKey = arr[Math.floor(arr.length / 2)];
+  const lookupBucket = Math.abs(lookupKey) % bucketCount;
+  steps.push({
+    stepNumber: step,
+    lineNumber: 10,
+    eventType: 'HASH_LOOKUP',
+    variables: { lookupKey, lookupBucket, found: true },
+    output: [`Lookup ${lookupKey}: FOUND in bucket ${lookupBucket}`],
+    dataStructureState: {
+      type: 'hash-table',
+      values: [...arr],
+      hashTable: Object.fromEntries(Object.entries(snapshot()).flatMap(([b, keys]) => keys.map((v) => [String(v), Number(b)]))),
+      activeIndex: arr.indexOf(lookupKey),
+      comparedIndices: [lookupBucket],
+      target: lookupKey,
+      label: `Lookup: ${lookupKey} → Bucket ${lookupBucket} ✓`,
+      focusInfo: 'Hash lookup resolved by computing the same bucket index.'
+    },
+    explanation: `Lookup recomputed the hash for ${lookupKey}, then found the key in bucket ${lookupBucket}.`,
+    aiHint: 'Average lookup remains O(1) with a well-distributed hash function.'
+  });
+
+  return steps;
+}
+
+/**
+ * Topic-specific AVL rotation trace (LL case)
+ */
+export function generateDynamicAvlTrace(language = 'java') {
+  const steps = [];
+  const makeNodes = (balanced = false) => balanced
+    ? [
+        { id: 0, val: 20, left: 1, right: 2, parent: null, depth: 0 },
+        { id: 1, val: 10, left: null, right: null, parent: 0, depth: 1 },
+        { id: 2, val: 30, left: null, right: null, parent: 0, depth: 1 },
+      ]
+    : [
+        { id: 0, val: 30, left: 1, right: null, parent: null, depth: 0 },
+        { id: 1, val: 20, left: 2, right: null, parent: 0, depth: 1 },
+        { id: 2, val: 10, left: null, right: null, parent: 1, depth: 2 },
+      ];
+
+  steps.push({
+    stepNumber: 1,
+    lineNumber: 4,
+    eventType: 'AVL_INSERT',
+    variables: { inserted: 30, balanceFactor: 0 },
+    output: ['Insert 30 as root'],
+    dataStructureState: {
+      type: 'avl',
+      nodes: makeNodes(false).slice(0, 1),
+      activeIndex: 0,
+      balanceFactors: { 30: 0 },
+      label: 'AVL Root = 30',
+      focusInfo: 'Balanced: BF(30) = 0'
+    },
+    explanation: 'First node becomes the AVL root.',
+    aiHint: 'AVL keeps every node balance factor in {-1, 0, +1}.'
+  });
+
+  steps.push({
+    stepNumber: 2,
+    lineNumber: 5,
+    eventType: 'AVL_INSERT',
+    variables: { inserted: 20, balanceFactor: 1 },
+    output: ['Insert 20 → left child of 30'],
+    dataStructureState: {
+      type: 'avl',
+      nodes: makeNodes(false).slice(0, 2),
+      activeIndex: 1,
+      balanceFactors: { 30: 1, 20: 0 },
+      label: 'Insert 20: BF(30) = +1',
+      focusInfo: 'Still balanced'
+    },
+    explanation: 'Node 20 is inserted on the left. Root balance factor becomes +1.',
+    aiHint: 'No rotation is needed while |BF| ≤ 1.'
+  });
+
+  steps.push({
+    stepNumber: 3,
+    lineNumber: 6,
+    eventType: 'AVL_IMBALANCE',
+    variables: { inserted: 10, balanceFactor: 2, rotation: 'RIGHT' },
+    output: ['Insert 10 → BF(30) = +2 → LL case → Right Rotation'],
+    dataStructureState: {
+      type: 'avl',
+      nodes: makeNodes(false),
+      activeIndex: 2,
+      balanceFactors: { 30: 2, 20: 1, 10: 0 },
+      label: 'LL Imbalance Detected at 30',
+      focusInfo: 'Balance factor +2 requires a right rotation'
+    },
+    explanation: 'Inserting 10 creates an LL imbalance. The AVL tree fixes it with a right rotation around 30.',
+    aiHint: 'Right rotation restores O(log n) height.'
+  });
+
+  steps.push({
+    stepNumber: 4,
+    lineNumber: 8,
+    eventType: 'AVL_ROTATION',
+    variables: { rotation: 'RIGHT', oldRoot: 30, newRoot: 20 },
+    output: ['Right Rotation complete: root = 20'],
+    dataStructureState: {
+      type: 'avl',
+      nodes: makeNodes(true),
+      activeIndex: 0,
+      balanceFactors: { 20: 0, 10: 0, 30: 0 },
+      label: 'AVL Balanced After Right Rotation',
+      focusInfo: '20 becomes root; 10 is left child; 30 is right child'
+    },
+    explanation: 'Right rotation promotes 20 to the root and restores balance.',
+    aiHint: 'AVL search, insertion and deletion remain O(log n) in height-balanced trees.'
+  });
+
+  return steps;
+}
+
+/**
+ * Topic-specific Sudoku grid trace
+ */
+export function generateDynamicSudokuTrace(language = 'java') {
+  const puzzle = [
+    [5, 3, 0, 0, 7, 0, 0, 0, 0],
+    [6, 0, 0, 1, 9, 5, 0, 0, 0],
+    [0, 9, 8, 0, 0, 0, 0, 6, 0],
+    [8, 0, 0, 0, 6, 0, 0, 0, 3],
+    [4, 0, 0, 8, 0, 3, 0, 0, 1],
+    [7, 0, 0, 0, 2, 0, 0, 0, 6],
+    [0, 6, 0, 0, 0, 0, 2, 8, 0],
+    [0, 0, 0, 4, 1, 9, 0, 0, 5],
+    [0, 0, 0, 0, 8, 0, 0, 7, 9],
+  ];
+  const solution = [
+    [5, 3, 4, 6, 7, 8, 9, 1, 2],
+    [6, 7, 2, 1, 9, 5, 3, 4, 8],
+    [1, 9, 8, 3, 4, 2, 5, 6, 7],
+    [8, 5, 9, 7, 6, 1, 4, 2, 3],
+    [4, 2, 6, 8, 5, 3, 7, 9, 1],
+    [7, 1, 3, 9, 2, 4, 8, 5, 6],
+    [9, 6, 1, 5, 3, 7, 2, 8, 4],
+    [2, 8, 7, 4, 1, 9, 6, 3, 5],
+    [3, 4, 5, 2, 8, 6, 1, 7, 9],
+  ];
+  const steps = [];
+  let step = 1;
+  const working = puzzle.map((row) => [...row]);
+
+  steps.push({
+    stepNumber: step++,
+    lineNumber: 3,
+    eventType: 'SUDOKU_INIT',
+    variables: { size: '9x9' },
+    output: ['Sudoku 9×9 grid initialized'],
+    dataStructureState: {
+      type: 'matrix',
+      matrix: working.map((row) => [...row]),
+      pointers: { activeRow: 0, activeCol: 0 },
+      label: 'Sudoku Solver: 9×9 Grid',
+      focusInfo: '0 means an empty cell'
+    },
+    explanation: 'The solver scans empty cells and tries a valid digit from 1 to 9.',
+    aiHint: 'Each placement must be valid in its row, column and 3×3 sub-grid.'
+  });
+
+  let placements = 0;
+  for (let r = 0; r < 9 && placements < 18; r++) {
+    for (let col = 0; col < 9 && placements < 18; col++) {
+      if (working[r][col] === 0) {
+        working[r][col] = solution[r][col];
+        placements++;
+        steps.push({
+          stepNumber: step++,
+          lineNumber: 8,
+          eventType: 'SUDOKU_PLACE',
+          variables: { row: r, col, value: working[r][col], placements },
+          output: [`Place ${working[r][col]} at [${r}][${col}]`],
+          dataStructureState: {
+            type: 'matrix',
+            matrix: working.map((row) => [...row]),
+            pointers: { activeRow: r, activeCol: col },
+            label: `Place ${working[r][col]} at [${r}][${col}]`,
+            focusInfo: 'Backtracking chooses a valid candidate for the active cell'
+          },
+          explanation: `Placed digit ${working[r][col]} in row ${r}, column ${col} using a valid Sudoku candidate.`,
+          aiHint: 'A real solver backtracks when no candidate is valid.'
+        });
+      }
+    }
+  }
+
+  steps.push({
+    stepNumber: step,
+    lineNumber: 12,
+    eventType: 'PROGRAM_END',
+    variables: { filledCells: placements },
+    output: [`Visualized ${placements} valid placements`],
+    dataStructureState: {
+      type: 'matrix',
+      matrix: working.map((row) => [...row]),
+      pointers: { activeRow: null, activeCol: null },
+      label: 'Sudoku Grid Visualization Complete',
+      focusInfo: 'Partial backtracking trace shown for clarity'
+    },
+    explanation: 'The 9×9 Sudoku grid is visualized with valid placements; the full solver can continue the same backtracking pattern.',
+    aiHint: 'Sudoku solving is exponential in the worst case, with strong pruning in practice.'
+  });
+
+  return steps;
+}
+
+/**
+ * Dynamic 3D Graph Traversal Trace Generator
+ */
+export function generateDynamicGraphTraversalTrace(mode = 'BFS', language = 'java') {
+  const nodes = [0, 1, 2, 3, 4].map((id) => ({ id, val: `V${id}` }));
+  const edges = [
+    { source: 0, target: 1 },
+    { source: 0, target: 2 },
+    { source: 1, target: 3 },
+    { source: 1, target: 4 },
+    { source: 2, target: 4 },
+    { source: 3, target: 4 },
+  ];
+  const adj = { 0: [1, 2], 1: [0, 3, 4], 2: [0, 4], 3: [1, 4], 4: [1, 2, 3] };
+  const steps = [];
+  const visited = new Set();
+  const order = [];
+  let step = 1;
+
+  if (mode === 'BFS') {
+    const queue = [0];
+    visited.add(0);
+    steps.push({
+      stepNumber: step++,
+      lineNumber: 4,
+      eventType: 'GRAPH_BFS_INIT',
+      variables: { start: 0, queue: '[0]' },
+      output: [],
+      dataStructureState: {
+        type: 'graph', nodes, edges, visited: [0], traversal: { mode: 'BFS', order: [] },
+        activeIndex: 0, queue: [0], label: 'BFS Initialized at V0', focusInfo: 'FIFO queue controls breadth-first exploration'
+      },
+      explanation: 'BFS starts at V0 and explores neighbors level by level using a FIFO queue.',
+      aiHint: 'BFS runs in O(V+E).'
+    });
+
+    while (queue.length) {
+      const u = queue.shift();
+      if (!order.includes(u)) order.push(u);
+      steps.push({
+        stepNumber: step++,
+        lineNumber: 6,
+        eventType: 'GRAPH_BFS_VISIT',
+        variables: { currentVertex: u, queue: JSON.stringify(queue), order: JSON.stringify(order) },
+        output: [`BFS visited V${u}`],
+        dataStructureState: {
+          type: 'graph', nodes, edges, visited: [...order], traversal: { mode: 'BFS', order: [...order] },
+          activeIndex: u, queue: [...queue], label: `BFS Visit: V${u}`, focusInfo: `Visited order: ${order.map((v) => 'V'+v).join(' → ')}`
+        },
+        explanation: `BFS removes V${u} from the front of the FIFO queue and marks it visited.`,
+        aiHint: 'Neighbors are enqueued once, preserving level order.'
+      });
+
+      for (const v of adj[u]) {
+        if (!visited.has(v)) {
+          visited.add(v);
+          queue.push(v);
+          steps.push({
+            stepNumber: step++,
+            lineNumber: 8,
+            eventType: 'GRAPH_BFS_ENQUEUE',
+            variables: { from: u, enqueued: v, queue: JSON.stringify(queue) },
+            output: [`Enqueue V${v}`],
+            dataStructureState: {
+              type: 'graph', nodes, edges, visited: [...order, ...queue], traversal: { mode: 'BFS', order: [...order] },
+              activeIndex: v, queue: [...queue], label: `Enqueue V${v}`, focusInfo: 'FIFO queue'
+            },
+            explanation: `V${v} is an unvisited neighbor of V${u}; enqueue it for later processing.`,
+            aiHint: 'BFS uses a queue: first in, first out.'
+          });
+        }
+      }
+    }
+  } else {
+    const stack = [0];
+    steps.push({
+      stepNumber: step++,
+      lineNumber: 4,
+      eventType: 'GRAPH_DFS_INIT',
+      variables: { start: 0, stack: '[0]' },
+      output: [],
+      dataStructureState: {
+        type: 'graph', nodes, edges, visited: [], traversal: { mode: 'DFS', order: [] },
+        activeIndex: 0, stack: [0], label: 'DFS Initialized at V0', focusInfo: 'LIFO stack controls depth-first exploration'
+      },
+      explanation: 'DFS starts at V0 and follows one branch deeply before backtracking.',
+      aiHint: 'DFS runs in O(V+E).'
+    });
+
+    while (stack.length) {
+      const u = stack.pop();
+      if (visited.has(u)) continue;
+      visited.add(u);
+      order.push(u);
+      steps.push({
+        stepNumber: step++,
+        lineNumber: 6,
+        eventType: 'GRAPH_DFS_VISIT',
+        variables: { currentVertex: u, stack: JSON.stringify(stack), order: JSON.stringify(order) },
+        output: [`DFS visited V${u}`],
+        dataStructureState: {
+          type: 'graph', nodes, edges, visited: [...order], traversal: { mode: 'DFS', order: [...order] },
+          activeIndex: u, stack: [...stack], label: `DFS Visit: V${u}`, focusInfo: `Visited order: ${order.map((v) => 'V'+v).join(' → ')}`
+        },
+        explanation: `DFS visits V${u} from the top of the LIFO stack.`,
+        aiHint: 'DFS uses a stack and explores depth before backtracking.'
+      });
+
+      for (let i = adj[u].length - 1; i >= 0; i--) {
+        const v = adj[u][i];
+        if (!visited.has(v)) stack.push(v);
+      }
+    }
+  }
+
+  steps.push({
+    stepNumber: step,
+    lineNumber: 10,
+    eventType: 'PROGRAM_END',
+    variables: { mode, traversalOrder: JSON.stringify(order) },
+    output: [`${mode} order: ${order.map((v) => 'V'+v).join(' → ')}`],
+    dataStructureState: {
+      type: 'graph', nodes, edges, visited: [...order], traversal: { mode, order: [...order] },
+      activeIndex: null, label: `${mode} Traversal Complete`, focusInfo: order.map((v) => 'V'+v).join(' → ')
+    },
+    explanation: `${mode} traversal completed with explicit visited order and ${mode === 'BFS' ? 'queue' : 'stack'} state.`,
+    aiHint: 'Both traversals run in O(V+E).'
+  });
+
+  return steps;
+}
+
+function generateDynamicGraphTrace(values = [0, 1, 2, 3, 4], language = 'java') {
   const order = [0, 1, 2, 3, 4];
   const steps = [];
 
@@ -2380,7 +2957,7 @@ export function generateDynamicReverseTrace(values = [10, 20, 30, 40, 50], langu
       variables: { left, right, swapped: `${a} <-> ${b}` },
       output: [],
       dataStructureState: {
-        type: 'sorting',
+        type: 'array',
         values: [...arr],
         swappedIndices: [left, right],
         pointers: { low: left, high: right },
@@ -7370,6 +7947,17 @@ function generateCatalogProblemTrace({ id = '', title = '', archetype = '', inpu
   const arr = values.length >= 2 ? values : [7, 2, 5, 1, 9];
 
   // Exact/near-exact algorithm families with dedicated trace generators.
+  // Exact topic IDs must be resolved before broad title matching.
+  if (id === 'quick-sort') return generateDynamicQuickSortTrace(arr, language);
+  if (id === 'two-pointer-reverse') return generateDynamicTwoPointerReverseTrace(arr, language);
+  if (id === 'sliding-window') return generateDynamicSlidingWindowTrace(arr, language);
+  if (id === 'hash-table') return generateDynamicHashTableTrace(arr, language);
+  if (id === 'avl-tree') return generateDynamicAvlTrace(language);
+  if (id === 'parentheses-stack') return generateDynamicValidParenthesesTrace(input || '()[]{}', language);
+  if (id === 'sudoku-solver') return generateDynamicSudokuTrace(language);
+  if (id === 'graph-bfs') return generateDynamicGraphTraversalTrace('BFS', language);
+  if (id === 'graph-dfs') return generateDynamicGraphTraversalTrace('DFS', language);
+
   if (t.includes('set matrix zero')) return generateDynamicSetMatrixZeroesTrace(values, language);
   if (t.includes("pascal")) return generateDynamicPascalsTriangleTrace(values, language);
   if (t.includes('next permutation')) return generateDynamicNextPermutationTrace(values, language);
