@@ -414,24 +414,76 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       });
     }
   };
-  // Execute User Code Pipeline: Code Editor -> Verification -> 3D Trace -> Animation
+  // Execute User Code Pipeline:
+  // The backend universal executor is the single source of truth for
+  // compilation, runtime behaviour and stdout/stderr. The returned
+  // universal trace is already enriched with the REAL runtime output.
   const handleRunCode = async () => {
     if (isExecuting) return false;
     if (isPlaying) { pause(); return false; }
-    setIsExecuting(true); setExecutionError(null);
+
+    setIsExecuting(true);
+    setExecutionError(null);
+
     try {
-      let backendResult = null;
-      if (backendOnline) backendResult = await executeProgram(code, activeStriverProblem?.id || selectedSample?.id || 'custom', language, formInputValues);
-      if (backendResult?.status === 'ERROR') {
-        setExecutionError(backendResult.message || 'Execution failed.');
+      const backendResult = await executeProgram(
+        code,
+        activeStriverProblem?.id || selectedSample?.id || 'custom',
+        language,
+        formInputValues,
+        true
+      );
+
+      if (!backendResult || backendResult.status !== 'COMPLETED') {
+        const message =
+          backendResult?.message ||
+          'Execution failed on the backend.';
+        setExecutionError(message);
+        return false;
       }
-      const visualTrace = getExecutionTrace(code, language, formInputValues, striverTraceKey(activeStriverProblem) || null);
-      if (!visualTrace?.length) throw new Error('Could not create a visual execution trace.');
-      setTrace(visualTrace); setLastExecutedCode(code); reset(); setTimeout(() => play(), 60);
-      recordExecutionHistory({ programTitle: activeStriverProblem?.title || selectedSample?.title || 'Custom Execution', conceptId: activeStriverProblem ? `striver-${activeStriverProblem.striverId || activeStriverProblem.id}` : selectedSample?.id || 'custom', language, totalSteps: visualTrace.length, status: backendResult?.status || 'COMPLETED', code, input: formInputValues });
-      return backendResult?.status !== 'ERROR';
-    } catch (err) { setExecutionError(err.message || 'Execution failed.'); return false; }
-    finally { setIsExecuting(false); }
+
+      // IMPORTANT: do NOT replace the real backend execution with the
+      // frontend regex simulator. backendResult.steps comes from the
+      // universal executor + universal trace engine and carries the
+      // authoritative stdout for the selected language.
+      const visualTrace = Array.isArray(backendResult.steps)
+        ? backendResult.steps
+        : [];
+
+      if (visualTrace.length === 0) {
+        throw new Error('Backend execution completed without a trace.');
+      }
+
+      setTrace(visualTrace);
+      setLastExecutedCode(code);
+      reset();
+      setTimeout(() => play(), 60);
+
+      recordExecutionHistory({
+        programTitle:
+          activeStriverProblem?.title ||
+          selectedSample?.title ||
+          'Custom Execution',
+        conceptId: activeStriverProblem
+          ? `striver-${activeStriverProblem.striverId || activeStriverProblem.id}`
+          : selectedSample?.id || 'custom',
+        language,
+        totalSteps: visualTrace.length,
+        status: backendResult.status,
+        code,
+        input: formInputValues,
+        output: backendResult.output || [],
+      });
+
+      return true;
+    } catch (err) {
+      setExecutionError(
+        err?.message || 'Execution failed on the backend.'
+      );
+      return false;
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   // Bidirectional interaction: 3D Element Click -> Seek Timeline & Code Line (Section 40)
