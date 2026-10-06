@@ -5,7 +5,7 @@
  */
 
 const LOCAL_BACKEND_URL = 'http://localhost:5000/api';
-const LIVE_RENDER_URL = 'https://code3d-ai.onrender.com/api';
+const LIVE_RENDER_URL = 'https://code3d-ai-oscc.onrender.com/api';
 
 const isLocalhost = typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
