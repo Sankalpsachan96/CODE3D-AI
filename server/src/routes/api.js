@@ -11,6 +11,7 @@ import * as aiController from '../controllers/aiController.js';
 import * as settingsController from '../controllers/settingsController.js';
 import * as dsaController from '../controllers/dsaController.js';
 import * as dashboardController from '../controllers/dashboardController.js';
+import universalExecutor from '../services/universalExecutor.cjs';
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.get('/health', (_req, res) => {
     online: true,
     database: isDbOnline(),
     supportedLanguages: ['java', 'python', 'cpp', 'c', 'javascript'],
+    executionRuntimes: universalExecutor.getRuntimeAvailability(),
     timestamp: new Date().toISOString(),
   });
 });
