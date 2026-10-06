@@ -1,5 +1,5 @@
 
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -7,6 +7,35 @@ const crypto = require("crypto");
 
 const TIME_LIMIT = 3000;
 const MAX_OUTPUT = 100 * 1024;
+
+function commandAvailable(command, args = ["--version"]) {
+  try {
+    const result = spawnSync(command, args, {
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    return result.status === 0;
+  } catch {
+    return false;
+  }
+}
+
+function getPythonCommand() {
+  if (commandAvailable("python3")) return "python3";
+  if (commandAvailable("python")) return "python";
+  return null;
+}
+
+function getRuntimeAvailability() {
+  return {
+    javascript: Boolean(process.execPath),
+    cpp: commandAvailable("g++"),
+    c: commandAvailable("gcc"),
+    python: Boolean(getPythonCommand()),
+    java: commandAvailable("javac") && commandAvailable("java"),
+    nodeVersion: process.version,
+  };
+}
 
 function createTempDirectory() {
   const id = crypto.randomBytes(8).toString("hex");
@@ -97,6 +126,16 @@ function runProcess(command, args, options = {}) {
 ========================= */
 
 async function executeCpp(code, input = "") {
+  if (!commandAvailable("g++")) {
+    return {
+      success: false,
+      stage: "environment",
+      output: "",
+      error: "C++ compiler (g++) is not installed in the backend runtime. Deploy the Node server with server/Dockerfile so g++ is available.",
+      executionTime: null,
+    };
+  }
+
   const tempDirectory = createTempDirectory();
 
   const sourceFile = path.join(tempDirectory, "main.cpp");
@@ -213,6 +252,16 @@ async function executeCpp(code, input = "") {
 ========================= */
 
 async function executeC(code, input = "") {
+  if (!commandAvailable("gcc")) {
+    return {
+      success: false,
+      stage: "environment",
+      output: "",
+      error: "C compiler (gcc) is not installed in the backend runtime. Deploy the Node server with server/Dockerfile so gcc is available.",
+      executionTime: null,
+    };
+  }
+
   const tempDirectory = createTempDirectory();
 
   const sourceFile = path.join(tempDirectory, "main.c");
@@ -329,6 +378,18 @@ async function executeC(code, input = "") {
 ========================= */
 
 async function executePython(code, input = "") {
+  const pythonCommand = getPythonCommand();
+
+  if (!pythonCommand) {
+    return {
+      success: false,
+      stage: "environment",
+      output: "",
+      error: "Python runtime is not installed in the backend runtime. Deploy the Node server with server/Dockerfile so Python 3 is available.",
+      executionTime: null,
+    };
+  }
+
   const tempDirectory = createTempDirectory();
 
   const sourceFile = path.join(tempDirectory, "main.py");
@@ -339,7 +400,7 @@ async function executePython(code, input = "") {
     const startTime = Date.now();
 
     const executionResult = await runProcess(
-      "python3",
+      pythonCommand,
       [sourceFile],
       {
         cwd: tempDirectory,
@@ -418,6 +479,16 @@ async function executePython(code, input = "") {
 ========================= */
 
 async function executeJava(code, input = "") {
+  if (!commandAvailable("javac") || !commandAvailable("java")) {
+    return {
+      success: false,
+      stage: "environment",
+      output: "",
+      error: "Java runtime (javac/java) is not installed in the backend runtime. Deploy the Node server with server/Dockerfile so OpenJDK is available.",
+      executionTime: null,
+    };
+  }
+
   const tempDirectory = createTempDirectory();
 
   // Java requires a public class to live in a file with the same name.
@@ -666,6 +737,7 @@ async function executeCode(language, code, input = "") {
 
 module.exports = {
   executeCode,
+  getRuntimeAvailability,
 };
 
 
