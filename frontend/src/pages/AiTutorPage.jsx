@@ -521,7 +521,9 @@ export default function AiTutorPage() {
         finalQuestion,
         code,
         language,
-        history
+        history,
+        output,
+        executionError || null
       );
 
       setMessages((previous) => [

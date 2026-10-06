@@ -129,7 +129,9 @@ export async function executeProgram(
       err
     );
 
-    return null;
+    // Do not convert execution failures into null. The AI Tutor needs the
+    // real runtime/compile error so it can explain what actually happened.
+    throw err;
   }
 }
 
@@ -1110,7 +1112,9 @@ export async function askAiFollowUp(
   prompt,
   code = '',
   language = 'java',
-  history = []
+  history = [],
+  output = '',
+  error = null
 ) {
   try {
     const userPrompt =
@@ -1188,6 +1192,14 @@ export async function askAiFollowUp(
 
             code:
               code || '',
+
+            output:
+              Array.isArray(output)
+                ? output
+                : String(output || '').split(/\r?\n/).filter(Boolean),
+
+            error:
+              error || null,
 
             question:
               userPrompt,

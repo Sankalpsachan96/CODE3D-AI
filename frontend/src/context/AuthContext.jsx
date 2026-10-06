@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, logoutUser } from '../services/auth.js';
+import { loginUser, registerUser, logoutUser, getCurrentUser } from '../services/auth.js';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
@@ -7,10 +7,30 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Validate server-side session via HttpOnly cookie on mount
+  // Restore the authenticated user from the HttpOnly session cookie on refresh.
   useEffect(() => {
-  setLoading(false);
-}, []);
+    let cancelled = false;
+
+    async function restoreSession() {
+      try {
+        const res = await getCurrentUser();
+        if (!cancelled && res?.success && res?.user) {
+          setUser(res.user);
+        }
+      } catch {
+        // No valid session is expected for a signed-out user.
+        if (!cancelled) setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    restoreSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = async (credentials) => {
     try {
