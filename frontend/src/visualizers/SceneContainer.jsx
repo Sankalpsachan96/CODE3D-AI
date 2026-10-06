@@ -216,7 +216,7 @@ function CameraPresetHandler({ preset, onApplied, controlsRef }) {
   useEffect(() => {
     if (!preset) return;
     if (controlsRef?.current) {
-      controlsRef.current.target.set(0, targetY, 0);
+      controlsRef.current.target.set(0, 0, 0);
     }
     if (preset === 'top') {
       camera.position.set(0, 18, 0.01);
@@ -282,11 +282,11 @@ function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default', s
     camera.lookAt(0, targetY, 0);
 
     if (controlsRef?.current) {
-      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.target.set(0, targetY, 0);
       controlsRef.current.maxDistance = Math.max(70, targetDist * 3.5);
       controlsRef.current.update();
     }
-  }, [count, camera, size, controlsRef]);
+  }, [count, camera, size, controlsRef, sceneType, sceneKey]);
 
   return null;
 }
