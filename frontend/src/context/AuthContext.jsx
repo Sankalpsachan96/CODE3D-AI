@@ -2,6 +2,17 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { loginUser, registerUser, logoutUser, getCurrentUser } from '../services/auth.js';
 const AuthContext = createContext(null);
 
+function isLegacyDemoUser(user) {
+  const username = String(user?.username || '').trim().toLowerCase();
+  const email = String(user?.email || '').trim().toLowerCase();
+
+  return (
+    username === 'alex' ||
+    username === 'student.alex' ||
+    email.startsWith('student.alex@')
+  );
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -15,7 +26,15 @@ export function AuthProvider({ children }) {
       try {
         const res = await getCurrentUser();
         if (!cancelled && res?.success && res?.user) {
-          setUser(res.user);
+          // The old Alex/demo account must never be restored in the UI.
+          if (isLegacyDemoUser(res.user)) {
+            try {
+              await logoutUser();
+            } catch {}
+            setUser(null);
+          } else {
+            setUser(res.user);
+          }
         }
       } catch {
         // No valid session is expected for a signed-out user.
@@ -36,6 +55,16 @@ export function AuthProvider({ children }) {
     try {
       const res = await loginUser(credentials);
       if (res && res.success) {
+        if (isLegacyDemoUser(res.user)) {
+          try {
+            await logoutUser();
+          } catch {}
+          return {
+            success: false,
+            message: 'This legacy demo account has been removed. Please use your own account.',
+          };
+        }
+
         setUser(res.user);
         return { success: true };
       }
@@ -49,6 +78,16 @@ export function AuthProvider({ children }) {
     try {
       const res = await registerUser(userData);
       if (res && res.success) {
+        if (isLegacyDemoUser(res.user)) {
+          try {
+            await logoutUser();
+          } catch {}
+          return {
+            success: false,
+            message: 'This legacy demo account has been removed. Please use your own account.',
+          };
+        }
+
         setUser(res.user);
         return { success: true };
       }
