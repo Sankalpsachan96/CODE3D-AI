@@ -208,10 +208,9 @@ export default function HeapVisualizer3D({ dataStructureState }) {
                 color="#ffffff"
                 anchorX="center"
                 anchorY="middle"
-                font="https://fonts.gstatic.com/s/firasans/v17/va9E4kDNxMZdWfMOD5Vvl4jO.woff"
                 fontWeight="bold"
               >
-                {val}
+                {String(val)}
               </Text>
 
               {/* Node Index & Role Label */}
