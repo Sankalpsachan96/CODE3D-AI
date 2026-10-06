@@ -71,6 +71,11 @@ async function callGroq(model, messages, jsonMode = false, jsonSchema = null) {
     throw error;
   }
 
+  const maxCompletionTokens =
+    jsonSchema ? 7000 :
+    jsonMode ? 2200 :
+    2200;
+
   const response = await fetch(GROQ_URL, {
     method: 'POST',
     headers: {
@@ -79,7 +84,8 @@ async function callGroq(model, messages, jsonMode = false, jsonSchema = null) {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.2,
+      temperature: jsonMode ? 0.1 : 0.2,
+      max_completion_tokens: maxCompletionTokens,
       messages,
       ...(jsonMode
         ? {
@@ -93,8 +99,9 @@ async function callGroq(model, messages, jsonMode = false, jsonSchema = null) {
                   },
                 }
               : { type: 'json_object' },
-            // GPT-OSS reasoning must be hidden/parsed when JSON mode is used.
-            reasoning_format: 'hidden',
+            // GPT-OSS currently exposes reasoning separately; do not send
+            // reasoning_format, which is not supported by GPT-OSS models.
+            include_reasoning: false,
           }
         : {}),
     }),
