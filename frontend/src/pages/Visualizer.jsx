@@ -71,10 +71,10 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     const problemId = problem?.striverId ?? problem?.id ?? '';
     const archetype = String(problem?.archetype || problemId || problem?.category || '')
       .trim()
-      .replace(/\\|/g, '/');
+      .replace(/\|/g, '/');
     const title = String(problem?.title || problem?.shortTitle || '')
       .trim()
-      .replace(/\\|/g, '/');
+      .replace(/\|/g, '/');
 
     // executionSimulator has an explicit problem-aware path. Use it instead
     // of only appending a comment to the source (comments are invisible to
@@ -82,7 +82,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     const isStriverProblem =
       problem?.striverId != null ||
       String(problem?.id || '').startsWith('striver-') ||
-      String(problem?.id || '').match(/^\\d+$/);
+      String(problem?.id || '').match(/^\d+$/);
 
     const selector = isStriverProblem
       ? `striver|${problemId}|${title}|${archetype}`
