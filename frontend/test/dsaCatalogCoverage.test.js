@@ -39,3 +39,15 @@ test('all 49 DSA curriculum programs produce a registered visualization trace', 
     assertWorkingTrace(trace, `Topic ${program.id} ${program.title}`);
   }
 });
+
+test('all 14 algorithm catalog entries produce execution steps', async () => {
+  const { ALGORITHM_CATALOG } = await import('../src/algorithms/index.js');
+  assert.equal(ALGORITHM_CATALOG.length, 14);
+  for (const algorithm of ALGORITHM_CATALOG) {
+    const result = algorithm.generator(
+      algorithm.defaultInput,
+      algorithm.defaultTarget
+    );
+    assert.ok(Array.isArray(result?.steps) && result.steps.length > 0, `Algorithm ${algorithm.id}: no steps`);
+  }
+});
