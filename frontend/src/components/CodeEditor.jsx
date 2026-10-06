@@ -788,6 +788,18 @@ export default function CodeEditor({
 
             automaticLayout: true,
 
+            wordWrap: 'on',
+
+            wrappingStrategy: 'advanced',
+
+            wordWrapColumn: 100,
+
+            autoIndent: 'full',
+
+            formatOnType: true,
+
+            formatOnPaste: true,
+
             tabSize: 4,
 
             cursorBlinking: 'smooth',

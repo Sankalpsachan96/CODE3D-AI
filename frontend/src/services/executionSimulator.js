@@ -2904,7 +2904,7 @@ export function generateDynamicDpTrace(values = [1, 2, 3, 5, 8], language = 'jav
     variables: { 'dp[0]': 1, 'dp[1]': 2 },
     output: [],
     dataStructureState: {
-      type: 'array',
+      type: 'dp',
       values: [...dp],
       activeIndex: 1,
       label: 'DP Base Cases: dp[0]=1, dp[1]=2',
@@ -2925,7 +2925,7 @@ export function generateDynamicDpTrace(values = [1, 2, 3, 5, 8], language = 'jav
       variables: { i, 'dp[i-1]': dp[i - 1], 'dp[i-2]': dp[i - 2], 'dp[i]': val },
       output: [],
       dataStructureState: {
-        type: 'array',
+        type: 'dp',
         values: [...dp],
         activeIndex: i,
         comparedIndices: [i - 2, i - 1],
@@ -7356,6 +7356,142 @@ export function generateDynamicUniversalTrace(code, values, lang = 'code', custo
  * Dynamically synthesizes an execution trace for ANY custom user code or program ID.
  * Parses user numbers, detects algorithms & data structures, and provides real 3D steps.
  */
+
+/**
+ * Canonical coverage router for the complete Striver SDE catalog and the
+ * 49 built-in DSA curriculum programs. The problem title/id is authoritative.
+ * This prevents broad archetype fallbacks (e.g. every two-pointer problem
+ * becoming the same generic array animation).
+ */
+function generateCatalogProblemTrace({ id = '', title = '', archetype = '', input = null, language = 'java' }) {
+  const t = String(title).toLowerCase();
+  const a = String(archetype).toLowerCase().replace(/_/g, '-');
+  const values = extractNumbersFromCode(input);
+  const arr = values.length >= 2 ? values : [7, 2, 5, 1, 9];
+
+  // Exact/near-exact algorithm families with dedicated trace generators.
+  if (t.includes('set matrix zero')) return generateDynamicSetMatrixZeroesTrace(values, language);
+  if (t.includes("pascal")) return generateDynamicPascalsTriangleTrace(values, language);
+  if (t.includes('next permutation')) return generateDynamicNextPermutationTrace(values, language);
+  if (t.includes('kadane') || t.includes('maximum subarray')) return generateDynamicKadaneTrace(arr, language);
+  if (t.includes('sort colors') || t.includes("dutch national flag")) return generateDynamicSortColorsTrace(arr, language);
+  if (t.includes('buy and sell stock') || t.includes('stock span')) return generateDynamicStockTrace(arr, language);
+  if (t.includes('maximum product subarray')) return generateDynamicKadaneTrace(arr, language);
+  if (t.includes('rotate') && (t.includes('matrix') || t.includes('image'))) return generateDynamicRotateMatrixTrace(values, language);
+  if (t.includes('merge over') && t.includes('interval')) return generateDynamicMergeIntervalsTrace(language);
+  if (t.includes('merge two sorted arrays')) return generateDynamicArrayTrace(arr, language);
+  if (t.includes('find the duplicate')) return generateDynamicFindDuplicateTrace(arr, language);
+  if (t.includes('repeat and missing')) return generateDynamicArrayTrace(arr, language);
+  if (t.includes('inversion of array') || t.includes('reverse pairs')) return generateDynamicMergeSortTrace(arr, language);
+  if (t.includes('search in a 2d matrix')) return generateDynamicBinarySearchTrace(arr.length >= 2 ? arr : [1, 3, 5, 7, 9], language);
+  if (t.includes('pow(x, n)') || t.includes('binary exponentiation')) return generateDynamicRecursionTrace([4], language);
+  if (t.includes('majority element')) return generateDynamicMajorityElementTrace(arr, language);
+  if (t.includes('grid unique paths')) return generateDynamicDpTrace([1, 2, 3, 5, 8], language);
+  if (t.includes('2 sum')) return generateDynamicTwoSumTrace(arr, 9, language);
+  if (t.includes('3 sum')) return generateDynamic3SumTrace(arr, language);
+  if (t.includes('4 sum')) return generateDynamic3SumTrace(arr, language);
+  if (t.includes('longest consecutive')) return generateDynamicArrayTrace(arr, language);
+  if (t.includes('largest subarray with 0 sum')) return generateDynamicArrayTrace(arr, language);
+  if (t.includes('subarrays with given xor')) return generateDynamicTwoSumTrace(arr, 0, language);
+  if (t.includes('substring without repeat')) return generateDynamicArrayTrace(arr, language);
+
+  if (t.includes('reverse a linked list')) return generateDynamicReverseLinkedListTrace(arr, language);
+  if (t.includes('merge two sorted lists')) return generateDynamicLinkedListTrace(arr, language);
+  if (t.includes('linked list') || t.includes('node from end') || t.includes('linked-list')) return generateDynamicLinkedListTrace(arr, language);
+
+  if (t.includes('trapping rain water')) return generateDynamicTrappingWaterTrace(arr, language);
+  if (t.includes('container with most water')) return generateDynamicContainerWaterTrace(arr, language);
+  if (t.includes('remove duplicates from sorted array')) return generateDynamicArrayTrace(arr, language);
+  if (t.includes('max consecutive ones')) return generateDynamicArrayTrace(arr, language);
+
+  if (t.includes('meeting') || t.includes('platform') || t.includes('job sequencing') || t.includes('fractional knapsack') || t.includes('assign cookies') || t.includes('greedy coin')) {
+    return generateDynamicSortTrace(arr, language);
+  }
+
+  if (t.includes('subset') || t.includes('combination sum') || t.includes('permutation') || t.includes('palindrome partition') ||
+      t.includes('n-queens') || t.includes('sudoku') || t.includes('m-coloring') || t.includes('rat in a maze') || t.includes('word break') && a.includes('recursion')) {
+    return t.includes('n-queens') ? generateDynamicNQueensTrace(language) : generateDynamicRecursionTrace([4], language);
+  }
+
+  if (t.includes('n-th root') || t.includes('matrix median') || t.includes('search in rotated') || t.includes('median of two sorted') ||
+      t.includes('k-th element') || t.includes('allocate minimum') || t.includes('aggressive cows') || a.includes('binary-search')) {
+    return generateDynamicBinarySearchTrace(arr.length >= 2 ? arr : [1, 4, 7, 10, 13], language);
+  }
+
+  if (t.includes('heap') || t.includes('kth largest') || t.includes('k-th largest') || t.includes('maximum sum combination') ||
+      t.includes('median from data stream') || t.includes('merge k sorted') || t.includes('stream')) {
+    return generateDynamicHeapTrace(arr.length >= 3 ? arr : [10, 15, 20, 17, 25], language);
+  }
+
+  if (t.includes('k most frequent') || t.includes('hash') || t.includes('two sum') ||
+      t.includes('zero sum') || t.includes('given xor') || t.includes('distinct numbers in window')) {
+    return generateDynamicTwoSumTrace(arr, 9, language);
+  }
+
+  if (t.includes('sliding window maximum')) return generateDynamicSlidingWindowMaxTrace(arr, language);
+  if (t.includes('next greater element') || t.includes('next smaller') || t.includes('largest rectangle') ||
+      t.includes('min stack') || t.includes('celebrity problem')) return generateDynamicMonotonicStackTrace(arr, language);
+  if (t.includes('valid parentheses')) return generateDynamicValidParenthesesTrace(input || '()[]{}', language);
+  if (t.includes('lru cache') || t.includes('lfu cache')) return generateDynamicLruCacheTrace(arr, language);
+
+  if (t.includes('rotting oranges')) return generateDynamicRottenOrangesTrace(language);
+  if (t.includes('word search')) return generateDynamicWordSearchTrace(language);
+  if (t.includes('dijkstra') || t.includes('shortest path')) return generateDynamicDijkstraTrace(arr, language);
+  if (t.includes('topological') || t.includes('course schedule')) return generateDynamicTopologicalSortTrace(arr, language);
+  if (t.includes('disjoint') || t.includes('kruskal') || a.includes('dsu')) return generateDynamicDsuTrace(arr, language);
+  if (t.includes('graph') || t.includes('is graph bipartite') || t.includes('islands') || t.includes('bellman') ||
+      t.includes('floyd warshall') || t.includes('prim') || t.includes('kosaraju')) return generateDynamicGraphTrace(arr, language);
+
+  if (t.includes('trie') || t.includes('prefix') || t.includes('distinct substrings')) return generateDynamicTrieTrace([], language);
+
+  if (t.includes('lis') || t.includes('longest increasing subsequence')) return generateDynamicLisTrace(arr, language);
+  if (t.includes('knapsack')) return generateDynamicKnapsackTrace(language);
+  if (t.includes('coin change')) return generateDynamicCoinChangeTrace(arr, language);
+  if (t.includes('edit distance') || t.includes('common subsequence') || t.includes('partition') ||
+      t.includes('rod cutting') || t.includes('egg dropping') || t.includes('matrix chain') ||
+      t.includes('job scheduling') || a === 'dp') return generateDynamicDpTrace(arr, language);
+
+  if (t.includes('power set') || t.includes('bitmask')) return generateDynamicRecursionTrace([4], language);
+
+  // Exact topic ids that are not descriptive enough on their own.
+  if (id === 'student-result') return generateDynamicUniversalTrace(String(input || ''), values, language, input);
+  if (id === 'array-loop') return generateDynamicArrayTrace(arr, language);
+  if (id === 'matrix') return generateDynamicMatrixTrace(arr, language);
+  if (id.includes('linked-list')) return generateDynamicLinkedListTrace(arr, language);
+  if (id === 'cycle-detection') return generateDynamicCycleTrace(arr, language);
+  if (id === 'stack' || id.includes('parentheses')) return generateDynamicStackTrace(arr, language);
+  if (id.includes('queue') || id === 'deque') return generateDynamicQueueTrace(arr, language);
+  if (id === 'bst' || id.includes('tree')) return generateDynamicTreeTrace(arr, language);
+  if (id.includes('sort')) return generateDynamicSortTrace(arr, language);
+  if (id.includes('binary-search')) return generateDynamicBinarySearchTrace(arr, language);
+  if (id.includes('graph')) return generateDynamicGraphTrace(arr, language);
+  if (id.includes('heap')) return generateDynamicHeapTrace(arr, language);
+  if (id.includes('trie')) return generateDynamicTrieTrace([], language);
+  if (id.includes('dijkstra')) return generateDynamicDijkstraTrace(arr, language);
+  if (id.includes('knapsack')) return generateDynamicKnapsackTrace(language);
+  if (id.includes('lcs') || id.includes('fibonacci') || id.includes('dp')) return generateDynamicDpTrace(arr, language);
+  if (id.includes('n-queens')) return generateDynamicNQueensTrace(language);
+  if (id.includes('sudoku')) return generateDynamicRecursionTrace([4], language);
+  if (id.includes('rotten')) return generateDynamicRottenOrangesTrace(language);
+  if (id.includes('word-search')) return generateDynamicWordSearchTrace(language);
+
+  // Final archetype fallback: every catalog entry still gets a real registered
+  // visualizer state rather than an empty trace.
+  if (a.includes('matrix') || a.includes('grid')) return generateDynamicMatrixTrace(arr, language);
+  if (a.includes('linked')) return generateDynamicLinkedListTrace(arr, language);
+  if (a.includes('stack')) return generateDynamicStackTrace(arr, language);
+  if (a.includes('queue')) return generateDynamicQueueTrace(arr, language);
+  if (a.includes('tree') || a.includes('bst')) return generateDynamicTreeTrace(arr, language);
+  if (a.includes('graph')) return generateDynamicGraphTrace(arr, language);
+  if (a.includes('heap')) return generateDynamicHeapTrace(arr, language);
+  if (a.includes('trie')) return generateDynamicTrieTrace([], language);
+  if (a.includes('dp') || a.includes('lis')) return generateDynamicDpTrace(arr, language);
+  if (a.includes('recursion')) return generateDynamicRecursionTrace([4], language);
+  if (a.includes('sort')) return generateDynamicSortTrace(arr, language);
+  if (a.includes('search') || a.includes('two-pointer') || a.includes('sliding-window')) return generateDynamicArrayTrace(arr, language);
+  return generateDynamicArrayTrace(arr, language);
+}
+
 export function getExecutionTrace(code, language = 'java', customInput = null, explicitArchetype = null) {
   if (!code || typeof code !== 'string') {
     return ARRAY_LOOP_EXECUTION_TRACE;
@@ -7368,9 +7504,26 @@ export function getExecutionTrace(code, language = 'java', customInput = null, e
   const rawSteps = String(explicitArchetype || '').startsWith('striver|')
     ? (() => {
         const [, id, title, archetype] = String(explicitArchetype).split('|');
-        return generateStriverTrace({ id, title, archetype, input: customInput, language });
+        return generateCatalogProblemTrace({
+          id,
+          title,
+          archetype,
+          input: customInput || values.join(', '),
+          language,
+        });
       })()
-    : _computeExecutionTrace(code, cleanCode, values, language, customInput, explicitArchetype);
+    : String(explicitArchetype || '').startsWith('topic|')
+      ? (() => {
+          const [, id, title, category] = String(explicitArchetype).split('|');
+          return generateCatalogProblemTrace({
+            id,
+            title,
+            archetype: id || category,
+            input: customInput || values.join(', '),
+            language,
+          });
+        })()
+      : _computeExecutionTrace(code, cleanCode, values, language, customInput, explicitArchetype);
   return ensureTraceOutputs(rawSteps, values, code);
 }
 
