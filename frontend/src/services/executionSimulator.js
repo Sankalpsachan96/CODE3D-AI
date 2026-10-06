@@ -8288,6 +8288,135 @@ function generateCatalogProblemTrace({ id = '', title = '', archetype = '', inpu
   return generateDynamicArrayTrace(arr, language);
 }
 
+/**
+ * Align simulator-generated trace steps with the actual source code.
+ *
+ * The rich DSA traces are intentionally deterministic and historically used
+ * template line numbers. Once a topic's code was edited, those numbers could
+ * point at a blank/wrong line in Monaco (for example array-loop's i++ pointed
+ * at line 3 instead of the for statement on line 6). This pass keeps the rich
+ * 3D state but resolves each step to a semantically matching source line.
+ */
+function alignTraceLinesWithSource(code, steps, language = 'java') {
+  if (typeof code !== 'string' || !code.trim() || !Array.isArray(steps) || !steps.length) {
+    return steps;
+  }
+
+  const sourceLines = code.split(/\r?\n/);
+  const normalized = sourceLines.map((line) => line.replace(/\/\/.*$/, '').trim());
+
+  const patterns = [
+    [/^(?:ARRAY_CREATION|ARRAY_INIT|ARRAY_ASSIGN|ARRAY_WRITE|MATRIX_INIT|MATRIX_SCAN|GRID_INIT|BOARD_INIT|SUDOKU_INIT)$/i,
+      [/\\b(?:int|long|double|float|char|boolean|String)\\s*\\[\\]\\s*\\w+\\s*=|\\b(?:int|long|double|float|char|boolean|String)\\s+\\w+\\s*\\[\\]\\s*=|\\b(?:array|matrix|grid|board)\\b.*(?:=|new)\\s+/i]],
+    [/^(?:LOOP_INIT|LOOP_INCREMENT|CONDITION_CHECK|COUNTER_INCREMENT|NESTED_LOOP_INIT|LOOP_ITERATION)$/i,
+      [/\\b(?:for|while|do)\\b/i]],
+    [/^(?:IF_CONDITION_CHECK|TARGET_SEARCH_INIT|BREAKPOINT_FOUND)$/i,
+      [/\\b(?:if|else\\s+if|switch|case)\\b/i]],
+    [/^(?:ARRAY_ACCESS|PRINT_OUTPUT|OUTPUT|PROGRAM_OUTPUT|TARGET_FOUND|WORD_FOUND|TRIE_SEARCH_FOUND|TRIE_SEARCH_MISSING)$/i,
+      [/\\b(?:System\\.out\\.(?:print|println)|print(?:ln)?|console\\.log)\\b/i, /\\[[^\\]]+\\]/]],
+    [/^(?:SWAP|SWAP_ELEMENTS|TWO_POINTER_SWAP|PARTITION_SWAP|TRANSPOSE_SWAP|ROW_REVERSE|REVERSE_STEP)$/i,
+      [/(?:(?:swap|temp|tmp)|\\[[^\\]]+\\]\\s*=)/i]],
+    [/^(?:POINTER_INIT|POINTER_REVERSE|POINTER_SCAN|TWO_POINTER_INIT|TWO_POINTER_ADVANCE|TWO_POINTER_STEP|WINDOW_INIT|WINDOW_SLIDE)$/i,
+      [/(?:left|right|slow|fast|pointer|window|start|end)/i]],
+    [/^(?:STACK_INIT|STACK_PUSH|STACK_POP)$/i,
+      [/(?:stack|push|pop)/i]],
+    [/^(?:QUEUE_ENQUEUE|QUEUE_DEQUEUE|QUEUE_INIT)$/i,
+      [/(?:queue|offer|poll|enqueue|dequeue)/i]],
+    [/^(?:TREE_INSERT_ROOT|TREE_INSERT_NODE|TREE_COMPARE_LEFT|TREE_COMPARE_RIGHT|TREE_INORDER_VISIT|TREE_BFS_VISIT|AVL_INSERT|AVL_IMBALANCE|AVL_ROTATION)$/i,
+      [/(?:tree|node|root|insert|rotate|rotation|balance|height|inorder|travers)/i]],
+    [/^(?:GRAPH_BFS_INIT|GRAPH_BFS_VISIT|GRAPH_BFS_ENQUEUE|GRAPH_DFS_INIT|GRAPH_DFS_VISIT|GRAPH_VISIT|EDGE_RELAXATION|VERTEX_PROCESSED|DIJKSTRA_INIT|DIJKSTRA_COMPLETE|TOPO_INIT)$/i,
+      [/(?:graph|bfs|dfs|visited|queue|stack|edge|dist|distance|vertex|topolog|priorityqueue)/i]],
+    [/^(?:HEAP_INIT|HEAP_INSERT|HEAP_COMPARE|HEAP_SWAP)$/i,
+      [/(?:heap|parent|child|sift|bubble|priority)/i]],
+    [/^(?:HASH_INIT|HASH_INSERT|HASH_LOOKUP|SET_INSERT)$/i,
+      [/(?:hash|map|set|bucket|key|lookup|put|get)/i]],
+    [/^(?:TRIE_INIT|TRIE_INSERT)$/i,
+      [/(?:trie|prefix|children|insert)/i]],
+    [/^(?:DSU_INIT|DSU_UNION|DSU_FIND_CONNECTED|DSU_FIND_DISCONNECTED)$/i,
+      [/(?:dsu|union|find|parent|rank|disjoint)/i]],
+    [/^(?:DP_INIT|DP_UPDATE|DP_TRANSITION|DP_BASE_CASE|DP_TABLE_INIT|LCS_INIT|LCS_DP_UPDATE|KADANE_INIT|LIS_INIT|LIS_EXTEND)$/i,
+      [/(?:dp|memo|table|lcs|lis|kadane|max|sum|transition|recurrence)/i]],
+    [/^(?:RECURSION_RETURN|FUNCTION_DECLARE|FUNCTION_CALL|FUNCTION_EXECUTE|FUNCTION_RETURN|FRAME_POP)$/i,
+      [/(?:return|void|function|method|call|recursive)/i]],
+    [/^(?:DIVIDE|MERGE_SUBARRAY|PIVOT_SELECT|PARTITION_COMPARE|PIVOT_PLACED)$/i,
+      [/(?:merge|divide|mid|pivot|partition)/i]],
+    [/^(?:WATER_TRAPPED|TRAPPING_WATER_INIT|UPDATE_LEFT_MAX|UPDATE_RIGHT_MAX)$/i,
+      [/(?:water|height|leftMax|rightMax|maxLeft|maxRight)/i]],
+    [/^(?:LRU_INIT)$/i, [/(?:lru|cache|capacity|linked)/i]],
+    [/^(?:STOCK_INIT|NEW_MIN_PRICE)$/i, [/(?:price|stock|min|profit)/i]],
+    [/^(?:SCANNER_INIT|INPUT_READ|ARITHMETIC_CALCULATION|IO_CLOSE|VARIABLES_INITIALIZED)$/i,
+      [/(?:Scanner|nextInt|nextLine|nextDouble|System\\.out|close\\(\\)|=)/i]],
+    [/^(?:CONTAGION_SPREAD|GRID_INIT|CHAR_MATCH|SOLUTION_FOUND|QUEEN_PLACED|CONFLICT_DETECTED)$/i,
+      [/(?:grid|board|queue|visited|char|queen|backtrack|conflict|solution)/i]],
+  ];
+
+  const findPatterns = (eventType) => {
+    const normalizedEvent = String(eventType || '').toUpperCase();
+    const match = patterns.find(([eventRegex]) => eventRegex.test(normalizedEvent));
+    return match?.[1] || [];
+  };
+
+  const isCandidate = (line) => {
+    const trimmed = String(line || '').trim();
+    return Boolean(trimmed) && !trimmed.startsWith('//') && !trimmed.startsWith('/*') && trimmed !== '*' && trimmed !== '*/';
+  };
+
+  const scoreLine = (step, lineNumber) => {
+    const index = lineNumber - 1;
+    if (index < 0 || index >= normalized.length || !isCandidate(normalized[index])) return -Infinity;
+
+    const line = normalized[index];
+    const patternsForStep = findPatterns(step?.eventType);
+    if (!patternsForStep.length) return 0;
+
+    let score = 0;
+    for (const regex of patternsForStep) {
+      if (regex.test(line)) score += 10;
+    }
+
+    const oldLine = Number(step?.lineNumber);
+    if (Number.isFinite(oldLine) && oldLine === lineNumber) score += 3;
+
+    if (patternsForStep.some((regex) => regex.test(line))) return score;
+    return -1;
+  };
+
+  return steps.map((step) => {
+    const current = Number(step?.lineNumber);
+    const currentScore = Number.isFinite(current) ? scoreLine(step, current) : -1;
+
+    // Preserve already-correct mappings.
+    if (currentScore >= 0) return step;
+
+    const candidates = [];
+    for (let lineNumber = 1; lineNumber <= normalized.length; lineNumber += 1) {
+      const score = scoreLine(step, lineNumber);
+      if (score >= 0) {
+        candidates.push({
+          lineNumber,
+          score,
+          distance: Number.isFinite(current) ? Math.abs(lineNumber - current) : lineNumber,
+        });
+      }
+    }
+
+    if (!candidates.length) {
+      // Last resort: never point Monaco at a blank/out-of-range line.
+      const fallback = Number.isFinite(current) && current >= 1 && current <= normalized.length
+        ? current
+        : Math.max(1, Math.min(normalized.length, 1));
+      if (isCandidate(normalized[fallback - 1])) {
+        return { ...step, lineNumber: fallback };
+      }
+      const firstExecutable = normalized.findIndex(isCandidate);
+      return { ...step, lineNumber: firstExecutable >= 0 ? firstExecutable + 1 : 1 };
+    }
+
+    candidates.sort((a, b) => b.score - a.score || a.distance - b.distance);
+    return { ...step, lineNumber: candidates[0].lineNumber };
+  });
+}
+
 export function getExecutionTrace(code, language = 'java', customInput = null, explicitArchetype = null) {
   if (!code || typeof code !== 'string') {
     return ARRAY_LOOP_EXECUTION_TRACE;
@@ -8322,7 +8451,8 @@ export function getExecutionTrace(code, language = 'java', customInput = null, e
           });
         })()
       : _computeExecutionTrace(code, cleanCode, values, language, customInput, explicitArchetype);
-  return ensureTraceOutputs(rawSteps, values, code);
+  const alignedSteps = alignTraceLinesWithSource(code, rawSteps, language);
+  return ensureTraceOutputs(alignedSteps, values, code);
 }
 
 function _computeExecutionTrace(code, cleanCode, values, language, customInput, explicitArchetype) {
