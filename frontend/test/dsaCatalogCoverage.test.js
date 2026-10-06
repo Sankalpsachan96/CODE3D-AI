@@ -5,9 +5,10 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-import { getExecutionTrace } from '../src/services/executionSimulator.js';
+import { getExecutionTrace, alignTraceLinesWithSource } from '../src/services/executionSimulator.js';
 import { STRIVER_PROBLEMS } from '../src/utils/striverCatalog.js';
 import { SAMPLE_PROGRAMS } from '../src/utils/sampleCodes.js';
+import { ALGORITHM_CATALOG } from '../src/algorithms/index.js';
 
 function assertWorkingTrace(trace, label) {
   assert.ok(Array.isArray(trace) && trace.length > 0, `${label}: trace is empty`);
@@ -201,6 +202,37 @@ test('all 14 algorithm catalog entries produce execution steps', async () => {
       algorithm.defaultTarget
     );
     assert.ok(Array.isArray(result?.steps) && result.steps.length > 0, `Algorithm ${algorithm.id}: no steps`);
+  }
+});
+
+test('all 14 algorithm traces point to real source lines', () => {
+  assert.equal(ALGORITHM_CATALOG.length, 14);
+
+  for (const algorithm of ALGORITHM_CATALOG) {
+    const code = algorithm.code?.java || '';
+    assert.ok(code.trim(), `Algorithm ${algorithm.id}: missing Java source`);
+
+    const result = algorithm.generator(
+      algorithm.defaultInput,
+      algorithm.defaultTarget
+    );
+    const trace = alignTraceLinesWithSource(code, result?.steps || [], 'java');
+    const lines = code.split(/\r?\n/);
+
+    assert.ok(trace.length > 0, `Algorithm ${algorithm.id}: empty trace`);
+    for (const step of trace) {
+      assert.ok(
+        Number.isInteger(step.lineNumber) &&
+        step.lineNumber >= 1 &&
+        step.lineNumber <= lines.length,
+        `Algorithm ${algorithm.id}: invalid source line ${step.lineNumber}`
+      );
+      const sourceLine = String(lines[step.lineNumber - 1] || '').trim();
+      assert.ok(
+        sourceLine && !sourceLine.startsWith('//') && sourceLine !== '*',
+        `Algorithm ${algorithm.id}: step ${step.stepNumber} points to blank/comment line ${step.lineNumber}`
+      );
+    }
   }
 });
 
