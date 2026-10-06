@@ -6,6 +6,55 @@ import { memorySessions, memoryUsers } from '../middleware/auth.js';
 const COOKIE_NAME = process.env.COOKIE_NAME || 'code3d_session';
 const SESSION_DURATION_DAYS = parseInt(process.env.SESSION_DURATION_DAYS || '7', 10);
 
+const LEGACY_DEMO_USERNAMES = new Set(['alex', 'student.alex']);
+const LEGACY_DEMO_EMAIL_PREFIXES = ['student.alex@'];
+
+function isLegacyDemoAccount(user) {
+  const username = String(user?.username || '').trim().toLowerCase();
+  const email = String(user?.email || '').trim().toLowerCase();
+
+  return (
+    LEGACY_DEMO_USERNAMES.has(username) ||
+    LEGACY_DEMO_EMAIL_PREFIXES.some((prefix) => email.startsWith(prefix))
+  );
+}
+
+export async function purgeLegacyDemoAccounts() {
+  // Remove the old demo/Alex account completely. It is not part of CODE3D-AI.
+  if (isDbOnline()) {
+    const prisma = getPrisma();
+    const legacyUsers = await prisma.user.findMany({
+      where: {
+        OR: [
+          { username: { in: [...LEGACY_DEMO_USERNAMES] } },
+          ...LEGACY_DEMO_EMAIL_PREFIXES.map((prefix) => ({
+            email: { startsWith: prefix },
+          })),
+        ],
+      },
+      select: { id: true, username: true, email: true },
+    });
+
+    for (const user of legacyUsers) {
+      await prisma.user.delete({ where: { id: user.id } });
+      console.log(`🧹 Removed legacy demo account: ${user.username}`);
+    }
+  }
+
+  // Also clear any legacy account created in the local in-memory fallback.
+  for (const [id, user] of memoryUsers.entries()) {
+    if (isLegacyDemoAccount(user)) {
+      memoryUsers.delete(id);
+
+      for (const [token, session] of memorySessions.entries()) {
+        if (session.userId === id) {
+          memorySessions.delete(token);
+        }
+      }
+    }
+  }
+}
+
 function generateSessionToken() {
   return crypto.randomBytes(32).toString('hex');
 }
