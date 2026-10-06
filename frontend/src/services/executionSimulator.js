@@ -8167,15 +8167,6 @@ function generateCatalogProblemTrace({ id = '', title = '', archetype = '', inpu
   if (id === 'circular-linked-list') return generateDynamicCircularLinkedListTrace(arr, language);
   if (id === 'tree-traversals') return generateDynamicTreeTraversalTrace(language);
   if (id === 'lcs') return generateDynamicLcsTrace(language);
-  if (id === 'two-pointer-reverse') return generateDynamicTwoPointerReverseTrace(arr, language);
-  if (id === 'sliding-window') return generateDynamicSlidingWindowTrace(arr, language);
-  if (id === 'hash-table') return generateDynamicHashTableTrace(arr, language);
-  if (id === 'avl-tree') return generateDynamicAvlTrace(language);
-  if (id === 'parentheses-stack') return generateDynamicValidParenthesesTrace(input || '()[]{}', language);
-  if (id === 'sudoku-solver') return generateDynamicSudokuTrace(language);
-  if (id === 'graph-bfs') return generateDynamicGraphTraversalTrace('BFS', language);
-  if (id === 'graph-dfs') return generateDynamicGraphTraversalTrace('DFS', language);
-
   if (t.includes('set matrix zero')) return generateDynamicSetMatrixZeroesTrace(values, language);
   if (t.includes("pascal")) return generateDynamicPascalsTriangleTrace(values, language);
   if (t.includes('next permutation')) return generateDynamicNextPermutationTrace(values, language);
