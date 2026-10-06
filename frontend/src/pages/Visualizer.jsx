@@ -246,7 +246,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             setTimeout(() => play(), 100);
           });
       } else {
-        setTrace(getExecutionTrace(initialConcept.code, initialConcept.language || 'java', initialConcept.defaultInput, universalOnly ? null : (striverTraceKey(initialConcept) || initialConcept.archetype || initialConcept.id)));
+        setTrace(buildSemanticTrace(initialConcept.code, initialConcept.language || 'java', initialConcept.defaultInput, initialConcept));
         reset();
         setTimeout(() => play(), 100);
       }
