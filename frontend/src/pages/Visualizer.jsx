@@ -1037,6 +1037,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                   isFull3DView={isFull3DView}
                   onToggleFull3D={() => setIsFull3DView((prev) => !prev)}
                   onSelectElement={handleSelectElementFrom3D}
+                  sceneKey={selectedSample?.id || activeStriverProblem?.id || 'custom'}
                 >
                   <DsaSceneDispatcher dataStructureState={currentStep?.dataStructureState} />
                 </SceneContainer>
