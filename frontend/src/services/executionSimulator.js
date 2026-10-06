@@ -2908,6 +2908,212 @@ export function generateDynamicGraphTraversalTrace(mode = 'BFS', language = 'jav
   return steps;
 }
 
+
+/**
+ * Topic-specific Doubly Linked List Trace
+ */
+export function generateDynamicDoublyLinkedListTrace(values = [10, 20, 30, 40], language = 'java') {
+  const nums = values.length >= 2 ? [...values] : [10, 20, 30, 40];
+  return nums.map((value, index) => ({
+    stepNumber: index + 1,
+    lineNumber: 8 + index,
+    eventType: 'DOUBLY_LIST_TRAVERSAL',
+    variables: {
+      'curr.val': value,
+      prev: index > 0 ? nums[index - 1] : null,
+      next: index < nums.length - 1 ? nums[index + 1] : null,
+    },
+    output: [`Node ${value}: prev=${index > 0 ? nums[index - 1] : 'null'}, next=${index < nums.length - 1 ? nums[index + 1] : 'null'}`],
+    dataStructureState: {
+      type: 'linked-list',
+      values: [...nums],
+      activeIndex: index,
+      pointers: {
+        HEAD: 0,
+        CURR: index,
+        PREV: index > 0 ? index - 1 : null,
+        NEXT: index < nums.length - 1 ? index + 1 : null,
+      },
+      label: `Doubly Node [${index}] = ${value}`,
+      focusInfo: `prev=${index > 0 ? nums[index - 1] : 'null'} ← ${value} → next=${index < nums.length - 1 ? nums[index + 1] : 'null'}`,
+    },
+    explanation: `Visited doubly linked-list node ${value}; both previous and next references are available.`,
+    aiHint: 'Doubly linked lists support bidirectional traversal because every node stores prev and next.'
+  }));
+}
+
+/**
+ * Topic-specific Circular Linked List Trace
+ */
+export function generateDynamicCircularLinkedListTrace(values = [10, 20, 30, 40], language = 'java') {
+  const nums = values.length >= 2 ? [...values] : [10, 20, 30, 40];
+  return nums.map((value, index) => {
+    const nextIndex = (index + 1) % nums.length;
+    return {
+      stepNumber: index + 1,
+      lineNumber: 9 + index,
+      eventType: 'CIRCULAR_LIST_TRAVERSAL',
+      variables: { 'curr.val': value, currentIndex: index, nextIndex },
+      output: [`Node ${value} → Node ${nums[nextIndex]}`],
+      dataStructureState: {
+        type: 'linked-list',
+        values: [...nums],
+        activeIndex: index,
+        pointers: { HEAD: 0, CURR: index, NEXT: nextIndex },
+        isCircular: true,
+        label: `Circular Node [${index}] = ${value}`,
+        focusInfo: `next points to Node [${nextIndex}] = ${nums[nextIndex]}`,
+      },
+      explanation: `Traversed node ${value}; its next reference points to ${nums[nextIndex]}, wrapping to HEAD at the end.`,
+      aiHint: 'A circular linked list has no null tail; the last node links back to the head.'
+    };
+  });
+}
+
+/**
+ * Topic-specific Tree Traversal Trace (In-Order + Level-Order BFS)
+ */
+export function generateDynamicTreeTraversalTrace(language = 'java') {
+  const nodes = [
+    { id: 0, val: 50, left: 1, right: 2, parent: null, depth: 0 },
+    { id: 1, val: 30, left: 3, right: 4, parent: 0, depth: 1 },
+    { id: 2, val: 70, left: 5, right: 6, parent: 0, depth: 1 },
+    { id: 3, val: 20, left: null, right: null, parent: 1, depth: 2 },
+    { id: 4, val: 40, left: null, right: null, parent: 1, depth: 2 },
+    { id: 5, val: 60, left: null, right: null, parent: 2, depth: 2 },
+    { id: 6, val: 80, left: null, right: null, parent: 2, depth: 2 },
+  ];
+  const steps = [];
+  let step = 1;
+  const inOrder = [3, 1, 4, 0, 5, 2, 6];
+
+  for (let index = 0; index < inOrder.length; index++) {
+    const id = inOrder[index];
+    const node = nodes[id];
+    const order = inOrder.slice(0, index + 1).map((x) => nodes[x].val);
+    steps.push({
+      stepNumber: step++,
+      lineNumber: 7,
+      eventType: 'TREE_INORDER_VISIT',
+      variables: { currentNode: node.val },
+      output: [`In-Order Visit: ${node.val}`],
+      dataStructureState: {
+        type: 'tree',
+        nodes,
+        activeIndex: id,
+        traversal: { mode: 'IN_ORDER', order },
+        label: `In-Order → ${node.val}`,
+        focusInfo: 'Left → Root → Right',
+      },
+      explanation: `In-order traversal visits ${node.val}: left subtree, current node, then right subtree.`,
+      aiHint: 'For a BST, in-order traversal produces sorted values.'
+    });
+  }
+
+  const bfs = [0, 1, 2, 3, 4, 5, 6];
+  const queue = [];
+  for (let index = 0; index < bfs.length; index++) {
+    const id = bfs[index];
+    queue.push(id);
+    const node = nodes[id];
+    const order = queue.map((x) => nodes[x].val);
+    steps.push({
+      stepNumber: step++,
+      lineNumber: 13,
+      eventType: 'TREE_BFS_VISIT',
+      variables: { currentNode: node.val, queue: order },
+      output: [`BFS / Level-Order Visit: ${node.val}`],
+      dataStructureState: {
+        type: 'tree',
+        nodes,
+        activeIndex: id,
+        queue: order,
+        traversal: { mode: 'BFS', order },
+        label: `Level-Order BFS → ${node.val}`,
+        focusInfo: 'FIFO queue visits nodes level by level',
+      },
+      explanation: `Level-order traversal visits ${node.val} using a FIFO queue.`,
+      aiHint: 'BFS uses a FIFO queue and runs in O(n).'
+    });
+  }
+  return steps;
+}
+
+/**
+ * Topic-specific Longest Common Subsequence DP Trace
+ */
+export function generateDynamicLcsTrace(language = 'java') {
+  const a = 'abcde';
+  const b = 'ace';
+  const rows = a.length + 1;
+  const cols = b.length + 1;
+  const dp = Array.from({ length: rows }, () => Array(cols).fill(0));
+  const steps = [];
+  let step = 1;
+
+  steps.push({
+    stepNumber: step++,
+    lineNumber: 3,
+    eventType: 'LCS_INIT',
+    variables: { a, b },
+    output: [],
+    dataStructureState: {
+      type: 'dp',
+      matrix: dp.map((row) => [...row]),
+      pointers: { activeRow: 0, activeCol: 0 },
+      label: 'LCS DP Table Initialized',
+      focusInfo: `Rows = "${a}", Columns = "${b}"`,
+    },
+    explanation: 'LCS uses a 2D DP table for prefixes of both strings.',
+    aiHint: 'If characters match, use diagonal + 1; otherwise take max(top, left).'
+  });
+
+  for (let i = 1; i < rows; i++) {
+    for (let j = 1; j < cols; j++) {
+      const match = a[i - 1] === b[j - 1];
+      dp[i][j] = match ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+
+      steps.push({
+        stepNumber: step++,
+        lineNumber: 7,
+        eventType: 'LCS_DP_UPDATE',
+        variables: { row: i, col: j, charA: a[i - 1], charB: b[j - 1], value: dp[i][j] },
+        output: [],
+        dataStructureState: {
+          type: 'dp',
+          matrix: dp.map((row) => [...row]),
+          pointers: { activeRow: i, activeCol: j },
+          label: `dp[${i}][${j}] = ${dp[i][j]}`,
+          focusInfo: match ? `Match "${a[i - 1]}" → diagonal + 1` : 'Mismatch → max(top, left)',
+        },
+        explanation: match
+          ? `Characters match (${a[i - 1]}), so diagonal DP state is extended.`
+          : 'Characters differ, so the larger of the top and left states is kept.',
+        aiHint: 'The table builds optimal answers from smaller prefixes.'
+      });
+    }
+  }
+
+  steps.push({
+    stepNumber: step,
+    lineNumber: 12,
+    eventType: 'PROGRAM_END',
+    variables: { lcsLength: dp[rows - 1][cols - 1] },
+    output: [`LCS length = ${dp[rows - 1][cols - 1]}`],
+    dataStructureState: {
+      type: 'dp',
+      matrix: dp.map((row) => [...row]),
+      pointers: { activeRow: rows - 1, activeCol: cols - 1 },
+      label: `LCS Complete: length = ${dp[rows - 1][cols - 1]}`,
+      focusInfo: 'Final cell contains the optimal subsequence length',
+    },
+    explanation: `The final DP cell gives the LCS length of ${dp[rows - 1][cols - 1]}.`,
+    aiHint: 'Time O(nm), space O(nm) for the full DP table.'
+  });
+
+  return steps;
+}
+
 function generateDynamicGraphTrace(values = [0, 1, 2, 3, 4], language = 'java') {
   const order = [0, 1, 2, 3, 4];
   const steps = [];
@@ -7949,6 +8155,18 @@ function generateCatalogProblemTrace({ id = '', title = '', archetype = '', inpu
   // Exact/near-exact algorithm families with dedicated trace generators.
   // Exact topic IDs must be resolved before broad title matching.
   if (id === 'quick-sort') return generateDynamicQuickSortTrace(arr, language);
+  if (id === 'two-pointer-reverse') return generateDynamicTwoPointerReverseTrace(arr, language);
+  if (id === 'sliding-window') return generateDynamicSlidingWindowTrace(arr, language);
+  if (id === 'hash-table') return generateDynamicHashTableTrace(arr, language);
+  if (id === 'avl-tree') return generateDynamicAvlTrace(language);
+  if (id === 'parentheses-stack') return generateDynamicValidParenthesesTrace(input || '()[]{}', language);
+  if (id === 'sudoku-solver') return generateDynamicSudokuTrace(language);
+  if (id === 'graph-bfs') return generateDynamicGraphTraversalTrace('BFS', language);
+  if (id === 'graph-dfs') return generateDynamicGraphTraversalTrace('DFS', language);
+  if (id === 'doubly-linked-list') return generateDynamicDoublyLinkedListTrace(arr, language);
+  if (id === 'circular-linked-list') return generateDynamicCircularLinkedListTrace(arr, language);
+  if (id === 'tree-traversals') return generateDynamicTreeTraversalTrace(language);
+  if (id === 'lcs') return generateDynamicLcsTrace(language);
   if (id === 'two-pointer-reverse') return generateDynamicTwoPointerReverseTrace(arr, language);
   if (id === 'sliding-window') return generateDynamicSlidingWindowTrace(arr, language);
   if (id === 'hash-table') return generateDynamicHashTableTrace(arr, language);
