@@ -8145,7 +8145,7 @@ export function generateDynamicUniversalTrace(code, values, lang = 'code', custo
  * This prevents broad archetype fallbacks (e.g. every two-pointer problem
  * becoming the same generic array animation).
  */
-function generateCatalogProblemTrace({ id = '', title = '', archetype = '', input = null, language = 'java' }) {
+function generateCatalogProblemTrace({ id = '', title = '', archetype = '', input = null, code = '', language = 'java' }) {
   const t = String(title).toLowerCase();
   const a = String(archetype).toLowerCase().replace(/_/g, '-');
   const values = extractNumbersFromCode(input);
@@ -8250,7 +8250,7 @@ function generateCatalogProblemTrace({ id = '', title = '', archetype = '', inpu
   if (t.includes('power set') || t.includes('bitmask')) return generateDynamicRecursionTrace([4], language);
 
   // Exact topic ids that are not descriptive enough on their own.
-  if (id === 'student-result') return generateDynamicUniversalTrace(String(input || ''), values, language, input);
+  if (id === 'student-result') return generateDynamicUniversalTrace(code || String(input || ''), values, language, input);
   if (id === 'array-loop') return generateDynamicArrayTrace(arr, language);
   if (id === 'matrix') return generateDynamicMatrixTrace(arr, language);
   if (id.includes('linked-list')) return generateDynamicLinkedListTrace(arr, language);
@@ -8305,6 +8305,7 @@ export function getExecutionTrace(code, language = 'java', customInput = null, e
           title,
           archetype,
           input: customInput || values.join(', '),
+          code,
           language,
         });
       })()
@@ -8316,6 +8317,7 @@ export function getExecutionTrace(code, language = 'java', customInput = null, e
             title,
             archetype: id || category,
             input: customInput || values.join(', '),
+            code,
             language,
           });
         })()
