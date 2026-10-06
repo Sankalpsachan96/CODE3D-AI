@@ -3794,7 +3794,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { root: 'ROOT', totalWords: 0 },
     output: ['Trie (Prefix Tree) root initialized.'],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: [trieNodes[0]],
       activeIndex: 0,
@@ -3813,7 +3813,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { word: 'cat', path: 'ROOT → c → a → t', isEndOfWord: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: [trieNodes[0], trieNodes[1], trieNodes[3], trieNodes[4]],
       activeIndex: 4,
@@ -3832,7 +3832,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { word: 'car', sharedPrefix: 'ca', path: 'ROOT → c → a → r', isEndOfWord: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: [trieNodes[0], trieNodes[1], trieNodes[3], trieNodes[4], trieNodes[5]],
       activeIndex: 5,
@@ -3851,7 +3851,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { word: 'cart', path: 'ROOT → c → a → r → t', isEndOfWord: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: [trieNodes[0], trieNodes[1], trieNodes[3], trieNodes[4], trieNodes[5], trieNodes[6]],
       activeIndex: 6,
@@ -3870,7 +3870,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { word: 'dog', path: 'ROOT → d → o → g', isEndOfWord: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: trieNodes,
       activeIndex: 8,
@@ -3889,7 +3889,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { query: 'car', result: true, finalNode: 'r', isEnd: true },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: trieNodes,
       activeIndex: 5,
@@ -3908,7 +3908,7 @@ export function generateDynamicTrieTrace(wordsInput, lang = 'java') {
     variables: { query: 'can', result: false, stoppedAt: 'a', missingChar: 'n' },
     output: [...output],
     dataStructureState: {
-      type: 'tree',
+      type: 'trie',
       name: 'trie',
       nodes: trieNodes,
       activeIndex: 3,
@@ -7386,19 +7386,36 @@ function _computeExecutionTrace(code, cleanCode, values, language, customInput, 
     
     
     
+    // Prefer the dedicated rich trace generators before falling back to
+    // broad data-structure traces. This is what makes the 49 curriculum
+    // algorithms and 182 Striver problems render their actual algorithm
+    // state instead of sharing one generic array/tree trace.
+    if (arch.includes('trie')) return generateDynamicTrieTrace([], language);
+    if (arch.includes('lru')) return generateDynamicLruCacheTrace(values, language);
+    if (arch.includes('dijkstra')) return generateDynamicDijkstraTrace(values, language);
+    if (arch.includes('topological')) return generateDynamicTopologicalSortTrace(values, language);
+    if (arch.includes('dsu') || arch.includes('disjoint-set')) return generateDynamicDsuTrace(values, language);
+    if (arch.includes('monotonic-stack')) return generateDynamicMonotonicStackTrace(values, language);
+    if (arch.includes('trapping-water')) return generateDynamicTrappingWaterTrace(values, language);
+    if (arch.includes('container-water')) return generateDynamicContainerWaterTrace(values, language);
+    if (arch.includes('sliding-window-max')) return generateDynamicSlidingWindowMaxTrace(values, language);
+    if (arch.includes('knapsack')) return generateDynamicKnapsackTrace(language);
+    if (arch.includes('coin-change')) return generateDynamicCoinChangeTrace(values, language);
+    if (arch.includes('lis')) return generateDynamicLisTrace(values, language);
+    if (arch.includes('kadane')) return generateDynamicKadaneTrace(values, language);
     if (arch.includes('binary-search')) return generateDynamicBinarySearchTrace(values.length >= 2 ? values : undefined, language);
-    if (arch.includes('search') || arch.includes('array') || arch.includes('two-pointer') || arch.includes('sliding-window')) return generateDynamicArrayTrace(values.length >= 2 ? values : [10, 20, 30, 40], language);
     if (arch.includes('matrix') || arch.includes('grid')) return generateDynamicMatrixTrace(values.length >= 2 ? values : undefined, language);
     if (arch.includes('linked-list') || arch.includes('linkedlist') || arch.includes('cycle')) return generateDynamicLinkedListTrace(values.length >= 2 ? values : [10, 20, 30, 40], language);
     if (arch.includes('stack') || arch.includes('parentheses')) return generateDynamicStackTrace(values.length >= 2 ? values : [10, 20, 30], language);
     if (arch.includes('queue') || arch.includes('deque')) return generateDynamicQueueTrace(values.length >= 2 ? values : [10, 20, 30], language);
-    if (arch.includes('tree') || arch.includes('bst') || arch.includes('avl') || arch.includes('trie')) return generateDynamicTreeTrace(values.length >= 3 ? values : [50, 30, 70, 20, 40], language);
-    if (arch.includes('graph') || arch.includes('topological') || arch.includes('dsu')) return generateDynamicGraphTrace(values.length >= 3 ? values : [0, 1, 2, 3, 4], language);
+    if (arch.includes('tree') || arch.includes('bst') || arch.includes('avl')) return generateDynamicTreeTrace(values.length >= 3 ? values : [50, 30, 70, 20, 40], language);
+    if (arch.includes('graph')) return generateDynamicGraphTrace(values.length >= 3 ? values : [0, 1, 2, 3, 4], language);
     if (arch.includes('heap')) return generateDynamicHeapTrace(values.length >= 3 ? values : [10, 15, 20, 17, 25], language);
     if (arch.includes('hash') || arch.includes('map') || arch.includes('two-sum')) return generateDynamicTwoSumTrace(values.length >= 2 ? values : [2, 7, 11, 15], 9, language);
     if (arch.includes('dp') || arch.includes('dynamic-programming')) return generateDynamicDpTrace(values.length >= 3 ? values : [1, 2, 3, 5, 8], language);
     if (arch.includes('recursion') || arch.includes('backtracking')) return generateDynamicRecursionTrace(values.length ? [Math.max(1, Math.min(7, Math.abs(values[0])))] : [4], language);
     if (arch.includes('sort')) return generateDynamicSortTrace(values.length >= 2 ? values : [45, 12, 89, 23, 7], language);
+    if (arch.includes('search') || arch.includes('array') || arch.includes('two-pointer') || arch.includes('sliding-window')) return generateDynamicArrayTrace(values.length >= 2 ? values : [10, 20, 30, 40], language);
   }
 
   // 00. Procedural / Scanner / Student Result / Variable Execution
