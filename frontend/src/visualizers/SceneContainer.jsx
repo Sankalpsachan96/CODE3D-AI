@@ -253,13 +253,16 @@ function CameraPresetHandler({ preset, onApplied, controlsRef }) {
  * - position camera smoothly without clipping
  * - update OrbitControls limits
  */
-function DynamicBoundingCamera({ count = 4, controlsRef }) {
+function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default' }) {
   const { camera, size } = useThree();
-  const prevCountRef = useRef(null);
+  const prevSceneKeyRef = useRef(null);
 
   useEffect(() => {
-    if (count === prevCountRef.current) return;
-    prevCountRef.current = count;
+    // Fit once when a new problem/algorithm is selected. Do NOT refit when
+    // execution advances from one step to another; that was causing the
+    // viewport to jump/zoom every time the data structure changed.
+    if (sceneKey === prevSceneKeyRef.current) return;
+    prevSceneKeyRef.current = sceneKey;
 
     const n = Math.max(1, count || 4);
     const spacing = n > 25 ? 1.6 : 2.1;
@@ -303,6 +306,7 @@ export default function SceneContainer({
   isFull3DView = false,
   onToggleFull3D,
   onSelectElement = null,
+  sceneKey = 'default',
 }) {
   const { isBright } = useTheme();
   const [cameraPreset, setCameraPreset] = useState(null);
@@ -659,6 +663,7 @@ export default function SceneContainer({
             <DynamicBoundingCamera
               count={elementCount}
               controlsRef={controlsRef}
+              sceneKey={sceneKey}
             />
 
             <Center top position={[0, -0.3, 0]}>
