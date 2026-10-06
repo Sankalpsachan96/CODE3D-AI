@@ -59,10 +59,14 @@ function runProcess(command, args, options = {}) {
     let timedOut = false;
     let outputLimitExceeded = false;
 
+    const timeoutMs = Number.isFinite(options.timeoutMs)
+      ? options.timeoutMs
+      : TIME_LIMIT;
+
     const timer = setTimeout(() => {
       timedOut = true;
       child.kill();
-    }, TIME_LIMIT);
+    }, timeoutMs);
 
     child.stdout.on("data", (data) => {
       stdout += data.toString();
@@ -155,6 +159,7 @@ async function executeCpp(code, input = "") {
       ],
       {
         cwd: tempDirectory,
+        timeoutMs: 15000,
       }
     );
 
@@ -163,9 +168,9 @@ async function executeCpp(code, input = "") {
         success: false,
         stage: "compile",
         output: "",
-        error:
-          compileResult.stderr ||
-          "C++ compilation failed.",
+        error: compileResult.timedOut
+          ? "C++ compilation timed out. The backend is under heavy load; please try again."
+          : compileResult.stderr || "C++ compilation failed.",
         executionTime: null,
       };
     }
@@ -281,6 +286,7 @@ async function executeC(code, input = "") {
       ],
       {
         cwd: tempDirectory,
+        timeoutMs: 15000,
       }
     );
 
@@ -289,9 +295,9 @@ async function executeC(code, input = "") {
         success: false,
         stage: "compile",
         output: "",
-        error:
-          compileResult.stderr ||
-          "C compilation failed.",
+        error: compileResult.timedOut
+          ? "C compilation timed out. The backend is under heavy load; please try again."
+          : compileResult.stderr || "C compilation failed.",
         executionTime: null,
       };
     }
@@ -508,6 +514,7 @@ async function executeJava(code, input = "") {
       [sourceFile],
       {
         cwd: tempDirectory,
+        timeoutMs: 15000,
       }
     );
 
@@ -516,9 +523,9 @@ async function executeJava(code, input = "") {
         success: false,
         stage: "compile",
         output: "",
-        error:
-          compileResult.stderr ||
-          "Java compilation failed.",
+        error: compileResult.timedOut
+          ? "Java compilation timed out. The backend is under heavy load; please try again."
+          : compileResult.stderr || "Java compilation failed.",
         executionTime: null,
       };
     }
