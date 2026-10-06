@@ -850,7 +850,7 @@ export default function CodeEditor({
 
 
 
-          {onResetCode && (
+          {!readOnly && onResetCode && (
 
             <button
 
