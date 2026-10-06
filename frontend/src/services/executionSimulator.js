@@ -2609,7 +2609,7 @@ export function generateDynamicAvlTrace(language = 'java') {
 
   steps.push({
     stepNumber: 1,
-    lineNumber: 4,
+    lineNumber: 46,
     eventType: 'AVL_INSERT',
     variables: { inserted: 30, balanceFactor: 0 },
     output: ['Insert 30 as root'],
@@ -2627,7 +2627,7 @@ export function generateDynamicAvlTrace(language = 'java') {
 
   steps.push({
     stepNumber: 2,
-    lineNumber: 5,
+    lineNumber: 47,
     eventType: 'AVL_INSERT',
     variables: { inserted: 20, balanceFactor: 1 },
     output: ['Insert 20 → left child of 30'],
@@ -2645,7 +2645,7 @@ export function generateDynamicAvlTrace(language = 'java') {
 
   steps.push({
     stepNumber: 3,
-    lineNumber: 6,
+    lineNumber: 48,
     eventType: 'AVL_IMBALANCE',
     variables: { inserted: 10, balanceFactor: 2, rotation: 'RIGHT' },
     output: ['Insert 10 → BF(30) = +2 → LL case → Right Rotation'],
@@ -2663,7 +2663,7 @@ export function generateDynamicAvlTrace(language = 'java') {
 
   steps.push({
     stepNumber: 4,
-    lineNumber: 8,
+    lineNumber: 49,
     eventType: 'AVL_ROTATION',
     variables: { rotation: 'RIGHT', oldRoot: 30, newRoot: 20 },
     output: ['Right Rotation complete: root = 20'],
