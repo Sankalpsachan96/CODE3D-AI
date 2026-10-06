@@ -2331,7 +2331,6 @@ export function generateDynamicArrayCreationTrace(code, values = [5, 2, 8, 1], l
 /**
  * Dynamic 3D Graph Generator
  */
-export 
 /**
  * Topic-specific Two-Pointer Reverse Trace
  */
@@ -3114,7 +3113,7 @@ export function generateDynamicLcsTrace(language = 'java') {
   return steps;
 }
 
-function generateDynamicGraphTrace(values = [0, 1, 2, 3, 4], language = 'java') {
+export function generateDynamicGraphTrace(values = [0, 1, 2, 3, 4], language = 'java') {
   const order = [0, 1, 2, 3, 4];
   const steps = [];
 
