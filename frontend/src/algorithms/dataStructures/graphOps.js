@@ -27,7 +27,7 @@ export const graphOpsDetails = {
     'Adjacency matrices consume O(V²) space for sparse graphs.'
   ],
   code: {
-    java: `public class GraphBFS {
+    java: `public class GraphTraversal {
     public static void bfs(List<List<Integer>> adj, int start) {
         boolean[] visited = new boolean[adj.size()];
         Queue<Integer> q = new LinkedList<>();
@@ -44,18 +44,43 @@ export const graphOpsDetails = {
             }
         }
     }
-}`,
+
+    public static void dfs(List<List<Integer>> adj, int start) {
+        boolean[] visited = new boolean[adj.size()];
+        dfsVisit(adj, start, visited);
+    }
+
+    private static void dfsVisit(List<List<Integer>> adj, int node, boolean[] visited) {
+        visited[node] = true;
+        System.out.print(node + " ");
+        for (int neighbor : adj.get(node)) {
+            if (!visited[neighbor]) dfsVisit(adj, neighbor, visited);
+        }
+    }
+}` ,
     python: `from collections import deque
 
 def bfs(adj, start):
-    visited = set([start])
+    visited = {start}
     q = deque([start])
     while q:
         node = q.popleft()
         for neighbor in adj[node]:
             if neighbor not in visited:
                 visited.add(neighbor)
-                q.append(neighbor)`,
+                q.append(neighbor)
+
+def dfs(adj, start):
+    visited = set()
+
+    def visit(node):
+        visited.add(node)
+        for neighbor in adj[node]:
+            if neighbor not in visited:
+                visit(neighbor)
+
+    visit(start)
+    return visited` ,
     cpp: `void bfs(const vector<vector<int>>& adj, int start) {
     vector<bool> visited(adj.size(), false);
     queue<int> q;
@@ -70,7 +95,14 @@ def bfs(adj, start):
             }
         }
     }
-}`,
+}
+
+void dfs(const vector<vector<int>>& adj, int u, vector<bool>& visited) {
+    visited[u] = true;
+    for (int v : adj[u]) {
+        if (!visited[v]) dfs(adj, v, visited);
+    }
+}` ,
     javascript: `function bfs(adj, start) {
     const visited = new Set([start]);
     const q = [start];
@@ -83,9 +115,17 @@ def bfs(adj, start):
             }
         }
     }
+    return visited;
+}
+
+function dfs(adj, start, visited = new Set()) {
+    visited.add(start);
+    for (const neighbor of adj[start]) {
+        if (!visited.has(neighbor)) dfs(adj, neighbor, visited);
+    }
+    return visited;
 }`
-  }
-};
+  }};
 
 export function generateGraphSteps(numNodes = 5) {
   const count = Math.max(3, Math.min(5, Number(numNodes) || 5));
