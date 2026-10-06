@@ -308,6 +308,34 @@ export async function getMe(req, res) {
     return res.status(401).json({ success: false, message: 'Not authenticated.' });
   }
 
+  // Never restore the retired demo account into a real browser session.
+  if (isLegacyDemoAccount(req.user)) {
+    const sessionToken = req.sessionToken || req.cookies?.[COOKIE_NAME];
+
+    if (sessionToken) {
+      if (isDbOnline()) {
+        const prisma = getPrisma();
+        await prisma.session.deleteMany({ where: { sessionToken } });
+      } else {
+        memorySessions.delete(sessionToken);
+      }
+    }
+
+    if (isDbOnline() && req.user.id) {
+      const prisma = getPrisma();
+      await prisma.user.delete({ where: { id: req.user.id } }).catch(() => {});
+    } else if (req.user.id) {
+      memoryUsers.delete(req.user.id);
+    }
+
+    res.clearCookie(COOKIE_NAME, { path: '/' });
+    return res.status(401).json({
+      success: false,
+      error: 'LEGACY_ACCOUNT_REMOVED',
+      message: 'This legacy demo account has been removed. Please sign in with your own account.',
+    });
+  }
+
   return res.json({
     success: true,
     user: req.user,
