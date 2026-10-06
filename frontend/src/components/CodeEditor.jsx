@@ -563,6 +563,7 @@ export default function CodeEditor({
 
 
 
+          {!readOnly && (
           <div ref={languageMenuRef} className="relative shrink-0">
 
             <button
@@ -689,8 +690,7 @@ export default function CodeEditor({
 
             )}
 
-          </div>
-
+          )}
 
 
           <span className={`hidden lg:inline-block text-[10px] px-2 py-1 rounded-lg font-mono ${
@@ -881,6 +881,7 @@ export default function CodeEditor({
 
         </div>
 
+        {!readOnly && (
         <button
           type="button"
 
@@ -930,7 +931,8 @@ export default function CodeEditor({
 
           )}
 
-        </button>
+        </button>        )}
+
 
       </div>
 
