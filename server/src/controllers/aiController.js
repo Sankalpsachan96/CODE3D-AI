@@ -17,6 +17,7 @@ export async function explainContext(req, res) {
       question = '',
       history = [],
       requestedLanguage = null,
+      questionCount = 10,
     } = req.body || {};
 
     const response = await askCodeTutor({
@@ -33,6 +34,7 @@ export async function explainContext(req, res) {
       question,
       history,
       requestedLanguage,
+      questionCount,
     });
 
     return res.json({
