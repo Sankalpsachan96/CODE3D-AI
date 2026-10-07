@@ -13,6 +13,7 @@
     "@monaco-editor/react": "^4.6.0",
     "@react-three/drei": "^9.99.0",
     "@react-three/fiber": "^8.15.16",
+    "@vercel/analytics": "^2.0.1",
     "lucide-react": "^0.354.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

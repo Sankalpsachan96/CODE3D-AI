@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import HomeDashboard from './pages/HomeDashboard';
@@ -94,5 +95,16 @@ function MainAppContent() {
 }
 
 export default function App() {
-  return <AppErrorBoundary><ThemeProvider><AuthProvider><HashRouter><MainAppContent /></HashRouter></AuthProvider></ThemeProvider></AppErrorBoundary>;
+  return (
+    <AppErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <HashRouter>
+            <MainAppContent />
+            <Analytics />
+          </HashRouter>
+        </AuthProvider>
+      </ThemeProvider>
+    </AppErrorBoundary>
+  );
 }
