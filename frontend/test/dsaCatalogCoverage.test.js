@@ -32,6 +32,32 @@ test('all 182 Striver problems produce a registered visualization trace', () => 
   }
 });
 
+test('Striver 130-182 traces are hardened and remain visualizer-safe', () => {
+  const allowed = new Set([
+    'array', 'sorting', 'searching', 'two-pointer', 'sliding-window', 'linked-list',
+    'stack', 'queue', 'tree', 'bst', 'heap', 'graph', 'topological-sort', 'dijkstra',
+    'hash-table', 'matrix', 'dp', 'trapping-rain-water', 'monotonic-stack',
+    'container-water', 'lis', 'recursion', 'trie'
+  ]);
+
+  for (const problem of STRIVER_PROBLEMS.filter((item) => item.id >= 130 && item.id <= 182)) {
+    const selector = `striver|${problem.id}|${problem.title.replace(/\|/g, '/')}|${problem.archetype}`;
+    const trace = getExecutionTrace(
+      problem.javaCode || '',
+      'java',
+      problem.defaultInput || '',
+      selector
+    );
+
+    assertWorkingTrace(trace, `Striver #${problem.id} ${problem.shortTitle}`);
+    for (const step of trace) {
+      const type = String(step.dataStructureState.type).toLowerCase().replace(/_/g, '-');
+      assert.ok(allowed.has(type), `Striver #${problem.id}: unsafe visualizer type "${type}"`);
+      assert.ok(step.dataStructureState.values !== undefined, `Striver #${problem.id}: missing values`);
+    }
+  }
+});
+
 test('all 49 DSA curriculum programs produce a registered visualization trace', () => {
   assert.equal(SAMPLE_PROGRAMS.length, 49);
   for (const program of SAMPLE_PROGRAMS) {
