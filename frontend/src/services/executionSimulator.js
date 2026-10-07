@@ -8417,6 +8417,129 @@ export function alignTraceLinesWithSource(code, steps, language = 'java') {
   });
 }
 
+function hardenStriver130to182Trace(steps, id, archetype, values = []) {
+  const problemId = Number(id);
+  if (!Number.isInteger(problemId) || problemId < 130 || problemId > 182) {
+    return steps;
+  }
+
+  const arch = String(archetype || '').toLowerCase().replace(/_/g, '-');
+  let fallbackType = 'array';
+  if (arch.includes('bst') || arch.includes('tree')) fallbackType = 'tree';
+  else if (arch.includes('heap')) fallbackType = 'heap';
+  else if (arch.includes('graph') || arch.includes('topological') || arch.includes('dijkstra')) fallbackType = 'graph';
+  else if (arch.includes('matrix') || arch.includes('grid')) fallbackType = 'matrix';
+  else if (arch.includes('trie')) fallbackType = 'trie';
+  else if (arch.includes('dp') || arch.includes('lis')) fallbackType = 'dp';
+  else if (arch.includes('stack')) fallbackType = 'stack';
+  else if (arch.includes('queue')) fallbackType = 'queue';
+  else if (arch.includes('recursion')) fallbackType = 'recursion';
+  else if (arch.includes('hash')) fallbackType = 'hash-table';
+  else if (arch.includes('sort') || arch.includes('search') || arch.includes('two-pointer') || arch.includes('sliding-window')) fallbackType = 'array';
+
+  const safeValues = Array.isArray(values) && values.length
+    ? values.filter(Number.isFinite).slice(0, 20)
+    : [7, 2, 5, 1, 9];
+
+  const fallbackState = () => {
+    if (fallbackType === 'matrix' || fallbackType === 'dp') {
+      return {
+        type: fallbackType,
+        values: fallbackType === 'matrix' ? [[1, 2, 3], [4, 5, 6], [7, 8, 9]] : safeValues,
+        activeIndex: 0,
+        label: 'Execution ready',
+        focusInfo: 'Safe fallback trace for this Striver problem.',
+      };
+    }
+    if (fallbackType === 'tree') {
+      return {
+        type: 'tree',
+        values: [50, 30, 70, 20, 40, 60, 80],
+        activeIndex: 0,
+        label: 'Tree execution ready',
+        focusInfo: 'Safe fallback tree state.',
+      };
+    }
+    if (fallbackType === 'heap') {
+      const heap = [...safeValues].sort((a, b) => a - b).slice(0, 12);
+      return {
+        type: 'heap',
+        values: heap.length ? heap : [10, 15, 20, 17, 25],
+        activeIndex: 0,
+        label: 'Heap execution ready',
+        focusInfo: 'Safe fallback heap state.',
+      };
+    }
+    if (fallbackType === 'trie') {
+      return {
+        type: 'trie',
+        values: ['C', 'O', 'D', 'E'],
+        activeIndex: 0,
+        label: 'Trie execution ready',
+        focusInfo: 'Safe fallback trie state.',
+      };
+    }
+    if (fallbackType === 'graph') {
+      return {
+        type: 'graph',
+        values: [0, 1, 2, 3, 4],
+        activeIndex: 0,
+        label: 'Graph execution ready',
+        focusInfo: 'Safe fallback graph state.',
+      };
+    }
+    return {
+      type: fallbackType,
+      values: safeValues,
+      activeIndex: safeValues.length ? 0 : null,
+      label: 'Execution ready',
+      focusInfo: 'Safe fallback trace for this Striver problem.',
+    };
+  };
+
+  const source = Array.isArray(steps) && steps.length ? steps : [{
+    stepNumber: 1,
+    lineNumber: 1,
+    algorithm: `Striver #${problemId}`,
+    eventType: 'EXECUTION_STEP',
+    variables: {},
+    output: [],
+    dataStructureState: fallbackState(),
+    explanation: 'Safe fallback execution state.',
+    aiHint: 'Safe fallback execution state.',
+  }];
+
+  return source.map((step, index) => {
+    const state = step?.dataStructureState && typeof step.dataStructureState === 'object'
+      ? { ...step.dataStructureState }
+      : fallbackState();
+
+    if (!state.type) state.type = fallbackType;
+
+    // Never allow malformed values to reach a 3D visualizer.
+    if (state.type === 'matrix') {
+      state.values = Array.isArray(state.values) && state.values.every(Array.isArray)
+        ? state.values
+        : [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
+    } else if (!Array.isArray(state.values)) {
+      state.values = safeValues;
+    }
+
+    if (Number.isFinite(state.activeIndex)) {
+      state.activeIndex = Math.max(0, Math.floor(state.activeIndex));
+    } else {
+      state.activeIndex = null;
+    }
+
+    return {
+      ...step,
+      stepNumber: Number.isInteger(step?.stepNumber) ? step.stepNumber : index + 1,
+      lineNumber: Number.isInteger(step?.lineNumber) && step.lineNumber > 0 ? step.lineNumber : 1,
+      dataStructureState: state,
+    };
+  });
+}
+
 export function getExecutionTrace(code, language = 'java', customInput = null, explicitArchetype = null) {
   if (!code || typeof code !== 'string') {
     return ARRAY_LOOP_EXECUTION_TRACE;
@@ -8451,7 +8574,12 @@ export function getExecutionTrace(code, language = 'java', customInput = null, e
           });
         })()
       : _computeExecutionTrace(code, cleanCode, values, language, customInput, explicitArchetype);
-  const alignedSteps = alignTraceLinesWithSource(code, rawSteps, language);
+  const hardenedSteps = (() => {
+    if (!String(explicitArchetype || '').startsWith('striver|')) return rawSteps;
+    const [, id, , archetype] = String(explicitArchetype).split('|');
+    return hardenStriver130to182Trace(rawSteps, id, archetype, values);
+  })();
+  const alignedSteps = alignTraceLinesWithSource(code, hardenedSteps, language);
   return ensureTraceOutputs(alignedSteps, values, code);
 }
 
