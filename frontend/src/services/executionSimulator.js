@@ -8514,7 +8514,18 @@ function hardenStriver130to182Trace(steps, id, archetype, values = []) {
       ? { ...step.dataStructureState }
       : fallbackState();
 
-    if (!state.type) state.type = fallbackType;
+    const registeredTypes = new Set([
+      'array', 'sorting', 'searching', 'two-pointer', 'sliding-window', 'linked-list',
+      'stack', 'queue', 'tree', 'bst', 'heap', 'graph', 'topological-sort', 'dijkstra',
+      'hash-table', 'matrix', 'dp', 'trapping-rain-water', 'monotonic-stack',
+      'container-water', 'lis', 'recursion', 'trie'
+    ]);
+    const normalizedType = String(state.type || '').toLowerCase().replace(/_/g, '-');
+    if (!registeredTypes.has(normalizedType)) {
+      Object.assign(state, fallbackState());
+    } else {
+      state.type = normalizedType;
+    }
 
     // Never allow malformed values to reach a 3D visualizer.
     if (state.type === 'matrix') {
