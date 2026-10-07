@@ -2872,7 +2872,7 @@ export const STRIVER_PROBLEMS = [
     "description": "Maximize value without exceeding weight capacity.",
     "defaultInput": "1, 2, 3, 10, 15, 40",
     "javaCode": "class Solution { public int knapsack(int W,int[]wt,int[]val){int[]dp=new int[W+1];for(int i=0;i<wt.length;i++)for(int w=W;w>=wt[i];w--)dp[w]=Math.max(dp[w],dp[w-wt[i]]+val[i]);return dp[W];} }",
-    "pythonCode": "class Solution:\n    # Striver SDE Sheet: 158. 0-1 Knapsack Problem (Medium)\n    # Time: O(n*W) | Space: O(W)\n    def 01KnapsackProblem(self, nums: list[int]) -> int:\n        # Maximize value without exceeding weight capacity.\n        return sum(nums)",
+    "pythonCode": "class Solution:\n    # Striver SDE Sheet: 158. 0-1 Knapsack Problem (Medium)\n    # Time: O(n*W) | Space: O(W)\n    def knapsack01Problem(self, nums: list[int]) -> int:\n        # Maximize value without exceeding weight capacity.\n        return sum(nums)",
     "cppCode": "class Solution {\npublic:\n    // Striver SDE Sheet: 158. 0-1 Knapsack Problem (Medium)\n    int 01KnapsackProblem(vector<int>& nums) {\n        int ans = 0;\n        for (int x : nums) ans += x;\n        return ans;\n    }\n};",
     "referenceSource": "canonical-reference"
   },
