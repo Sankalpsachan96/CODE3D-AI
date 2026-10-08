@@ -1,7 +1,7 @@
 import React from 'react';
 import './ComingSoonPage.css';
 
-const status = String(import.meta.env.VITE_PLATFORM_STATUS || 'LIVE').toUpperCase();
+const status = String(import.meta.env.VITE_PLATFORM_STATUS || 'COMING_SOON').toUpperCase();
 
 const isMaintenance = status === 'MAINTENANCE';
 
