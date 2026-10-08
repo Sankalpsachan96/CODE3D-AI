@@ -2133,8 +2133,6 @@ int prefix = sum(index);`,
               
               const v = VARIANT_DETAILS[selectedVariant];
 
-              const d = deep(selectedVariant);
-
               const deep = (name) => {
                 const detail = VARIANT_DETAILS[name] || ['', '', ''];
                 const [what, hinglish, where] = detail;
@@ -2216,6 +2214,8 @@ int prefix = sum(index);`,
                   mistakes: 'For ' + name + ', remember this defining rule: ' + what + ' Do not copy assumptions from a similar-looking structure.'
                 };
               };
+
+              const d = deep(selectedVariant);
               return (
                 <div className={`mt-4 p-5 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
                   <div className="flex items-start justify-between gap-4">
