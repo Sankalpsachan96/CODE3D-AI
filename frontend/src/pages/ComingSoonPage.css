@@ -78,8 +78,8 @@
 .cs-flow i { color:#6f7391;font-style:normal; }
 
 .cs-code-panel,.cs-tree-card,.cs-graph-card {
-  border:1px solid rgba(139,92,246,.35);background:linear-gradient(145deg,rgba(16,18,47,.84),rgba(4,7,22,.55));
-  box-shadow:0 24px 60px rgba(0,0,0,.32),0 0 35px rgba(93,64,177,.10);
+  border:1px solid rgba(139,92,246,.35);background:rgba(10,13,35,.82);
+  box-shadow:0 16px 35px rgba(0,0,0,.24);
   backdrop-filter:blur(13px);border-radius:20px;
 }
 .cs-code-panel { transform:perspective(1000px) rotateY(8deg) rotateX(-2deg);padding:13px;position:relative;overflow:hidden; }
@@ -91,17 +91,17 @@
 .cs-lang-badges { display:flex;gap:7px;flex-wrap:wrap;margin-top:15px;justify-content:center; }
 .cs-lang-badges b { padding:6px 9px;border-radius:8px;background:rgba(19,22,54,.78);border:1px solid rgba(148,163,184,.18);font-size:10px;color:#bfc6e0; }
 
-.cs-tree-card { padding:16px; transform:perspective(1000px) rotateY(-4deg); margin-left:15px; }
+.cs-tree-card { padding:16px; margin-left:15px; }
 .cs-tree-title,.cs-graph-title { font-size:10px;color:#9ea7c5;letter-spacing:1px; }
 .cs-tree-scene { height:205px;position:relative;margin-top:5px; }
 .cs-tree-node,.g {
   position:absolute;display:grid;place-items:center;border-radius:50%;font-size:12px;font-weight:800;
-  background:radial-gradient(circle at 32% 25%,#e9d5ff,#9333ea 42%,#172554 100%);
-  border:1px solid #c084fc;box-shadow:0 0 22px rgba(168,85,247,.48),inset -5px -7px 12px rgba(0,0,0,.38);
+  background:#7c3aed;
+  border:1px solid #c084fc;box-shadow:none;
 }
 .cs-tree-node { width:34px;height:34px; }
 .n1{left:47%;top:5%}.n2{left:23%;top:36%}.n3{left:70%;top:36%}.n4{left:9%;top:69%}.n5{left:35%;top:69%}.n6{left:74%;top:69%}
-.e,.ge { position:absolute;height:2px;transform-origin:left center;background:linear-gradient(90deg,#a855f7,#38bdf8);box-shadow:0 0 9px rgba(56,189,248,.55);opacity:.9; }
+.e,.ge { position:absolute;height:2px;transform-origin:left center;background:#7dd3fc;box-shadow:none;opacity:.9; }
 .e1{left:49%;top:17%;width:29%;transform:rotate(132deg)}
 .e2{left:51%;top:17%;width:28%;transform:rotate(48deg)}
 .e3{left:27%;top:48%;width:24%;transform:rotate(128deg)}
@@ -109,9 +109,9 @@
 .e5{left:76%;top:48%;width:18%;transform:rotate(55deg)}
 .cs-tree-caption { font-size:12px;text-align:center;color:#cbd2eb;margin-top:2px; }
 
-.cs-graph-card { margin-top:18px;padding:13px;transform:translateX(25px) rotateY(-3deg); }
+.cs-graph-card { margin-top:18px;padding:13px;transform:none; }
 .cs-graph-scene { height:105px;position:relative;margin-top:5px; }
-.g { width:29px;height:29px;font-size:10px;background:radial-gradient(circle at 35% 25%,#cffafe,#0891b2 48%,#172554);border-color:#67e8f9; }
+.g { width:29px;height:29px;font-size:10px;background:#0891b2;border-color:#67e8f9; }
 .g1{left:8%;top:42%}.g2{left:38%;top:8%}.g3{left:71%;top:45%}.g4{left:38%;top:73%}.g5{left:87%;top:10%}
 .ge1{left:13%;top:45%;width:31%;transform:rotate(-43deg)}
 .ge2{left:42%;top:22%;width:33%;transform:rotate(25deg)}
