@@ -2446,6 +2446,40 @@ int prefix = sum(index);`,
             })()}
           </DetailSection>
 
+          <DetailSection title="Individual Type Explanations" icon={<BookOpen size={16} />} isBright={isBright}>
+            <p className="mb-4 text-sm leading-6 text-slate-400">
+              First review the complete Types / Variants list above. Below, each type is explained separately so related types are not mixed into one explanation.
+            </p>
+            <div className="space-y-4">
+              {selected.types.map((type, index) => {
+                const details = VARIANT_DETAILS[type];
+                return (
+                  <article key={type} className={`rounded-xl border p-4 ${isBright ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/50 border-slate-800'}`}>
+                    <div className="flex items-start gap-3">
+                      <span className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs font-bold text-cyan-400">{index + 1}</span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-bold text-cyan-300">{type}</h3>
+                        {details?.length ? (
+                          <div className="mt-3 space-y-2">
+                            {details.map((detail, detailIndex) => (
+                              <p key={detailIndex} className="text-sm leading-6 text-slate-400">
+                                <span className="font-semibold text-slate-300">{details.length === 3 ? ['Explanation', 'Hinglish / practical meaning', 'Best use'][detailIndex] : ['Core idea', 'How it is represented / works', 'Complexity / key property', 'Important note'][detailIndex] || 'More details'}:</span> {detail}
+                              </p>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-2 text-sm leading-6 text-slate-400">
+                            {type} is a type or variant of {selected.title}. Use the core concept, operations and examples in this topic to understand how it works.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </DetailSection>
+
           {TOPIC_DEEP_DIVE[selected.id] && (
             <DetailSection title={TOPIC_DEEP_DIVE[selected.id].title} icon={<BookOpen size={16} />} isBright={isBright}>
               <div className="space-y-5">
