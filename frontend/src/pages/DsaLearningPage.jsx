@@ -361,6 +361,19 @@ const DSA_INTRO = {
     ['What should you learn first?', 'Start with complexity basics and simple linear structures, then move through searching/sorting, linked lists, stacks/queues, trees, BSTs, heaps, graphs, dynamic programming and string structures. Along the way, practice problems and dry runs turn theory into problem-solving skill.'],
     ['Why companies and interviews care about DSA', 'DSA questions test more than memorized syntax. They reveal how you break down a problem, choose a representation, analyze trade-offs and build a correct solution. These skills also matter in real engineering when software must handle larger workloads efficiently.']
   ]
+  hashing: {
+    concept: 'Hashing converts a key into a bucket/index using a hash function, making average lookup very fast.',
+    hinglish: 'Hashing ko locker system jaisa samjho: key ko hash function ek bucket deta hai, phir wahi se data quickly mil jata hai. Same bucket aaye to collision handle karni padti hai.',
+    why: 'Use hashing when fast average-case lookup or membership checking matters more than sorted order.',
+    working: ['Compute the hash of the key.', 'Map it to a bucket using table capacity.', 'Resolve collisions using chaining or probing.', 'Resize and rehash when the load factor becomes high.'],
+    example: 'A frequency map stores each value as a key and its count as the value.',
+    dryRun: ['Read 5 → count 1', 'Read 2 → count 1', 'Read 5 → count 2', 'Read 5 → count 3'],
+    code: 'unordered_map<int,int> freq;\nfor (int x : a) freq[x]++;',
+    mistakes: ['Assuming hashing is always O(1)', 'Ignoring collisions', 'Forgetting that hash maps are not automatically sorted'],
+    interview: ['How does a hash table work?', 'What is a collision?', 'Chaining vs open addressing?', 'What is load factor?'],
+    when: 'Use for frequency counts, membership checks, caching and fast key-based lookup.',
+    avoid: 'Avoid when sorted iteration or ordered predecessor/successor operations are required.'
+  },
 };
 
 const VARIANT_DETAILS = {
@@ -420,6 +433,12 @@ const VARIANT_DETAILS = {
   'Compressed Trie / Radix Tree': ['Trie variant that compresses chains with single children into longer edge labels.','Unnecessary one-child nodes hata kar memory aur traversal overhead reduce kiya ja sakta hai.','Best for: large string sets where memory matters.'],
   'Ternary Search Tree': ['String structure where each node stores a character and has lower, equal and higher links.','Trie aur BST ke ideas combine karta hai; alphabet-wide child array ki memory bach sakti hai.','Best for: dictionary/prefix workloads with memory constraints.'],
   'Prefix Hashing': ['Uses hashes of prefixes to compare or query strings efficiently.','Prefix information ko numeric hash me represent karke substring/prefix comparisons fast kiye ja sakte hain, with collision considerations.','Best for: string matching and fast equality checks.']
+  'Hash Table': ['A bucket-based key-value structure that uses hashing to locate entries quickly.','Key ko hash karke bucket milta hai, jisse average lookup fast hota hai.','Best for: fast key-value lookup and caching.'],
+  'Hash Map': ['A map implementation where keys are hashed rather than kept in sorted order.','Hash map me key se value quickly milti hai; sorted order guaranteed nahi hota.','Best for: frequency maps and fast lookup.'],
+  'Hash Set': ['A hash-based collection that stores unique keys.','Membership check fast hota hai aur duplicate values store nahi hoti.','Best for: duplicate detection and membership checks.'],
+  'Collision Handling': ['Techniques used when different keys map to the same bucket.','Do keys same bucket me aa sakti hain; chaining ya probing se collision handle karte hain.','Best for: understanding hash table internals.'],
+  'Frequency Map': ['A hash map from a value to the number of times it appears.','Har element ki counting store karne ka simple pattern hai.','Best for: frequency, anagram and duplicate problems.'],
+
 };
 
 function TopicCard({ topic, onOpen, isBright }) {
