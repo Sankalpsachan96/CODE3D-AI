@@ -333,7 +333,7 @@ const TOPIC_DEEP = {
     working: ['Preorder: root → left → right.', 'Inorder: left → root → right.', 'Postorder: left → right → root.', 'Level-order uses a queue and visits one depth at a time.'],
     example: 'For root 1 with children 2 and 3, preorder is 1,2,3; inorder is 2,1,3; postorder is 2,3,1.',
     dryRun: ['Visit root', 'Recursively process left subtree', 'Return to root/right according to traversal', 'Continue until every node is visited once'],
-    code: 'void inorder(Node* r){ if(!r) return; inorder(r->left); cout<<r->val; inorder(r->right); }',
+    code: 'void inorder(Node* r) {\n  if (!r) return;\n\n  inorder(r->left);\n  cout << r->val;\n  inorder(r->right);\n}',
     mistakes: ['Forgetting the null base case', 'Confusing traversal orders', 'Assuming every binary tree is a BST', 'Ignoring skewed-tree height'],
     interview: ['Height of tree', 'Level-order traversal', 'Diameter', 'Lowest common ancestor'],
     when: 'Use for hierarchical data, recursive decomposition, expression trees and tree-based algorithms.',
@@ -346,7 +346,7 @@ const TOPIC_DEEP = {
     working: ['Compare target with current node.', 'Smaller → left; larger → right; equal → found.', 'Insertion follows the same path.', 'Deletion handles leaf, one-child and two-child cases.'],
     example: 'Insert 8,3,10,1,6. Search 6: 6<8 → left; 6>3 → right; found.',
     dryRun: ['Root 8', '6 < 8 → node 3', '6 > 3 → node 6', '6 == 6 → found'],
-    code: 'bool search(Node* r,int x){ if(!r) return false; if(r->val==x) return true; return x<r->val ? search(r->left,x) : search(r->right,x); }',
+    code: 'bool search(Node* r, int x) {\n  if (!r) return false;\n\n  if (r->val == x) return true;\n\n  if (x < r->val) {\n    return search(r->left, x);\n  }\n\n  return search(r->right, x);\n}',
     mistakes: ['Assuming every BST is balanced', 'Breaking the ordering invariant during deletion', 'Ignoring duplicate-key policy'],
     interview: ['Validate a BST', 'Kth smallest', 'Lowest common ancestor', 'AVL vs Red-Black tree'],
     when: 'Use for ordered search, predecessor/successor and range-style queries when a suitable balanced implementation is available.',
@@ -437,7 +437,7 @@ const TOPIC_DEEP = {
     working: ['Define the candidates.','Choose a local priority rule.','Take the best valid candidate.','Prove the choice can belong to an optimal solution.'],
     example: 'Activity selection works by repeatedly choosing the activity that finishes earliest.',
     dryRun: ['Sort by finish time','Pick the first activity','Skip overlaps','Pick the next compatible activity','Continue'],
-    code: 'sort(a.begin(), a.end(), [](auto &x, auto &y){ return x.end < y.end; });',
+    code: 'sort(a.begin(), a.end(), [](auto &x, auto &y) {\n  return x.end < y.end;\n});',
     mistakes: ['Assuming every optimization problem is greedy','Skipping the correctness proof'],
     interview: ['Greedy vs DP?','What is an exchange argument?','Why does activity selection work?','Give a case where greedy fails.'],
     when: 'Use for scheduling, MST and other problems with a proven greedy property.',
@@ -463,7 +463,7 @@ const TOPIC_DEEP = {
     working: ['Start with each element as its own parent.','Find follows parents to the representative.','Path compression shortens future paths.','Union by rank/size keeps trees shallow.'],
     example: 'Union(1,2) and Union(2,3) makes 1, 2 and 3 part of the same component.',
     dryRun: ['1 and 2 separate','Union(1,2)','2 points toward 1','Union(2,3)','All three now share a representative'],
-    code: 'int find(int x){ return parent[x]==x ? x : parent[x]=find(parent[x]); }',
+    code: 'int find(int x) {\n  if (parent[x] == x) {\n    return x;\n  }\n\n  parent[x] = find(parent[x]);\n  return parent[x];\n}',
     mistakes: ['Skipping path compression','Not using rank/size','Using DSU where deletions are central'],
     interview: ['Why is DSU nearly O(1)?','Path compression vs union by rank?','How does Kruskal use DSU?'],
     when: 'Use for connectivity merging, Kruskal and undirected cycle detection.',
@@ -476,7 +476,7 @@ const TOPIC_DEEP = {
     working: ['Segment Tree stores aggregates for intervals.','Queries combine only relevant intervals.','Updates recompute affected ancestors.','Fenwick Tree uses binary-indexed jumps for prefix aggregates.'],
     example: 'For [2,4,6,8], after changing 6 to 10, a range query can use stored nodes instead of rescanning every value.',
     dryRun: ['Build structure','Update one index','Recompute affected nodes','Query a range','Combine O(log n) relevant pieces'],
-    code: 'void update(int i,int d){ for(;i<=n;i+=i&-i) bit[i]+=d; }',
+    code: 'void update(int i, int d) {\n  for (; i <= n; i += i & -i) {\n    bit[i] += d;\n  }\n}',
     mistakes: ['Mixing 0-based and 1-based Fenwick indexing','Forgetting lazy propagation','Using a tree when prefix sums are enough'],
     interview: ['Segment tree vs Fenwick tree?','Why is update O(log n)?','What is lazy propagation?','When are prefix sums enough?'],
     when: 'Use for dynamic range sums/min/max and repeated updates plus queries.',
@@ -1619,8 +1619,8 @@ update(node, left, right, index, value);`,
                   'Fenwick Tree / BIT': `add(index, delta);
 
 int prefix = sum(index);`,
-                  'Range Sum Query': `int rangeSum = prefixSum(r) - prefixSum(l - 1);`,
-                  'Range Minimum Query': `int answer = segmentTree.query(left, right);`
+                  'Range Sum Query': `int prefixRight = prefixSum(r);\nint prefixLeft = prefixSum(l - 1);\n\nint rangeSum = prefixRight - prefixLeft;`,
+                  'Range Minimum Query': `int answer = segmentTree.query(left, right);\n\ncout << answer;`
                 };
                 return examples[name] || `Start with a small example, trace the structure step by step, and observe how the state changes.`;
               };
