@@ -22,6 +22,30 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - run: npm install
+      - run: npm ci
       - run: npm test
       - run: npm run build
+
+  backend-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install language runtimes and sandbox tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap util-linux gcc g++ python3
+      - name: Install backend dependencies
+        working-directory: server
+        run: npm ci
+      - name: Run backend tests
+        working-directory: server
+        run: npm test
