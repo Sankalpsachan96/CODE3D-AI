@@ -1910,7 +1910,14 @@ return -1;`,
     if (a[mid] == target) {
         return mid;
     }
-}`,
+    if (a[mid] < target) {
+        lo = mid + 1;
+    } else {
+        hi = mid - 1;
+    }
+}
+
+return -1;`,
                   'Bubble Sort': `for (int pass = 0; pass < n - 1; pass++) {
     for (int i = 0; i < n - pass - 1; i++) {
         if (a[i] > a[i + 1]) {
@@ -2266,6 +2273,7 @@ int prefix = sum(index);`,
                 return examples[name] || `Start with a small example, trace the structure step by step, and observe how the state changes.`;
               };
               const complexityFor = (name) => {
+                if (name === 'Heap Sort') return 'O(n log n) worst-case time';
                 if (/Search|Sort/.test(name)) return name === 'Linear Search' ? 'O(n) worst case' : /Binary/.test(name) ? 'O(log n) on sorted/monotonic data' : /Merge/.test(name) ? 'O(n log n)' : /Quick/.test(name) ? 'O(n log n) average, O(n²) worst' : 'O(n²) typical for this elementary sort';
                 if (/Heap|Priority Queue/.test(name)) return 'Core heap operations are typically O(log n); top/peek is O(1).';
                 if (/Trie/.test(name) || /Prefix/.test(name)) return 'Typically O(L), where L is the key/prefix length, subject to implementation.';
