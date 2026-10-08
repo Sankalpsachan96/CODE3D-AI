@@ -150,3 +150,51 @@
   .cs-copy h1{font-size:37px;letter-spacing:-1.5px}.cs-copy p{font-size:13px}.cs-flow{flex-wrap:wrap}
   .cs-visual.right{grid-template-columns:1fr}.cs-features{grid-template-columns:1fr}.cs-code-panel pre{font-size:8px}.cs-hero{min-height:auto}
 }
+
+
+.cs-countdown {
+  margin: 20px auto 4px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+.cs-countdown > div {
+  min-width:72px;
+  padding:10px 8px 8px;
+  border:1px solid rgba(255,122,24,.22);
+  border-radius:12px;
+  background:linear-gradient(145deg,rgba(255,122,24,.08),rgba(0,217,255,.05));
+  box-shadow:inset 0 0 18px rgba(255,122,24,.04),0 8px 24px rgba(0,0,0,.16);
+}
+.cs-countdown strong {
+  display:block;
+  font-size:24px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+  background:linear-gradient(90deg,#ff7a18,#ff6b9d,#00d9ff);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+.cs-countdown span {
+  display:block;
+  margin-top:5px;
+  color:#777f9d;
+  font-size:8px;
+  letter-spacing:1.1px;
+  text-transform:uppercase;
+}
+.cs-countdown i {
+  color:#ff7a18;
+  font-style:normal;
+  font-weight:800;
+  animation:csColon 1s steps(2,end) infinite;
+}
+@keyframes csColon { 50% { opacity:.25; } }
+
+@media (max-width:600px) {
+  .cs-countdown { gap:5px; }
+  .cs-countdown > div { min-width:58px; padding:9px 5px 7px; }
+  .cs-countdown strong { font-size:20px; }
+  .cs-countdown span { font-size:7px; }
+}
