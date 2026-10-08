@@ -6,7 +6,7 @@ const LEARNING_TOPICS = [
   {
     id: 'arrays',
     title: 'Arrays & Vectors',
-    level: 'BCA → B.Tech → Advanced',
+    level: 'Basic → Intermediate → Advanced',
     summary: 'Contiguous indexed storage and the foundation for searching, sorting, prefix sums, sliding windows and two-pointer techniques.',
     types: ['Static Array', 'Dynamic Array / Vector', '2D Array', 'Multidimensional Array'],
     operations: [
@@ -24,7 +24,7 @@ const LEARNING_TOPICS = [
   {
     id: 'sorting-searching',
     title: 'Sorting & Searching',
-    level: 'BCA → B.Tech → Advanced',
+    level: 'Basic → Intermediate → Advanced',
     summary: 'Core techniques for ordering data and locating elements efficiently.',
     types: ['Linear Search', 'Binary Search', 'Bubble Sort', 'Selection Sort', 'Insertion Sort', 'Merge Sort', 'Quick Sort', 'Heap Sort'],
     operations: [
@@ -42,7 +42,7 @@ const LEARNING_TOPICS = [
   {
     id: 'linked-lists',
     title: 'Linked Lists',
-    level: 'BCA → B.Tech → Advanced',
+    level: 'Basic → Intermediate → Advanced',
     summary: 'Node-based linear structures where links connect elements instead of requiring contiguous storage.',
     types: ['Singly Linked List', 'Doubly Linked List', 'Circular Singly Linked List', 'Circular Doubly Linked List', 'Skip List'],
     operations: [
@@ -60,7 +60,7 @@ const LEARNING_TOPICS = [
   {
     id: 'stacks-queues',
     title: 'Stacks & Queues',
-    level: 'BCA → B.Tech → Advanced',
+    level: 'Basic → Intermediate → Advanced',
     summary: 'Linear access disciplines: LIFO for stacks and FIFO for queues.',
     types: ['Array Stack', 'Linked Stack', 'Circular Queue', 'Deque', 'Priority Queue', 'Monotonic Stack'],
     operations: [
@@ -78,7 +78,7 @@ const LEARNING_TOPICS = [
   {
     id: 'binary-trees',
     title: 'Binary Trees',
-    level: 'BCA → B.Tech → Advanced',
+    level: 'Basic → Intermediate → Advanced',
     summary: 'Hierarchical structures where each node has at most two children.',
     types: ['Full Binary Tree', 'Complete Binary Tree', 'Perfect Binary Tree', 'Balanced Tree', 'Skewed / Degenerate Tree'],
     operations: [
@@ -96,7 +96,7 @@ const LEARNING_TOPICS = [
   {
     id: 'bst',
     title: 'Binary Search Trees',
-    level: 'B.Tech → Advanced',
+    level: 'Intermediate → Advanced',
     summary: 'A binary tree with an ordering invariant that enables ordered search, insertion and deletion.',
     types: ['Unbalanced BST', 'Balanced BST', 'AVL Tree', 'Red-Black Tree'],
     operations: [
@@ -114,7 +114,7 @@ const LEARNING_TOPICS = [
   {
     id: 'heaps',
     title: 'Heaps & Priority Queues',
-    level: 'B.Tech → Advanced',
+    level: 'Intermediate → Advanced',
     summary: 'Complete-tree-based structures optimized for repeatedly retrieving the minimum or maximum priority.',
     types: ['Min Heap', 'Max Heap', 'Binary Heap', 'd-ary Heap', 'Priority Queue'],
     operations: [
@@ -132,7 +132,7 @@ const LEARNING_TOPICS = [
   {
     id: 'graphs',
     title: 'Graphs',
-    level: 'B.Tech → M.Tech',
+    level: 'Advanced',
     summary: 'A general model of relationships using vertices and edges.',
     types: ['Directed', 'Undirected', 'Weighted', 'Unweighted', 'DAG', 'Bipartite', 'Complete', 'Connected'],
     operations: [
@@ -150,7 +150,7 @@ const LEARNING_TOPICS = [
   {
     id: 'dynamic-programming',
     title: 'Dynamic Programming',
-    level: 'B.Tech → M.Tech',
+    level: 'Advanced',
     summary: 'A problem-solving paradigm that exploits overlapping subproblems and optimal substructure.',
     types: ['Top-down Memoization', 'Bottom-up Tabulation', 'Space-Optimized DP', '1D DP', '2D DP', 'Bitmask DP', 'Tree DP'],
     operations: [
@@ -168,7 +168,7 @@ const LEARNING_TOPICS = [
   {
     id: 'trie',
     title: 'Trie & String Algorithms',
-    level: 'B.Tech → Advanced',
+    level: 'Intermediate → Advanced',
     summary: 'Prefix-oriented structures and algorithms for efficient dictionary, autocomplete and pattern operations.',
     types: ['Standard Trie', 'Compressed Trie / Radix Tree', 'Ternary Search Tree', 'Prefix Hashing'],
     operations: [
@@ -296,7 +296,7 @@ export default function DsaLearningPage() {
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">{selected.uses.map((item) => <div key={item} className="p-3 rounded-xl bg-slate-500/5 border border-slate-700/50 text-sm text-slate-400">{item}</div>)}</div>
           </DetailSection>
 
-          <DetailSection title="Advanced / B.Tech–M.Tech layer" icon={<Brain size={16} />} isBright={isBright}>
+          <DetailSection title="Advanced / Deep Dive" icon={<Brain size={16} />} isBright={isBright}>
             <ul className="grid sm:grid-cols-2 gap-2">{selected.advanced.map((item) => <li key={item} className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10 text-sm text-slate-400">{item}</li>)}</ul>
           </DetailSection>
 
@@ -321,7 +321,7 @@ export default function DsaLearningPage() {
           <div>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-mono font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20"><BookOpen size={13} /> Concept-first DSA learning</span>
             <h1 className="mt-3 text-3xl md:text-4xl font-extrabold tracking-tight">DSA Learning</h1>
-            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Deep DSA theory from BCA foundations to B.Tech and M.Tech-level reasoning, separated from the DSA Hub's code, execution and 3D practice workflow.</p>
+            <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">Deep DSA theory from core foundations to advanced reasoning, kept separate from the DSA Hub's code, execution and 3D practice workflow.</p>
           </div>
           <div className="relative w-full md:w-72">
             <Search size={15} className="absolute left-3 top-2.5 text-slate-500" />
