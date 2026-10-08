@@ -2499,7 +2499,7 @@ int prefix = sum(index);`,
                   <p className="mt-2 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Hinglish:</span> Vector ko expandable array samjho. Array ka size usually fixed hota hai, lekin vector me elements add karte jao aur zarurat padne par vector apni storage badha leta hai.</p>
                 </div>
                 <div className="grid lg:grid-cols-2 gap-5 min-w-0">
-                  <div className="min-w-0"><h3 className="text-sm font-bold text-cyan-300">size vs capacity</h3><p className="mt-2 text-sm leading-6 text-slate-400"><span className="font-mono text-cyan-300">size()</span> = current elements. <span className="font-mono text-cyan-300">capacity()</span> = current allocated element capacity.</p><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">vector&lt;int&gt; v;
+                  <div className="min-w-0"><h3 className="text-sm font-bold text-cyan-300">size vs capacity</h3><p className="mt-2 text-sm leading-6 text-slate-400"><span className="font-mono text-cyan-300">size()</span> = current elements. <span className="font-mono text-cyan-300">capacity()</span> = current allocated element capacity.</p><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre">vector&lt;int&gt; v;
 
 v.push_back(10);
 v.push_back(20);
@@ -2509,7 +2509,7 @@ size     = 2
 capacity = 2 or more</pre></div>
                   <div className="min-w-0"><h3 className="text-sm font-bold text-cyan-300">Why capacity can be bigger</h3><p className="mt-2 text-sm leading-6 text-slate-400">Spare capacity avoids allocating new storage for every append. When growth is needed, a larger block is allocated and existing elements are moved or copied.</p></div>
                 </div>
-                <div><h3 className="text-sm font-bold text-cyan-300">What happens when it becomes full?</h3><ol className="mt-2 space-y-2 list-decimal list-inside text-sm leading-7 text-slate-400"><li>A larger block is allocated.</li><li>Existing elements are moved or copied.</li><li>Old storage is released.</li><li>The vector continues with the new block and larger capacity.</li></ol><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">Before growth:
+                <div><h3 className="text-sm font-bold text-cyan-300">What happens when it becomes full?</h3><ol className="mt-2 space-y-2 list-decimal list-inside text-sm leading-7 text-slate-400"><li>A larger block is allocated.</li><li>Existing elements are moved or copied.</li><li>Old storage is released.</li><li>The vector continues with the new block and larger capacity.</li></ol><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre">Before growth:
 capacity = 4
 size     = 4
 
