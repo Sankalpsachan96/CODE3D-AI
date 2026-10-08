@@ -1090,6 +1090,75 @@ function TopicCard({ topic, onOpen, isBright }) {
   );
 }
 
+const VARIANT_GROUPS = {
+  arrays: [
+    ['Arrays', ['Static Array', '2D Array', 'Multidimensional Array']],
+    ['Vectors', ['Dynamic Array / Vector', 'Vector of Primitive Values', 'Vector of Strings', 'Vector of Pairs', 'Vector of Vectors (2D)', 'Vector of Objects / Structs', 'Vector of Pointers', 'vector<bool> (Specialized)', 'Nested Vectors']],
+  ],
+  'sorting-searching': [
+    ['Searching', ['Linear Search', 'Binary Search']],
+    ['Sorting', ['Bubble Sort', 'Selection Sort', 'Insertion Sort', 'Merge Sort', 'Quick Sort', 'Heap Sort']],
+  ],
+  'linked-lists': [
+    ['Linear Linked Lists', ['Singly Linked List', 'Doubly Linked List']],
+    ['Circular Linked Lists', ['Circular Singly Linked List', 'Circular Doubly Linked List']],
+    ['Advanced Linked List', ['Skip List']],
+  ],
+  'stacks-queues': [
+    ['Stacks', ['Array Stack', 'Linked Stack', 'Monotonic Stack']],
+    ['Queues', ['Circular Queue', 'Deque']],
+    ['Priority-based', ['Priority Queue']],
+  ],
+  'binary-trees': [
+    ['Structural Types', ['Full Binary Tree', 'Complete Binary Tree', 'Perfect Binary Tree']],
+    ['Shape & Balance', ['Balanced Tree', 'Skewed / Degenerate Tree']],
+  ],
+  bst: [
+    ['BST Variants', ['Unbalanced BST', 'Balanced BST']],
+    ['Self-Balancing BSTs', ['AVL Tree', 'Red-Black Tree']],
+  ],
+  heaps: [
+    ['Heap Variants', ['Min Heap', 'Max Heap', 'Binary Heap', 'd-ary Heap']],
+    ['Priority Queue', ['Priority Queue']],
+  ],
+  graphs: [
+    ['Edge & Direction Types', ['Directed', 'Undirected', 'Weighted', 'Unweighted']],
+    ['Special Graph Classes', ['DAG', 'Bipartite', 'Complete', 'Connected']],
+  ],
+  'dynamic-programming': [
+    ['DP Approaches', ['Top-down Memoization', 'Bottom-up Tabulation', 'Space-Optimized DP']],
+    ['DP State Dimensions', ['1D DP', '2D DP', 'Bitmask DP', 'Tree DP']],
+  ],
+  trie: [
+    ['Trie Structures', ['Standard Trie', 'Compressed Trie / Radix Tree', 'Ternary Search Tree']],
+    ['String Hashing', ['Prefix Hashing']],
+  ],
+  hashing: [
+    ['Hash Structures', ['Hash Table', 'Hash Map', 'Hash Set']],
+    ['Hashing Techniques', ['Collision Handling', 'Frequency Map']],
+  ],
+  'recursion-backtracking': [
+    ['Recursion Forms', ['Direct Recursion', 'Tail Recursion', 'Memoized Recursion']],
+    ['Problem-Solving Patterns', ['Divide & Conquer', 'Backtracking']],
+  ],
+  greedy: [
+    ['Classic Greedy Problems', ['Activity Selection', 'Fractional Knapsack', 'Huffman Coding', 'Interval Scheduling']],
+    ['Graph Greedy', ['Greedy Graph Algorithms']],
+  ],
+  'bit-manipulation': [
+    ['Bitwise Operations', ['Bitwise AND/OR/XOR', 'Bit Shifting']],
+    ['Bit Techniques', ['Bit Mask', 'Set/Clear/Toggle Bit', 'Bitmask Enumeration']],
+  ],
+  'disjoint-set': [
+    ['Core Structure', ['Union-Find']],
+    ['Optimization Techniques', ['Path Compression', 'Union by Rank', 'Union by Size']],
+  ],
+  'segment-fenwick-trees': [
+    ['Segment Tree Variants', ['Segment Tree', 'Lazy Propagation']],
+    ['Fenwick Tree & Range Queries', ['Fenwick Tree / BIT', 'Range Sum Query', 'Range Minimum Query']],
+  ],
+};
+
 function DetailSection({ title, icon, children, isBright }) {
   return (
     <section className={`min-w-0 rounded-2xl border p-5 ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'}`}>
@@ -1715,11 +1784,21 @@ Node* b = a;
           </div>
 
           <DetailSection title="Types / Variants" icon={<Layers3 size={16} />} isBright={isBright}>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
-              {selected.types.map((type) => (
-                <button key={type} type="button" onClick={() => openVariant(type)} className="text-left p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-xs font-semibold hover:border-cyan-400/50 hover:bg-cyan-500/10 transition-colors cursor-pointer">
-                  {type}<span className="block mt-1 text-[10px] font-normal text-cyan-500/70">Click to learn →</span>
-                </button>
+            <div className="space-y-6">
+              {(VARIANT_GROUPS[selected.id] || [['All Types / Variants', selected.types]]).map(([groupTitle, groupTypes]) => (
+                <div key={groupTitle}>
+                  <div className="flex items-center gap-2 mb-2.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-cyan-400" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-cyan-300">{groupTitle}</h3>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    {groupTypes.map((type) => (
+                      <button key={type} type="button" onClick={() => openVariant(type)} className="text-left p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-xs font-semibold hover:border-cyan-400/50 hover:bg-cyan-500/10 transition-colors cursor-pointer">
+                        {type}<span className="block mt-1 text-[10px] font-normal text-cyan-500/70">Click to learn →</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
             {selectedVariant && VARIANT_DETAILS[selectedVariant] && (() => {
