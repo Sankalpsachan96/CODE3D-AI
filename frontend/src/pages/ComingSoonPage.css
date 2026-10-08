@@ -94,31 +94,15 @@
 .cs-tree-card { padding:16px; margin-left:15px; }
 .cs-tree-title,.cs-graph-title { font-size:10px;color:#9ea7c5;letter-spacing:1px; }
 .cs-tree-scene { height:205px;position:relative;margin-top:5px; }
-.cs-tree-node,.g {
-  position:absolute;display:grid;place-items:center;border-radius:50%;font-size:12px;font-weight:800;
-  background:#7c3aed;
-  border:1px solid #c084fc;box-shadow:none;
-}
-.cs-tree-node { width:34px;height:34px; }
-.n1{left:47%;top:5%}.n2{left:23%;top:36%}.n3{left:70%;top:36%}.n4{left:9%;top:69%}.n5{left:35%;top:69%}.n6{left:74%;top:69%}
-.e,.ge { position:absolute;height:2px;transform-origin:left center;background:#7dd3fc;box-shadow:none;opacity:.9; }
-.e1{left:49%;top:17%;width:29%;transform:rotate(132deg)}
-.e2{left:51%;top:17%;width:28%;transform:rotate(48deg)}
-.e3{left:27%;top:48%;width:24%;transform:rotate(128deg)}
-.e4{left:30%;top:48%;width:14%;transform:rotate(49deg)}
-.e5{left:76%;top:48%;width:18%;transform:rotate(55deg)}
+.cs-tree-scene svg,.cs-graph-scene svg { width:100%;height:100%;display:block;overflow:visible; }
+.cs-svg-edges line { stroke:#67c7f5;stroke-width:2.5;stroke-linecap:round;opacity:.9; }
+.cs-svg-tree-nodes circle { fill:#7c3aed;stroke:#c084fc;stroke-width:1.2; }
+.cs-svg-tree-nodes text,.cs-svg-graph-nodes text { fill:#fff;font-size:13px;font-weight:800;text-anchor:middle;dominant-baseline:central;font-family:Inter,ui-sans-serif,system-ui,sans-serif; }
 .cs-tree-caption { font-size:12px;text-align:center;color:#cbd2eb;margin-top:2px; }
 
 .cs-graph-card { margin-top:18px;padding:13px;transform:none; }
 .cs-graph-scene { height:105px;position:relative;margin-top:5px; }
-.g { width:29px;height:29px;font-size:10px;background:#0891b2;border-color:#67e8f9; }
-.g1{left:8%;top:42%}.g2{left:38%;top:8%}.g3{left:71%;top:45%}.g4{left:38%;top:73%}.g5{left:87%;top:10%}
-.ge1{left:13%;top:45%;width:31%;transform:rotate(-43deg)}
-.ge2{left:42%;top:22%;width:33%;transform:rotate(25deg)}
-.ge3{left:13%;top:58%;width:31%;transform:rotate(31deg)}
-.ge4{left:43%;top:72%;width:31%;transform:rotate(-31deg)}
-.ge5{left:76%;top:23%;width:17%;transform:rotate(-27deg)}
-
+.cs-svg-graph-nodes circle { fill:#0891b2;stroke:#67e8f9;stroke-width:1.2; }
 .cs-message { text-align:center;margin:0 auto 35px;max-width:780px;padding:22px;border-radius:22px;background:rgba(5,8,24,.55);border:1px solid rgba(139,92,246,.19);box-shadow:0 20px 55px rgba(0,0,0,.25); }
 .cs-message-line { width:100px;height:2px;margin:0 auto 16px;background:linear-gradient(90deg,transparent,#a855f7,#38bdf8,transparent); }
 .cs-message h2 { margin:0;font-size:25px; }
