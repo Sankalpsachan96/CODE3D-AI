@@ -183,6 +183,26 @@ const LEARNING_TOPICS = [
     uses: ['Autocomplete', 'Spell checking', 'Dictionary lookup', 'Prefix search', 'Routing/prefix matching'],
     advanced: ['Radix trees', 'Aho–Corasick', 'Suffix structures', 'Compressed representations'],
   },
+
+  {
+    id: 'hashing',
+    title: 'Hashing & Hash Tables',
+    level: 'Intermediate → Advanced',
+    summary: 'Key-value and membership structures that use hash functions for fast average-case lookup, insertion and deletion.',
+    types: ['Hash Table', 'Hash Map', 'Hash Set', 'Collision Handling', 'Frequency Map'],
+    operations: [
+      ['Insert', 'Average O(1)', 'A good hash function spreads keys across buckets.'],
+      ['Search / Lookup', 'Average O(1)', 'The hash identifies the likely bucket before collision resolution.'],
+      ['Delete', 'Average O(1)', 'Remove the key/value from its bucket or probe sequence.'],
+      ['Worst-case operation', 'O(n)', 'Poor hashing or heavy collisions can degrade performance.'],
+    ],
+    memory: 'Hash tables use O(n) storage for n entries plus bucket capacity and collision-management overhead.',
+    advantages: ['Very fast average lookup', 'Natural key-value representation', 'Excellent for membership and frequency counting'],
+    disadvantages: ['No inherent sorted order', 'Collision handling adds complexity', 'Worst-case lookup can degrade to O(n)'],
+    uses: ['Frequency counting', 'Caching', 'Symbol tables', 'Duplicate detection', 'Fast membership checks'],
+    advanced: ['Load factor and rehashing', 'Separate chaining vs open addressing', 'Custom hash functions', 'String and composite-key hashing'],
+  },
+
 ];
 
 
