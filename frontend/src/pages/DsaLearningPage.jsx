@@ -896,6 +896,53 @@ void insert(Node* root, const string& s) {
   }
 };
 
+const PROBLEM_SOLVING = {
+  "title": "Problem Solving & Algorithmic Thinking",
+  "summary": "Learn a repeatable process for turning a problem statement into a correct, efficient and testable solution.",
+  "sections": [
+    [
+      "1. Understand the problem",
+      "Read the statement twice. Identify inputs, outputs, constraints, edge cases and exactly what must be returned. Do not start coding until you can explain the problem in your own words."
+    ],
+    [
+      "2. Build a small example",
+      "Take a tiny input and solve it manually. This reveals the expected behavior and often exposes hidden conditions before implementation."
+    ],
+    [
+      "3. Start with brute force",
+      "Write the simplest correct approach first. Brute force gives you a correctness baseline and helps you see which operation is becoming too expensive."
+    ],
+    [
+      "4. Find the bottleneck",
+      "Count how many times the expensive operation runs. Nested loops, repeated searches, repeated sorting, recursion branches and large auxiliary structures are common bottlenecks."
+    ],
+    [
+      "5. Choose the pattern",
+      "Ask whether the problem looks like two pointers, sliding window, binary search, hashing, stack/queue, recursion, greedy, dynamic programming, graph traversal or a range-query structure."
+    ],
+    [
+      "6. Prove the idea before coding",
+      "State the invariant or reason the algorithm is correct. For example, in binary search the remaining interval must always contain every possible answer; in a sliding window the maintained window must satisfy its condition."
+    ],
+    [
+      "7. Dry run line by line",
+      "Use the smallest useful example and write the state after each important step. Track indexes, pointers, queue/stack contents, DP states or graph visits."
+    ],
+    [
+      "Structured code example",
+      "vector<int> a = {2, 7, 11, 15};\nint target = 9;\n\nunordered_map<int, int> seen;\n\nfor (int i = 0; i < a.size(); i++) {\n    int need = target - a[i];\n\n    if (seen.count(need)) {\n        cout << seen[need] << \" \" << i;\n        break;\n    }\n\n    seen[a[i]] = i;\n}"
+    ],
+    [
+      "Why this is better than brute force",
+      "Brute force checks every pair and takes O(n²). The hash-map approach remembers previously seen values, so each new value can be checked in average O(1), giving O(n) expected time with O(n) auxiliary space."
+    ],
+    [
+      "Final checklist",
+      "Before submitting: test empty/minimum input, maximum-size input, duplicates, already-sorted/reversed data, boundary indexes, negative values when allowed, and cases where the answer does not exist."
+    ]
+  ]
+};
+
 const DSA_INTRO = {
   title: 'Introduction to DSA',
   summary: 'Understand what Data Structures and Algorithms are, why they matter, where they are used, and how they help us build efficient software.',
