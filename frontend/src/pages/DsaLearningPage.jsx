@@ -486,6 +486,416 @@ const TOPIC_DEEP = {
 
 };
 
+
+const TOPIC_DEEP_DIVE = {
+  arrays: {
+    title: 'Arrays & Vectors — Deep Explanation',
+    sections: [
+      ['How it works internally', 'An array stores elements in contiguous memory. Because every element has the same size, the address of element i can be calculated directly from the base address plus i × element size. A vector uses the same contiguous idea, but keeps size and capacity and can allocate a larger block when it grows.'],
+      ['Array vs Vector — what actually changes', 'A fixed array gets its storage for a known size. A vector owns a dynamic contiguous block, tracks how many elements are currently present (size), and how many can fit without reallocation (capacity). Reallocation moves/copies the old elements into a new block.'],
+      ['Important operations', 'Index access is O(1). Linear search is O(n). Appending to a vector is amortized O(1). Inserting or deleting in the middle is O(n) because later elements may have to shift. reserve() can reduce repeated reallocations when the expected size is known.'],
+      ['Worked example', 'Suppose v = [10, 20, 30, 40] and capacity = 4. push_back(50) cannot fit, so a larger block is obtained, the four old values are moved/copied, 50 is placed after them, and the old block is released. The logical size becomes 5.'],
+      ['Dry run', 'Start: [10,20] → size 2. Add 30 → [10,20,30]. Add 40 → [10,20,30,40]. Add 50 when capacity is 4 → allocate larger storage → move old values → write 50 → size 5.'],
+      ['Structured code example', `vector<int> v;
+v.reserve(4);
+
+v.push_back(10);
+v.push_back(20);
+v.push_back(30);
+v.push_back(40);
+
+cout << v.size() << "\\n";
+cout << v.capacity() << "\\n";
+
+v.push_back(50);   // growth may happen here
+cout << v[4];      // 50`],
+      ['Common mistakes', 'Confusing size with capacity, using an invalid index, assuming every push_back is individually O(1), and keeping pointers/references/iterators across a reallocation.'],
+      ['When to use', 'Use arrays/vectors when indexed access and contiguous storage are useful. Prefer vector when the number of elements changes during execution.']
+    ]
+  },
+  'sorting-searching': {
+    title: 'Searching & Sorting — Deep Explanation',
+    sections: [
+      ['How searching works', 'Linear search checks elements one by one and needs no ordering. Binary search uses a sorted or monotonic search space and repeatedly compares the target with the middle, discarding half of the remaining range.'],
+      ['How sorting works', 'Sorting establishes an order so later operations become easier. Bubble/selection/insertion repeatedly rearrange nearby or selected elements; merge sort divides and merges; quick sort partitions around a pivot; heap sort uses heap order.'],
+      ['Choosing the right algorithm', 'For a single lookup in unsorted data, linear search is often simplest. For many lookups on sorted data, binary search is powerful. For sorting, consider n, worst-case guarantees, stability, memory limits and whether the data is nearly sorted.'],
+      ['Worked example — binary search', 'For a = [3, 8, 12, 17, 25, 31] and target 25: middle is 12, target is larger, search the right half; middle becomes 25, so the target is found.'],
+      ['Dry run — insertion sort', '[5, 2, 4, 1] → insert 2 before 5 → [2,5,4,1] → insert 4 → [2,4,5,1] → insert 1 → [1,2,4,5].'],
+      ['Structured code example', `vector<int> a = {5, 2, 4, 1};
+
+for (int i = 1; i < a.size(); i++) {
+    int key = a[i];
+    int j = i - 1;
+
+    while (j >= 0 && a[j] > key) {
+        a[j + 1] = a[j];
+        j--;
+    }
+
+    a[j + 1] = key;
+}`],
+      ['Complexity', 'Linear search: O(n). Binary search: O(log n) when the precondition holds. Merge sort: O(n log n). Quick sort: O(n log n) average and O(n²) worst case with poor pivots. Elementary quadratic sorts are typically O(n²).'],
+      ['Common mistakes', 'Using binary search on unsorted data, forgetting the sorted precondition, choosing a pivot without considering worst cases, and comparing algorithms only by average time.']
+    ]
+  },
+  'linked-lists': {
+    title: 'Linked Lists — Deep Explanation',
+    sections: [
+      ['How it works internally', 'A linked list stores nodes separately. Each node contains data plus a link to another node. The nodes do not need to be contiguous, so insertion can be done by changing links rather than shifting a whole block.'],
+      ['Types and when they matter', 'Singly linked lists have next links, doubly linked lists add prev links, and circular lists connect the tail back to the head. The extra links make some operations easier but increase memory usage.'],
+      ['Important operations', 'Access by position is O(n) because links must be followed. Inserting after a known node is O(1). Searching is O(n). Deleting a node is O(1) once the required predecessor/node reference is already known.'],
+      ['Worked example', 'For A → B → C, insert X after B: save B.next (C), set B.next = X, then X.next = C. No array-style shifting is required.'],
+      ['Dry run', 'Before: A → B → C. Create X. X.next = C. B.next = X. After: A → B → X → C.'],
+      ['Structured code example', `struct Node {
+    int data;
+    Node* next;
+
+    Node(int value) : data(value), next(nullptr) {}
+};
+
+Node* x = new Node(25);
+
+x->next = current->next;
+current->next = x;`],
+      ['Memory and trade-off', 'Each node needs its value plus one or more pointers. This adds overhead compared with a contiguous vector, and pointer chasing can be slower because nodes may be far apart in memory.'],
+      ['Common mistakes', 'Losing the next pointer before reconnecting nodes, dereferencing nullptr, forgetting head/tail updates, and assuming linked lists provide O(1) random indexing.']
+    ]
+  },
+  'stacks-queues': {
+    title: 'Stacks & Queues — Deep Explanation',
+    sections: [
+      ['Core idea', 'A stack is LIFO: the most recently added item leaves first. A queue is FIFO: the earliest item leaves first. A deque supports insertion/removal at both ends, while a priority queue removes by priority rather than arrival time.'],
+      ['How they work internally', 'A stack can use a vector or linked nodes with a top position. A queue can use a circular array or linked nodes with front/rear references. Circular indexing avoids shifting all remaining queue elements.'],
+      ['Important operations', 'Stack push/pop/top are typically O(1). Queue enqueue/dequeue are typically O(1). Deque end operations are typically O(1). Heap-based priority queue insertion and removal are O(log n), while peek is O(1).'],
+      ['Worked example', 'Stack: push 10, 20, 30 → pop returns 30. Queue: enqueue A, B, C → dequeue returns A. The order is determined by the access rule, not by sorting.'],
+      ['Dry run', 'Stack: [] → push A → [A] → push B → [A,B] → pop → [A]. Queue: [] → A → A,B → A,B,C → dequeue A → B,C.'],
+      ['Structured code example', `stack<int> st;
+
+st.push(10);
+st.push(20);
+cout << st.top();   // 20
+st.pop();
+
+queue<int> q;
+
+q.push(10);
+q.push(20);
+cout << q.front();  // 10
+q.pop();`],
+      ['Where they are used', 'Stacks are natural for recursion, undo, parsing, balanced parentheses and monotonic-stack problems. Queues are natural for BFS, scheduling and level-order traversal.'],
+      ['Common mistakes', 'Popping from an empty structure, mixing front/back semantics, implementing a queue with repeated O(n) shifting, and assuming a priority queue is fully sorted.']
+    ]
+  },
+  'binary-trees': {
+    title: 'Binary Trees — Deep Explanation',
+    sections: [
+      ['How it works internally', 'A binary tree is made of nodes with at most two child references: left and right. The recursive structure means every child subtree is itself a smaller binary tree.'],
+      ['Traversal', 'Preorder visits root-left-right, inorder visits left-root-right, postorder visits left-right-root, and level-order visits one depth at a time using a queue. Traversal choice changes the order in which information is processed.'],
+      ['Worked example', 'For root 1 with children 2 and 3: preorder = 1,2,3; inorder = 2,1,3; postorder = 2,3,1; level-order = 1,2,3.'],
+      ['Dry run — inorder', 'Start at 1 → go left to 2 → no left child → visit 2 → return to 1 → visit 1 → go right to 3 → visit 3. Result: 2,1,3.'],
+      ['Structured code example', `void inorder(Node* root) {
+    if (root == nullptr) {
+        return;
+    }
+
+    inorder(root->left);
+    cout << root->data << " ";
+    inorder(root->right);
+}`],
+      ['Complexity', 'A traversal visits every node once, so time is O(n). Recursive auxiliary space is O(h), where h is tree height; a skewed tree can have h = n.'],
+      ['Common mistakes', 'Forgetting the null base case, confusing traversal orders, assuming every binary tree is a BST, and ignoring how tree height changes recursive memory usage.'],
+      ['When to use', 'Use binary trees for hierarchical data, recursive decomposition, expression trees and tree-based divide-and-conquer problems.']
+    ]
+  },
+  bst: {
+    title: 'Binary Search Trees — Deep Explanation',
+    sections: [
+      ['Core invariant', 'For a chosen duplicate policy, values smaller than a node go left and larger values go right. This ordering invariant lets a search eliminate one subtree at every comparison.'],
+      ['How search works', 'Compare target with the current node. Equal means found. Smaller means move left. Larger means move right. The number of comparisons depends on tree height h.'],
+      ['Insertion and deletion', 'Insertion follows the search path and attaches a new leaf. Deletion has three cases: leaf, one child, or two children. The two-child case usually replaces the node with its inorder successor or predecessor.'],
+      ['Worked example', 'Insert 8, 3, 10, 1, 6. Search for 6: 6 < 8 → go left to 3; 6 > 3 → go right to 6; found.'],
+      ['Dry run', 'Root 8 → compare 6 → left. Node 3 → compare 6 → right. Node 6 → equal → stop.'],
+      ['Structured code example', `bool search(Node* root, int x) {
+    if (root == nullptr) {
+        return false;
+    }
+
+    if (root->data == x) {
+        return true;
+    }
+
+    if (x < root->data) {
+        return search(root->left, x);
+    }
+
+    return search(root->right, x);
+}`],
+      ['Complexity', 'Search/insert/delete are O(h). A balanced BST has h ≈ log n, while a skewed BST can have h = n, making operations O(n).'],
+      ['Common mistakes', 'Assuming every BST is balanced, breaking the ordering invariant during deletion, and forgetting to define how duplicate values are handled.']
+    ]
+  },
+  heaps: {
+    title: 'Heaps & Priority Queues — Deep Explanation',
+    sections: [
+      ['Core idea', 'A binary heap is a complete binary tree stored compactly in an array. A min-heap keeps the smallest value at the root; a max-heap keeps the largest.'],
+      ['How indexing works', 'With zero-based indexing, children of i are 2i+1 and 2i+2, while the parent is (i-1)/2. This removes the need for explicit child pointers.'],
+      ['Heapify and operations', 'Insert places an item at the end and bubbles it upward. Extract removes the root, moves the last item to the root, and bubbles it downward. Both are O(log n).'],
+      ['Worked example', 'Max-heap [50, 30, 40, 10, 20]. Insert 60 at the end → compare with parent 40 → swap → compare with parent 50 → swap. Result begins [60,50,40,...].'],
+      ['Dry run', 'Insert 60: [50,30,40,10,20,60] → swap with 40 → [50,30,60,10,20,40] → swap with 50 → [60,30,50,10,20,40].'],
+      ['Structured code example', `priority_queue<int> pq;
+
+pq.push(30);
+pq.push(50);
+pq.push(40);
+
+cout << pq.top();   // 50
+
+pq.pop();
+cout << pq.top();   // 40`],
+      ['Complexity', 'Peek is O(1), insertion and extraction are O(log n), and building a heap from n existing elements can be O(n).'],
+      ['Common mistakes', 'Treating a heap as fully sorted, using wrong child indices, confusing min-heap and max-heap, and forgetting that priority_queue is a heap interface rather than a sorted container.']
+    ]
+  },
+  hashing: {
+    title: 'Hashing & Hash Tables — Deep Explanation',
+    sections: [
+      ['How it works internally', 'A hash function converts a key into a number that is mapped to a table slot. A good hash distributes keys so that most operations inspect very few entries.'],
+      ['Collision handling', 'Two different keys can map to the same slot. Chaining stores multiple entries in a bucket; open addressing probes other slots. The collision strategy affects performance and memory layout.'],
+      ['Hash map vs hash set', 'A hash map stores key-value pairs. A hash set stores keys only and is useful for membership checks and duplicate detection. A frequency map is simply a map whose value counts occurrences.'],
+      ['Worked example', 'For array [2, 2, 5, 2, 5], start with an empty frequency map. Read 2 → freq[2]=1, read 2 → 2, read 5 → 1, read 2 → 3, read 5 → 2.'],
+      ['Dry run', 'Key "cat" → hash("cat") → bucket 4. Key "dog" → bucket 1. If another key also maps to 4, the collision handler stores both without losing either value.'],
+      ['Structured code example', `unordered_map<int, int> freq;
+
+for (int x : a) {
+    freq[x]++;
+}
+
+for (auto [value, count] : freq) {
+    cout << value << ": " << count << "\\n";
+}`],
+      ['Complexity', 'Average lookup/insert/delete is O(1) under good hashing and controlled load factor. Worst-case behavior can degrade toward O(n) with severe collisions.'],
+      ['Common mistakes', 'Assuming O(1) is guaranteed, ignoring collisions, forgetting key/value semantics, and using hashing when ordered iteration or predecessor/successor queries are required.']
+    ]
+  },
+  'recursion-backtracking': {
+    title: 'Recursion & Backtracking — Deep Explanation',
+    sections: [
+      ['Core recursion idea', 'A recursive function solves a smaller version of the same problem and eventually reaches a base case. Every active call has its own stack frame containing parameters and local state.'],
+      ['Backtracking idea', 'Backtracking explores a choice, recursively solves the remaining problem, then undoes the choice before trying another branch. It is a disciplined form of search over possibilities.'],
+      ['Worked example', 'For generating subsets of [1,2], at each element choose include or exclude: {}, {2}, {1}, {1,2}. The recursion tree represents these decisions.'],
+      ['Dry run', 'Start [] → choose 1 → []/1 decisions → choose 2 → [1,2] → undo 2 → [1] → undo 1 → choose 2 → [2].'],
+      ['Structured code example', `void generate(int index, vector<int>& current) {
+    if (index == n) {
+        print(current);
+        return;
+    }
+
+    // Do not take a[index].
+    generate(index + 1, current);
+
+    // Take a[index].
+    current.push_back(a[index]);
+    generate(index + 1, current);
+
+    // Undo the choice.
+    current.pop_back();
+}`],
+      ['Complexity and memory', 'Time depends on the recursion tree. Generating all subsets is O(2^n). Auxiliary stack space is O(n) for depth n, excluding stored output.'],
+      ['Common mistakes', 'Missing the base case, forgetting to undo state during backtracking, sharing mutable state incorrectly, and using recursion when the depth can exceed safe stack limits.']
+    ]
+  },
+  greedy: {
+    title: 'Greedy Algorithms — Deep Explanation',
+    sections: [
+      ['Core idea', 'A greedy algorithm makes the best local choice available at each step. Unlike brute force, it does not revisit every combination. The critical question is whether the problem has a proof that local choices can lead to a global optimum.'],
+      ['Greedy-choice property', 'You need more than intuition. A correct greedy solution normally relies on an exchange argument, cut property, or another proof showing that an optimal solution can contain the greedy choice.'],
+      ['Worked example — activity selection', 'Choose the activity that finishes earliest, then repeatedly choose the next activity whose start is at least the last selected finish time.'],
+      ['Dry run', 'Activities sorted by finish: (1,2), (3,4), (0,6), (5,7). Choose (1,2), then (3,4), skip (0,6), then choose (5,7).'],
+      ['Structured code example', `sort(activities.begin(), activities.end(),
+     [](const Activity& a, const Activity& b) {
+         return a.finish < b.finish;
+     });
+
+int lastFinish = -1;
+
+for (const auto& activity : activities) {
+    if (activity.start >= lastFinish) {
+        choose(activity);
+        lastFinish = activity.finish;
+    }
+}`],
+      ['Complexity', 'Many greedy algorithms sort first, giving O(n log n), followed by an O(n) scan. The exact complexity depends on the chosen greedy strategy and supporting data structure.'],
+      ['Common mistakes', 'Assuming every locally best choice is correct, using greedy for 0/1 knapsack without proof, and skipping the reasoning that establishes the greedy-choice property.']
+    ]
+  },
+  'bit-manipulation': {
+    title: 'Bit Manipulation — Deep Explanation',
+    sections: [
+      ['How bits work', 'An integer is represented in binary. Bit operations let you inspect or modify individual positions using AND, OR, XOR, NOT and shifts.'],
+      ['Core operations', 'AND can test/clear bits, OR can set bits, XOR can toggle bits, and shifts move bit positions. The expression (1 << k) creates a mask with bit k set.'],
+      ['Worked example', 'For x = 10 (1010₂), bit 1 is set and bit 0 is clear. x & (1<<1) is non-zero, so bit 1 is set. x ^ (1<<1) toggles bit 1 and produces 1000₂.'],
+      ['Dry run', 'x = 10 → binary 1010. mask = 0010. x & mask = 0010 → bit is set. x ^ mask = 1000 → bit 1 is toggled off.'],
+      ['Structured code example', `int x = 10;       // 1010
+int k = 1;
+int mask = 1 << k;
+
+bool isSet = (x & mask) != 0;
+
+x |= mask;        // set bit k
+x &= ~mask;       // clear bit k
+x ^= mask;        // toggle bit k`],
+      ['Complexity', 'Basic bit operations on fixed-width integers are O(1) in the usual word-RAM model and use O(1) auxiliary space.'],
+      ['Common mistakes', 'Ignoring operator precedence, confusing logical and bitwise operators, misunderstanding signed right shifts, and using clever tricks without checking readability and integer width.']
+    ]
+  },
+  'disjoint-set': {
+    title: 'Disjoint Set Union (Union-Find) — Deep Explanation',
+    sections: [
+      ['Core idea', 'DSU maintains a collection of disjoint groups. find(x) tells which component x belongs to, while union(a,b) merges the components containing a and b.'],
+      ['How it works internally', 'Each set is represented as a parent tree. Path compression makes nodes point directly toward the root, while union by rank or size attaches the smaller tree below the larger one.'],
+      ['Worked example', 'Start with {1},{2},{3},{4}. union(1,2) creates {1,2}; union(3,4) creates {3,4}; union(2,3) merges them into {1,2,3,4}.'],
+      ['Dry run', 'parent initially points every node to itself. After union(1,2), root 2 may point to 1. After union(2,3), find(2) reaches 1, so root 3 is attached to 1.'],
+      ['Structured code example', `int find(int x) {
+    if (parent[x] == x) {
+        return x;
+    }
+
+    return parent[x] = find(parent[x]);
+}
+
+void unite(int a, int b) {
+    a = find(a);
+    b = find(b);
+
+    if (a == b) return;
+
+    if (size[a] < size[b]) {
+        swap(a, b);
+    }
+
+    parent[b] = a;
+    size[a] += size[b];
+}`],
+      ['Complexity', 'With path compression plus union by rank/size, operations are amortized O(alpha(n)), which behaves almost like O(1) for practical input sizes.'],
+      ['Common mistakes', 'Forgetting to find roots before merging, attaching arbitrary roots without balancing, and confusing component identity with the original node value.']
+    ]
+  },
+  'segment-fenwick-trees': {
+    title: 'Segment Trees & Fenwick Trees — Deep Explanation',
+    sections: [
+      ['Why they exist', 'When an array receives many updates and range queries, checking every element in every query can be too slow. These structures store partial information so a query can combine only O(log n) pieces.'],
+      ['Segment tree', 'A segment tree recursively divides an array into intervals. Each node stores an aggregate such as sum, minimum or maximum for its interval. Updates and range queries typically take O(log n).'],
+      ['Fenwick tree', 'A Fenwick tree stores prefix aggregates in a compact array. Each index represents a block determined by its lowest set bit. Point update and prefix sum are O(log n).'],
+      ['Worked example', 'For [2,4,1,7], a range sum query [1,3] is 4+1+7 = 12. A segment tree can combine stored interval sums; a Fenwick tree can compute prefix(3)-prefix(0).'],
+      ['Dry run', 'Fenwick add(index, delta) updates index and then jumps by lowbit(index). sum(index) moves backward by lowbit(index), accumulating the stored partial sums.'],
+      ['Structured code example', `vector<int> bit(n + 1);
+
+void add(int i, int delta) {
+    for (; i <= n; i += i & -i) {
+        bit[i] += delta;
+    }
+}
+
+int sum(int i) {
+    int result = 0;
+
+    for (; i > 0; i -= i & -i) {
+        result += bit[i];
+    }
+
+    return result;
+}`],
+      ['Complexity', 'Fenwick point update/prefix sum are O(log n). Standard segment-tree point update/range query are O(log n). Building can be O(n), depending on implementation.'],
+      ['Common mistakes', 'Mixing zero-based and one-based Fenwick indexing, forgetting the query/update boundaries, and using a complex tree when static prefix sums would be enough.']
+    ]
+  },
+  graphs: {
+    title: 'Graphs — Deep Explanation',
+    sections: [
+      ['Core idea', 'A graph models entities as vertices and relationships as edges. Edges may be directed or undirected and may carry weights. The representation and edge properties determine which algorithms are valid.'],
+      ['Representations', 'An adjacency list stores neighbors per vertex and uses O(V+E) space for sparse graphs. An adjacency matrix stores a V×V table and gives O(1) edge lookup at the cost of O(V²) space.'],
+      ['Traversal', 'BFS uses a queue and explores by distance in unweighted graphs. DFS follows one path deeply before backtracking. Both traverse an adjacency-list graph in O(V+E).'],
+      ['Worked example', 'Edges 1-2, 1-3, 2-4. BFS from 1 visits 1, then 2 and 3, then 4. DFS might visit 1,2,4, then return and visit 3.'],
+      ['Dry run — BFS', 'Queue [1] → visit 1, enqueue 2,3 → queue [2,3] → visit 2, enqueue 4 → queue [3,4] → visit 3 → visit 4.'],
+      ['Structured code example', `vector<vector<int>> adj(n);
+
+queue<int> q;
+vector<bool> visited(n, false);
+
+q.push(0);
+visited[0] = true;
+
+while (!q.empty()) {
+    int u = q.front();
+    q.pop();
+
+    for (int v : adj[u]) {
+        if (!visited[v]) {
+            visited[v] = true;
+            q.push(v);
+        }
+    }
+}`],
+      ['Advanced choices', 'Dijkstra is for non-negative weighted shortest paths, topological sort applies to DAGs, DSU helps connectivity/component merging, and MST algorithms use edge-weight structure.'],
+      ['Common mistakes', 'Forgetting visited tracking, confusing directed and undirected edges, using Dijkstra with negative edges, and assuming every graph is connected.']
+    ]
+  },
+  'dynamic-programming': {
+    title: 'Dynamic Programming — Deep Explanation',
+    sections: [
+      ['Core idea', 'Dynamic programming solves problems with overlapping subproblems and optimal substructure by storing results of states instead of recomputing them.'],
+      ['How to build a DP', 'First define the state: what does dp[i] or dp[i][j] mean? Then define the transition, base cases, computation order and final answer. Only after the full table is correct should you consider space optimization.'],
+      ['Memoization vs tabulation', 'Memoization starts from the target and caches recursive states. Tabulation starts from base cases and fills states iteratively. Both can represent the same recurrence.'],
+      ['Worked example — Fibonacci', 'Naive recursion recomputes fib(3), fib(2), etc. Memoization computes each fib(k) once. Tabulation builds fib(0), fib(1), fib(2), ... up to fib(n).'],
+      ['Dry run', 'fib(5): compute fib(0), fib(1), then 2, 3, 4, 5. Each state is reused instead of creating the same recursive subtree again.'],
+      ['Structured code example', `vector<long long> dp(n + 1);
+
+dp[0] = 0;
+dp[1] = 1;
+
+for (int i = 2; i <= n; i++) {
+    dp[i] = dp[i - 1] + dp[i - 2];
+}
+
+cout << dp[n];`],
+      ['Complexity', 'A common DP bound is number of states × transition cost. Space is the number of stored states unless the dependency pattern allows optimization.'],
+      ['Common mistakes', 'Defining an incomplete state, writing an incorrect transition, forgetting base cases, mixing up dimensions, and optimizing space before validating the full DP.']
+    ]
+  },
+  trie: {
+    title: 'Trie & String Algorithms — Deep Explanation',
+    sections: [
+      ['Core idea', 'A trie stores strings character by character along paths. Shared prefixes share nodes, making prefix queries natural and often proportional to the string length rather than the number of stored words.'],
+      ['How it works internally', 'Starting from the root, each character chooses an outgoing edge. A terminal marker records that a complete word ends at that node.'],
+      ['Worked example', 'Insert "cat" and "car". The paths c → a are shared; the final nodes branch at t and r. Searching "ca" can also answer whether a prefix exists.'],
+      ['Dry run', 'Insert "cat": root → c → a → t, mark t as terminal. Insert "car": root → c → a already exists, then create r and mark it terminal.'],
+      ['Structured code example', `struct Node {
+    Node* child[26] = {};
+    bool terminal = false;
+};
+
+void insert(Node* root, const string& s) {
+    Node* cur = root;
+
+    for (char ch : s) {
+        int id = ch - 'a';
+
+        if (!cur->child[id]) {
+            cur->child[id] = new Node();
+        }
+
+        cur = cur->child[id];
+    }
+
+    cur->terminal = true;
+}`],
+      ['String algorithm connection', 'Prefix matching, autocomplete, word search, KMP, Z-function and rolling/prefix hashing solve different string tasks. Choose based on whether you need prefixes, pattern positions, hashing comparisons or structural storage.'],
+      ['Complexity and memory', 'Trie insert/search is typically O(L), where L is string length, but memory can be large because nodes may store many child pointers.'],
+      ['Common mistakes', 'Forgetting the terminal marker, allocating huge child arrays unnecessarily, confusing prefix existence with complete-word existence, and ignoring memory usage.']
+    ]
+  }
+};
+
 const DSA_INTRO = {
   title: 'Introduction to DSA',
   summary: 'Understand what Data Structures and Algorithms are, why they matter, where they are used, and how they help us build efficient software.',
