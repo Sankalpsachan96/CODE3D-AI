@@ -8,7 +8,7 @@ const LEARNING_TOPICS = [
     title: 'Arrays & Vectors',
     level: 'Basic → Intermediate → Advanced',
     summary: 'Contiguous indexed storage and the foundation for searching, sorting, prefix sums, sliding windows and two-pointer techniques.',
-    types: ['Static Array', 'Dynamic Array / Vector', '2D Array', 'Multidimensional Array'],
+    types: ['Static Array', 'Dynamic Array / Vector', 'Vector of Primitive Values', 'Vector of Strings', 'Vector of Pairs', 'Vector of Vectors (2D)', 'Vector of Objects / Structs', 'Vector of Pointers', 'vector<bool> (Specialized)', 'Nested Vectors', '2D Array', 'Multidimensional Array'],
     operations: [
       ['Access', 'O(1)', 'Direct indexing gives constant-time access.'],
       ['Search', 'O(n)', 'Unsorted linear search may inspect every element.'],
@@ -969,6 +969,14 @@ const DSA_INTRO = {
 const VARIANT_DETAILS = {
   'Static Array': ['Fixed-size contiguous collection. Size is decided when the array is created.','Simple aur fast hota hai, lekin size fixed hota hai; random access O(1) milta hai.','Best for: fixed-size data, tables, small buffers.'],
   'Dynamic Array / Vector': ['Resizable array that grows when capacity is exhausted.','Vector ko flexible array samjho: end par add karna usually fast hota hai, aur zarurat par capacity badh sakti hai.','Best for: collections whose size changes during execution.'],
+  'Vector of Primitive Values': ['A vector whose elements are built-in values such as int, double, char or bool.','Normal values ko dynamic contiguous storage me rakhte ho; vector ka size runtime par badh sakta hai.','Best for: numbers, flags, characters and general DSA arrays.'],
+  'Vector of Strings': ['A vector where each element is a std::string.','Har position par ek complete string hoti hai; vector strings ko element storage me rakhta hai, while each string manages its own character storage.','Best for: word lists, names, tokens and text collections.'],
+  'Vector of Pairs': ['A vector whose each element is a pair of two related values, such as {value, index}.','Har element ke andar first aur second fields hote hain; useful jab do values ko ek unit ki tarah store karna ho.','Best for: coordinates, graph edges, key-value-like records and sorting by one field.'],
+  'Vector of Vectors (2D)': ['A vector whose elements are themselves vectors, forming a dynamic 2D structure.','Har row ka size alag ho sakta hai, isliye ye fixed 2D array se zyada flexible hai.','Best for: adjacency lists, jagged matrices and dynamic grids.'],
+  'Vector of Objects / Structs': ['A vector that stores user-defined objects or structs as its elements.','Har vector element ek complete object hota hai jisme multiple fields ho sakte hain.','Best for: students, products, graph edges and records.'],
+  'Vector of Pointers': ['A vector whose elements store addresses/pointers to other objects or nodes.','Vector pointers ko contiguous rakhta hai, lekin actual objects alag memory locations par ho sakte hain.','Best for: polymorphism, graph/tree node references and dynamically managed objects.'],
+  'vector<bool> (Specialized)': ['A special standard-library vector<bool> specialization that stores boolean values in a bit-packed representation on common implementations.','Ye normal vector<int> jaisa simple element-reference behavior nahi deta; bits ko compactly store kar sakta hai.','Best for: memory-efficient boolean flags when its specialized behavior is acceptable.'],
+  'Nested Vectors': ['A vector containing vectors to represent multiple dynamic dimensions.','vector<vector<int>> se 2D aur vector<vector<vector<int>>> se 3D-style dynamic structures bana sakte ho.','Best for: variable-size matrices, DP states and multi-level collections.'],
   '2D Array': ['An array arranged as rows and columns.','Matrix/table jaisa structure: a[i][j] se row i aur column j ka element access karte hain.','Best for: grids, matrices, DP tables.'],
   'Multidimensional Array': ['An array with three or more dimensions.','2D se aage multiple indexes hote hain, jaise a[x][y][z]; useful but memory layout ko samajhna important hai.','Best for: 3D grids, tensors and state spaces.'],
   'Singly Linked List': ['Each node stores data and one next reference.','Har node ko sirf next node ka address pata hota hai; forward traversal simple hai.','Best for: simple dynamic chains and stack-like structures.'],
@@ -1716,6 +1724,66 @@ Node* b = a;
             </div>
             {selectedVariant && VARIANT_DETAILS[selectedVariant] && (() => {
 const exampleFor = (name) => {
+  if (name === 'Vector of Primitive Values') return `vector<int> nums;
+
+nums.push_back(10);
+nums.push_back(20);
+
+cout << nums[1]; // 20`;
+  if (name === 'Vector of Strings') return `vector<string> names;
+
+names.push_back("Aman");
+names.push_back("Riya");
+
+cout << names[0]; // Aman`;
+  if (name === 'Vector of Pairs') return `vector<pair<int, int>> edges;
+
+edges.push_back({1, 2});
+edges.push_back({2, 5});
+
+cout << edges[0].first << " "
+     << edges[0].second;`;
+  if (name === 'Vector of Vectors (2D)') return `vector<vector<int>> grid = {
+    {1, 2, 3},
+    {4, 5, 6}
+};
+
+cout << grid[1][2]; // 6`;
+  if (name === 'Vector of Objects / Structs') return `struct Student {
+    string name;
+    int marks;
+};
+
+vector<Student> students;
+
+students.push_back({"Aman", 88});
+students.push_back({"Riya", 92});`;
+  if (name === 'Vector of Pointers') return `int a = 10;
+int b = 20;
+
+vector<int*> ptrs;
+
+ptrs.push_back(&a);
+ptrs.push_back(&b);
+
+cout << *ptrs[1]; // 20`;
+  if (name === 'vector<bool> (Specialized)') return `vector<bool> visited(5, false);
+
+visited[2] = true;
+
+if (visited[2]) {
+    cout << "Visited";
+}`;
+  if (name === 'Nested Vectors') return `vector<vector<vector<int>>> cube(
+    2,
+    vector<vector<int>>(
+        2,
+        vector<int>(2, 0)
+    )
+);
+
+cube[1][0][1] = 7;`;
+
                 const examples = {
                   'Static Array': `int a[5] = {10, 20, 30, 40, 50};
 
@@ -2138,6 +2206,14 @@ int prefix = sum(index);`,
                 const [what, hinglish, where] = detail;
 
                 const specific = {
+                  'Vector of Primitive Values': ['Stores built-in values as vector elements; the vector controls dynamic size and capacity.', 'Each element is a normal value, so indexing is direct and references follow vector reallocation rules.', 'Use for resizable collections of numbers, characters or flags.', 'Do not confuse element type with vector size or capacity.'],
+                  'Vector of Strings': ['Stores std::string objects as vector elements; each string manages its own character storage.', 'The vector moves string objects when it reallocates, while each string manages its text separately.', 'Use for dynamic lists of words, names and tokens.', 'Do not assume all characters live in one contiguous block with the vector elements.'],
+                  'Vector of Pairs': ['Stores pair objects so two related values travel together as one element.', 'Each vector slot contains first and second fields.', 'Use for coordinates, graph edges and index-value records.', 'Keep the meaning and order of first and second consistent.'],
+                  'Vector of Vectors (2D)': ['Stores a vector in each element, creating a dynamic row-based 2D structure.', 'Each row has independent storage and can have a different length.', 'Use for adjacency lists, jagged matrices and dynamic grids.', 'Do not assume every row has the same size.'],
+                  'Vector of Objects / Structs': ['Stores complete user-defined records as vector elements.', 'Each element contains all fields of the struct/class and follows that type’s copy/move behavior.', 'Use for collections of real-world records and graph/tree data.', 'Avoid unnecessary object copies and understand ownership of contained resources.'],
+                  'Vector of Pointers': ['Stores addresses rather than the pointed-to objects themselves.', 'The vector storage is contiguous, but pointed objects may live elsewhere.', 'Use when object identity, polymorphism or node references are required.', 'A pointer does not transfer ownership automatically; dangling pointers are dangerous.'],
+                  'vector<bool> (Specialized)': ['std::vector<bool> is a specialized representation that packs boolean values into bits on common implementations.', 'Element access uses proxy behavior rather than a normal bool reference.', 'Use when compact boolean storage matters and the specialized behavior is acceptable.', 'Do not assume vector<bool> behaves exactly like vector<int> or vector<char>.'],
+                  'Nested Vectors': ['Contains vectors inside vectors, allowing dynamic multi-level structures.', 'Each dimension can have its own dynamic allocation and shape.', 'Use for variable-size DP states, grids and multi-level collections.', 'Track every dimension carefully and avoid accidental huge allocations.'],
                   'Linear Search': ['Walks from index 0 toward the end and stops at the first matching value.', 'Only the input and current index are needed; auxiliary space is O(1).', 'Best when data is unsorted or the collection is small.', 'Do not assume the target is sorted or skip positions while scanning.'],
                   'Binary Search': ['Maintains a low/high candidate interval and discards half after every midpoint comparison.', 'Iterative form uses O(1) auxiliary memory; recursive form adds O(log n) stack.', 'Requires a sorted/monotonic search space and runs in O(log n).', 'Never use it on unsorted data; boundary updates must preserve the search invariant.'],
                   'Bubble Sort': ['Repeated adjacent comparisons move an out-of-order larger value toward the right on each pass.', 'Works in place with O(1) auxiliary memory.', 'Typical time is O(n²); an early-exit check can improve sorted input.', 'The inner-loop range shrinks after each pass; getting that bound wrong breaks sorting.'],
