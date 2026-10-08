@@ -91,7 +91,7 @@
 .cs-lang-badges { display:flex;gap:7px;flex-wrap:wrap;margin-top:15px;justify-content:center; }
 .cs-lang-badges b { padding:6px 9px;border-radius:8px;background:rgba(19,22,54,.78);border:1px solid rgba(148,163,184,.18);font-size:10px;color:#bfc6e0; }
 
-.cs-tree-card { padding:16px; transform:perspective(1000px) rotateY(-7deg); margin-left:15px; }
+.cs-tree-card { padding:16px; transform:perspective(1000px) rotateY(-4deg); margin-left:15px; }
 .cs-tree-title,.cs-graph-title { font-size:10px;color:#9ea7c5;letter-spacing:1px; }
 .cs-tree-scene { height:205px;position:relative;margin-top:5px; }
 .cs-tree-node,.g {
@@ -100,16 +100,24 @@
   border:1px solid #c084fc;box-shadow:0 0 22px rgba(168,85,247,.48),inset -5px -7px 12px rgba(0,0,0,.38);
 }
 .cs-tree-node { width:34px;height:34px; }
-.n1{left:47%;top:6%}.n2{left:23%;top:36%}.n3{left:70%;top:36%}.n4{left:9%;top:69%}.n5{left:35%;top:69%}.n6{left:74%;top:69%}
-.e,.ge { position:absolute;height:2px;transform-origin:left center;background:linear-gradient(90deg,#a855f7,#38bdf8);box-shadow:0 0 9px rgba(56,189,248,.6); }
-.e1{left:42%;top:24%;width:27%;transform:rotate(31deg)}.e2{left:52%;top:24%;width:28%;transform:rotate(-31deg)}.e3{left:31%;top:52%;width:25%;transform:rotate(30deg)}.e4{left:42%;top:52%;width:25%;transform:rotate(-28deg)}.e5{left:76%;top:52%;width:18%;transform:rotate(30deg)}
+.n1{left:47%;top:5%}.n2{left:23%;top:36%}.n3{left:70%;top:36%}.n4{left:9%;top:69%}.n5{left:35%;top:69%}.n6{left:74%;top:69%}
+.e,.ge { position:absolute;height:2px;transform-origin:left center;background:linear-gradient(90deg,#a855f7,#38bdf8);box-shadow:0 0 9px rgba(56,189,248,.55);opacity:.9; }
+.e1{left:49%;top:17%;width:29%;transform:rotate(132deg)}
+.e2{left:51%;top:17%;width:28%;transform:rotate(48deg)}
+.e3{left:27%;top:48%;width:24%;transform:rotate(128deg)}
+.e4{left:30%;top:48%;width:14%;transform:rotate(49deg)}
+.e5{left:76%;top:48%;width:18%;transform:rotate(55deg)}
 .cs-tree-caption { font-size:12px;text-align:center;color:#cbd2eb;margin-top:2px; }
 
-.cs-graph-card { margin-top:18px;padding:13px;transform:translateX(25px) rotateY(-5deg); }
+.cs-graph-card { margin-top:18px;padding:13px;transform:translateX(25px) rotateY(-3deg); }
 .cs-graph-scene { height:105px;position:relative;margin-top:5px; }
 .g { width:29px;height:29px;font-size:10px;background:radial-gradient(circle at 35% 25%,#cffafe,#0891b2 48%,#172554);border-color:#67e8f9; }
 .g1{left:8%;top:42%}.g2{left:38%;top:8%}.g3{left:71%;top:45%}.g4{left:38%;top:73%}.g5{left:87%;top:10%}
-.ge1{left:22%;top:43%;width:23%;transform:rotate(-42deg)}.ge2{left:52%;top:31%;width:23%;transform:rotate(33deg)}.ge3{left:22%;top:53%;width:23%;transform:rotate(28deg)}.ge4{left:53%;top:65%;width:23%;transform:rotate(-35deg)}.ge5{left:73%;top:42%;width:16%;transform:rotate(-27deg)}
+.ge1{left:13%;top:45%;width:31%;transform:rotate(-43deg)}
+.ge2{left:42%;top:22%;width:33%;transform:rotate(25deg)}
+.ge3{left:13%;top:58%;width:31%;transform:rotate(31deg)}
+.ge4{left:43%;top:72%;width:31%;transform:rotate(-31deg)}
+.ge5{left:76%;top:23%;width:17%;transform:rotate(-27deg)}
 
 .cs-message { text-align:center;margin:0 auto 35px;max-width:780px;padding:22px;border-radius:22px;background:rgba(5,8,24,.55);border:1px solid rgba(139,92,246,.19);box-shadow:0 20px 55px rgba(0,0,0,.25); }
 .cs-message-line { width:100px;height:2px;margin:0 auto 16px;background:linear-gradient(90deg,transparent,#a855f7,#38bdf8,transparent); }
