@@ -156,15 +156,15 @@ export default function HomeDashboard() {
               </button>
 
               <button
-                onClick={() => navigate('/dsa')}
+                onClick={() => navigate('/dsa-learning')}
                 className={`inline-flex items-center gap-2 rounded-xl border px-5 py-3 text-sm font-bold transition hover:-translate-y-0.5 ${
                   isBright
                     ? 'bg-white border-slate-300 hover:bg-slate-50'
                     : 'bg-slate-900 border-slate-700 hover:bg-slate-800'
                 }`}
               >
-                <Layers3 size={16} />
-                Explore DSA
+                <BookOpen size={16} />
+                Learn DSA
               </button>
             </div>
           </div>
