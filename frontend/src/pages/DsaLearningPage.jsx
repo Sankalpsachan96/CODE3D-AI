@@ -1221,6 +1221,422 @@ Node* b = a;
               ))}
             </div>
             {selectedVariant && VARIANT_DETAILS[selectedVariant] && (() => {
+const exampleFor = (name) => {
+                const examples = {
+                  'Static Array': `int a[5] = {10, 20, 30, 40, 50};
+
+cout << a[2];  // 30`,
+                  'Dynamic Array / Vector': `vector<int> v;
+
+v.push_back(10);
+v.push_back(20);
+v.push_back(30);
+
+cout << v[1];  // 20`,
+                  '2D Array': `int grid[2][3] = {
+    {1, 2, 3},
+    {4, 5, 6}
+};
+
+cout << grid[1][2];  // 6`,
+                  'Multidimensional Array': `int a[2][2][2] = {};
+
+a[0][1][1] = 10;`,
+                  'Singly Linked List': `Node* first = new Node(10);
+first->next = new Node(20);
+
+cout << first->next->data;  // 20`,
+                  'Doubly Linked List': `node->next = second;
+second->prev = node;`,
+                  'Circular Singly Linked List': `tail->next = head;
+
+// From tail, next points back to head.`,
+                  'Circular Doubly Linked List': `tail->next = head;
+head->prev = tail;`,
+                  'Skip List': `skipList.insert(25);
+
+// Multiple forward levels may be created.`,
+                  'Linear Search': `for (int i = 0; i < n; i++) {
+    if (a[i] == target) {
+        return i;
+    }
+}
+
+return -1;`,
+                  'Binary Search': `while (lo <= hi) {
+    int mid = lo + (hi - lo) / 2;
+
+    if (a[mid] == target) {
+        return mid;
+    }
+}`,
+                  'Bubble Sort': `for (int pass = 0; pass < n - 1; pass++) {
+    for (int i = 0; i < n - pass - 1; i++) {
+        if (a[i] > a[i + 1]) {
+            swap(a[i], a[i + 1]);
+        }
+    }
+}`,
+                  'Selection Sort': `for (int i = 0; i < n - 1; i++) {
+    int minIndex = i;
+
+    for (int j = i + 1; j < n; j++) {
+        if (a[j] < a[minIndex]) {
+            minIndex = j;
+        }
+    }
+
+    swap(a[i], a[minIndex]);
+}`,
+                  'Insertion Sort': `for (int i = 1; i < n; i++) {
+    int key = a[i];
+    int j = i - 1;
+
+    while (j >= 0 && a[j] > key) {
+        a[j + 1] = a[j];
+        j--;
+    }
+
+    a[j + 1] = key;
+}`,
+                  'Merge Sort': `mergeSort(left, right);
+
+1. Split the array.
+2. Sort the left half.
+3. Sort the right half.
+4. Merge both sorted halves.`,
+                  'Quick Sort': `quickSort(low, high);
+
+1. Choose a pivot.
+2. Partition the array.
+3. Recursively sort both sides.`,
+                  'Heap Sort': `buildMaxHeap(a);
+
+for (int end = n - 1; end > 0; end--) {
+    swap(a[0], a[end]);
+    heapify(a, end, 0);
+}`,
+                  'Array Stack': `stack.push(x);
+int x = stack.top();
+stack.pop();`,
+                  'Linked Stack': `Node* node = new Node(x);
+
+node->next = top;
+top = node;`,
+                  'Circular Queue': `rear = (rear + 1) % capacity;
+queue[rear] = value;`,
+                  'Deque': `dq.push_front(10);
+dq.push_back(20);
+
+int first = dq.front();`,
+                  'Priority Queue': `priority_queue<int> pq;
+
+pq.push(10);
+pq.push(30);
+pq.push(20);
+
+cout << pq.top();  // 30`,
+                  'Monotonic Stack': `while (!st.empty() && a[st.top()] <= a[i]) {
+    st.pop();
+}
+
+st.push(i);`,
+                  'Full Binary Tree': `// Every node has either 0 or 2 children.
+
+        1
+       / \\
+      2   3`,
+                  'Complete Binary Tree': `// Fill levels from left to right.
+
+        1
+       / \\
+      2   3
+     /
+    4`,
+                  'Perfect Binary Tree': `// Every internal node has 2 children
+// and all leaves have the same depth.
+
+        1
+       / \\
+      2   3
+     / \\
+    4   5 6  7`,
+                  'Balanced Tree': `// Keep subtree heights close
+// so the tree stays approximately logarithmic in height.`,
+                  'Skewed / Degenerate Tree': `10
+  \\
+   20
+     \\
+      30
+        \\
+         40`,
+                  'Unbalanced BST': `insert(10);
+insert(20);
+insert(30);
+
+// Repeated increasing inserts can create
+// a chain-like tree.`,
+                  'Balanced BST': `insert(10);
+insert(20);
+insert(15);
+
+// Rebalancing keeps height near O(log n).`,
+                  'AVL Tree': `insert(30);
+insert(20);
+insert(10);
+
+// Balance factor becomes invalid.
+// A right rotation restores balance.`,
+                  'Red-Black Tree': `insert(10);
+insert(20);
+insert(30);
+
+// Recoloring and rotations maintain
+// logarithmic height.`,
+                  'Min Heap': `// Parent value <= child values.
+
+        10
+       /  \\
+      20   30`,
+                  'Max Heap': `// Parent value >= child values.
+
+        30
+       /  \\
+      20   10`,
+                  'Binary Heap': `// Array representation of a heap.
+
+vector<int> heap = {30, 20, 10, 15, 5};`,
+                  'd-ary Heap': `// A node can have up to d children.
+// Example: d = 4 for a 4-ary heap.`,
+                  'Directed': `addEdge(u, v);
+
+// Edge direction:
+u -> v`,
+                  'Undirected': `addEdge(u, v);
+addEdge(v, u);
+
+// Movement is possible in both directions.`,
+                  'Weighted': `addEdge(u, v, weight);
+
+// Example:
+addEdge(1, 2, 7);`,
+                  'Unweighted': `adj[u].push_back(v);
+
+// Every edge has equal cost.`,
+                  'DAG': `1 -> 2 -> 3
+     \\
+      -> 4
+
+// No directed cycle exists.`,
+                  'Bipartite': `color[u] = 0;
+color[v] = 1;
+
+// Adjacent vertices get opposite colors.`,
+                  'Complete': `// Every pair of distinct vertices
+// has an edge.`,
+                  'Connected': `// Starting from any vertex,
+// every other vertex is reachable.`,
+                  'Top-down Memoization': `int solve(int state) {
+    if (memo[state] != -1) {
+        return memo[state];
+    }
+
+    return memo[state] = solve(smallerState);
+}`,
+                  'Bottom-up Tabulation': `vector<int> dp(n + 1);
+
+dp[0] = baseCase;
+
+for (int i = 1; i <= n; i++) {
+    dp[i] = transition(dp, i);
+}`,
+                  'Space-Optimized DP': `int previous = baseCase;
+
+for (int i = 1; i <= n; i++) {
+    int current = transition(previous);
+    previous = current;
+}`,
+                  '1D DP': `vector<int> dp(n + 1);
+
+dp[i] = best answer for state i;`,
+                  '2D DP': `vector<vector<int>> dp(n, vector<int>(m));
+
+dp[i][j] = transition(dp, i, j);`,
+                  'Bitmask DP': `// mask represents selected items.
+
+dp[mask] = best answer for this subset;`,
+                  'Tree DP': `void dfs(Node* node, Node* parent) {
+    for (Node* child : node->children) {
+        dfs(child, node);
+    }
+
+    // Compute node's DP state.
+}`,
+                  'Standard Trie': `trie.insert("cat");
+
+if (trie.search("cat")) {
+    cout << "found";
+}`,
+                  'Compressed Trie / Radix Tree': `// Common character paths are
+// stored as compressed edge labels.`,
+                  'Ternary Search Tree': `// Each node has:
+// left  <  character
+// equal = character
+// right > character`,
+                  'Prefix Hashing': `long long prefixHash = hashPrefix(s, i);
+
+// Equal prefix hashes can be compared
+// with collision-aware techniques.`,
+                  'Hash Table': `int index = hash(key) % capacity;
+
+table[index] = value;`,
+                  'Hash Map': `unordered_map<string, int> freq;
+
+freq["cat"]++;
+freq["dog"]++;`,
+                  'Hash Set': `unordered_set<int> seen;
+
+seen.insert(10);
+
+if (seen.count(10)) {
+    cout << "present";
+}`,
+                  'Collision Handling': `// Two keys may map to the same slot.
+
+// Common solutions:
+// 1. Chaining
+// 2. Open addressing / probing`,
+                  'Frequency Map': `unordered_map<int, int> freq;
+
+for (int x : a) {
+    freq[x]++;
+}`,
+                  'Direct Recursion': `int factorial(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+
+    return n * factorial(n - 1);
+}`,
+                  'Tail Recursion': `int fact(int n, int result) {
+    if (n == 0) {
+        return result;
+    }
+
+    return fact(n - 1, result * n);
+}`,
+                  'Divide & Conquer': `1. Divide the problem.
+2. Solve each smaller problem.
+3. Combine their answers.`,
+                  'Backtracking': `choose();
+
+solve(nextState);
+
+undoChoice();`,
+                  'Memoized Recursion': `if (memo[state] != -1) {
+    return memo[state];
+}
+
+memo[state] = solve(nextState);`,
+                  'Activity Selection': `sort(activities, byFinishTime);
+
+for (activity : activities) {
+    if (activity.start >= lastFinish) {
+        choose(activity);
+        lastFinish = activity.finish;
+    }
+}`,
+                  'Fractional Knapsack': `sort(items, byValuePerWeight);
+
+for (item : items) {
+    take as much as possible;
+}`,
+                  'Huffman Coding': `while (heap.size() > 1) {
+    Node* a = popMin();
+    Node* b = popMin();
+
+    push(a + b);
+}`,
+                  'Interval Scheduling': `sort(intervals, byFinishTime);
+
+choose the next interval
+whose start >= lastFinish;`,
+                  'Greedy Graph Algorithms': `sort(edges, byWeight);
+
+for (edge : edges) {
+    if (safe(edge)) {
+        choose(edge);
+    }
+}`,
+                  'Bitwise AND/OR/XOR': `int andResult = a & b;
+int orResult  = a | b;
+int xorResult = a ^ b;`,
+                  'Bit Shifting': `int x = 5;
+
+x <<= 1;  // shift left
+x >>= 1;  // shift right`,
+                  'Bit Mask': `int mask = 0;
+
+mask |= (1 << k);  // set bit k`,
+                  'Set/Clear/Toggle Bit': `x |= (1 << k);   // set
+x &= ~(1 << k);  // clear
+x ^= (1 << k);   // toggle`,
+                  'Bitmask Enumeration': `for (int mask = 0; mask < (1 << n); mask++) {
+    // mask represents one subset.
+}`,
+                  'Union-Find': `dsu.unite(a, b);
+
+if (dsu.find(a) == dsu.find(b)) {
+    // Same component.
+}`,
+                  'Path Compression': `int find(int x) {
+    if (parent[x] == x) {
+        return x;
+    }
+
+    return parent[x] = find(parent[x]);
+}`,
+                  'Union by Rank': `if (rank[rootA] < rank[rootB]) {
+    swap(rootA, rootB);
+}
+
+parent[rootB] = rootA;`,
+                  'Union by Size': `if (size[rootA] < size[rootB]) {
+    swap(rootA, rootB);
+}
+
+parent[rootB] = rootA;
+size[rootA] += size[rootB];`,
+                  'Segment Tree': `build(node, left, right);
+
+query(node, left, right, ql, qr);
+
+update(node, left, right, index, value);`,
+                  'Lazy Propagation': `lazy[node] += value;
+
+// Push the pending update only when
+// we need to visit child nodes.`,
+                  'Fenwick Tree / BIT': `add(index, delta);
+
+int prefix = sum(index);`,
+                  'Range Sum Query': `int rangeSum = prefixSum(r) - prefixSum(l - 1);`,
+                  'Range Minimum Query': `int answer = segmentTree.query(left, right);`
+                };
+                return examples[name] || `Start with a small example, trace the structure step by step, and observe how the state changes.`;
+              };
+              const complexityFor = (name) => {
+                if (/Search|Sort/.test(name)) return name === 'Linear Search' ? 'O(n) worst case' : /Binary/.test(name) ? 'O(log n) on sorted/monotonic data' : /Merge/.test(name) ? 'O(n log n)' : /Quick/.test(name) ? 'O(n log n) average, O(n²) worst' : 'O(n²) typical for this elementary sort';
+                if (/Heap|Priority Queue/.test(name)) return 'Core heap operations are typically O(log n); top/peek is O(1).';
+                if (/Trie/.test(name) || /Prefix/.test(name)) return 'Typically O(L), where L is the key/prefix length, subject to implementation.';
+                if (/Hash|Frequency|Collision/.test(name)) return 'Average lookup/insert is O(1); worst case can degrade with collisions.';
+                if (/Graph|DAG|Bipartite|Connected|Weighted|Unweighted|Directed|Undirected|Complete/.test(name)) return 'Depends on the algorithm; traversal with adjacency lists is typically O(V + E).';
+                if (/DP|Memoization|Tabulation/.test(name)) return 'Depends on number of states × transition cost; identify both explicitly.';
+                if (/Union|Path Compression|Rank|Size/.test(name)) return 'With path compression + union by rank/size, operations are amortized near O(1), formally O(α(n)).';
+                if (/Segment|Fenwick|Range/.test(name)) return 'Typical query/update is O(log n); build is commonly O(n) for standard segment/Fenwick constructions.';
+                if (/Bit/.test(name)) return 'A fixed-width integer has O(1) bit operations in the usual word-RAM model.';
+                return 'Use the parent topic operations table, then account for the specific variant’s extra pointers, levels, or invariants.';
+              };
+              
               const v = VARIANT_DETAILS[selectedVariant];
 
               const deep = (name) => {
