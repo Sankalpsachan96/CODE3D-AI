@@ -2134,106 +2134,86 @@ int prefix = sum(index);`,
               const v = VARIANT_DETAILS[selectedVariant];
 
               const deep = (name) => {
-                if (/Array|Vector/.test(name)) return {
-                  internal: 'Elements are stored in indexed positions. A normal array has fixed storage; a vector manages a resizable contiguous block and may reallocate when capacity is exhausted.',
-                  memory: 'Array/vector elements are contiguous, so index i can be reached directly using the base address plus an offset.',
-                  operations: 'Access is O(1). Vector append is amortized O(1); insertion/deletion in the middle can be O(n) because elements may shift.',
-                  mistakes: 'Confusing size with capacity, using an invalid index, and forgetting that vector reallocation can invalidate iterators, references and pointers.'
-                };
-                if (/Search|Binary Search/.test(name)) return {
-                  internal: 'Searching repeatedly compares the target with stored values. Binary search eliminates half of the remaining search space after each comparison.',
-                  memory: 'Linear search needs only the input array and a few variables. Iterative binary search also uses O(1) auxiliary space.',
-                  operations: 'Linear search scans one by one. Binary search needs sorted/monotonic data and repeatedly chooses the middle.',
-                  mistakes: 'Using binary search on unsorted data, calculating the wrong midpoint, or forgetting boundary updates.'
-                };
-                if (/Sort/.test(name)) return {
-                  internal: 'Sorting rearranges elements according to an ordering rule. Different algorithms trade simplicity, stability, extra memory and worst-case performance.',
-                  memory: 'Some sorts work in-place; merge sort normally needs extra temporary storage. Recursive algorithms also use call-stack space.',
-                  operations: 'Compare the number of comparisons, swaps/moves, recursion depth and extra storage when choosing a sorting algorithm.',
-                  mistakes: 'Memorizing only average complexity, ignoring worst-case behavior, or using an algorithm without checking stability/in-place requirements.'
-                };
-                if (/Stack|Queue|Deque|Priority Queue|Monotonic/.test(name)) return {
-                  internal: 'These structures restrict how elements enter and leave. Stack uses LIFO, queue uses FIFO, deque supports both ends, and a priority queue removes the highest/lowest priority element.',
-                  memory: 'They can be backed by arrays/vectors or linked nodes. A priority queue is commonly implemented with a heap.',
-                  operations: 'Stack push/pop, queue enqueue/dequeue, and deque end operations are typically O(1). Heap-based priority insertion/removal is O(log n), with peek O(1).',
-                  mistakes: 'Mixing LIFO and FIFO, removing from the wrong end, or assuming a priority queue preserves full sorted order.'
-                };
-                if (/Binary Tree|BST|AVL|Red-Black|Balanced|Skewed|Perfect|Complete|Full/.test(name)) return {
-                  internal: 'Tree nodes form parent-child relationships. Binary trees have at most two children; BSTs add an ordering rule; balanced trees maintain height so operations stay efficient.',
-                  memory: 'Each node stores its value plus child references. BST/AVL/Red-Black nodes may also store parent, height, balance or color metadata.',
-                  operations: 'Traversal is O(n). BST search/insert/delete is O(h), where h is height; balanced variants keep h near O(log n).',
-                  mistakes: 'Confusing depth and height, forgetting the BST ordering invariant, or assuming every binary tree is balanced.'
-                };
-                if (/Heap|Priority/.test(name)) return {
-                  internal: 'A heap is a complete-tree structure satisfying a parent-child priority rule. It is usually stored compactly in an array.',
-                  memory: 'For a zero-based array heap, children of i are at 2i+1 and 2i+2; no explicit node pointers are required.',
-                  operations: 'Peek is O(1). Insert and extract are O(log n). Building a heap from n elements can be O(n).',
-                  mistakes: 'Treating a heap as a fully sorted array, using the wrong parent/child indices, or confusing min-heap and max-heap.'
-                };
-                if (/Hash|Frequency|Collision/.test(name)) return {
-                  internal: 'A hash function maps a key to a table position. Collisions occur when different keys map to the same position, so the implementation needs chaining or probing.',
-                  memory: 'A hash table maintains buckets/slots and may allocate additional nodes or probe positions depending on the collision strategy.',
-                  operations: 'Average lookup/insert/delete is O(1) with a good hash function and controlled load factor; worst-case can become O(n).',
-                  mistakes: 'Assuming O(1) is guaranteed, ignoring collisions/load factor, or modifying a key in a way that changes its hash identity.'
-                };
-                if (/Recursion|Backtracking|Divide|Memoized/.test(name)) return {
-                  internal: 'Recursion solves a problem by calling the same logic on a smaller state. Backtracking adds a choose-explore-undo cycle. Memoization stores repeated states.',
-                  memory: 'Every active recursive call occupies call-stack space. Memoization additionally stores computed states.',
-                  operations: 'Complexity depends on the number of recursive states and branches. Memoization can reduce repeated work dramatically.',
-                  mistakes: 'Missing the base case, changing state without undoing it in backtracking, or forgetting the memoization state definition.'
-                };
-                if (/Trie|Prefix/.test(name)) return {
-                  internal: 'A trie stores characters along paths so a prefix corresponds to a path from the root. Variants compress or reorganize those paths.',
-                  memory: 'Each node can contain child references plus an end-of-word marker. Memory depends on the number of stored characters and branching.',
-                  operations: 'Search/insert/prefix operations are typically O(L), where L is the string length, independent of the number of stored words in the ideal model.',
-                  mistakes: 'Forgetting the end-of-word marker, confusing a prefix with a complete word, or using a trie when memory cost is unjustified.'
-                };
-                if (/Graph|Directed|Undirected|Weighted|Unweighted|DAG|Bipartite|Complete|Connected/.test(name)) return {
-                  internal: 'A graph consists of vertices and edges. Direction, weight and connectivity change what algorithms are valid and what each edge means.',
-                  memory: 'Adjacency lists use O(V+E) space and are efficient for sparse graphs. Adjacency matrices use O(V²) space and give O(1) edge lookup.',
-                  operations: 'BFS/DFS with adjacency lists are typically O(V+E). Weighted graphs may require algorithms such as Dijkstra or Bellman-Ford.',
-                  mistakes: 'Using an algorithm with incompatible edge weights, forgetting visited tracking, or confusing directed and undirected connectivity.'
-                };
-                if (/DP|Memoization|Tabulation/.test(name)) return {
-                  internal: 'Dynamic programming stores answers to overlapping subproblems. The key is defining a state and a transition that covers every required case.',
-                  memory: 'A DP table stores states. Space can often be reduced when a state depends only on the previous row/step.',
-                  operations: 'Time is usually number of states × transition cost. Space is the number of stored states unless optimized.',
-                  mistakes: 'Choosing an incomplete state, writing a wrong transition, or optimizing space before understanding the full DP table.'
-                };
-                if (/Greedy|Activity|Knapsack|Huffman|Interval/.test(name)) return {
-                  internal: 'Greedy algorithms make the best-looking local choice and rely on a proof that those choices can lead to a global optimum.',
-                  memory: 'Usually low auxiliary memory beyond sorting or a small selection structure.',
-                  operations: 'Many greedy solutions are dominated by sorting, often O(n log n), followed by a linear scan.',
-                  mistakes: 'Assuming every locally best choice is globally optimal without proving the greedy-choice property.'
-                };
-                if (/Bit/.test(name)) return {
-                  internal: 'Bit manipulation treats an integer as a collection of binary bits and changes individual bits using AND, OR, XOR and shifts.',
-                  memory: 'Operations work inside a fixed-width machine word, so auxiliary space is normally O(1).',
-                  operations: 'Basic bit operations are O(1) for fixed-width integers.',
-                  mistakes: 'Ignoring signed shifts, operator precedence, overflow and the difference between setting, clearing and toggling a bit.'
-                };
-                if (/Union|Path Compression|Rank|Size/.test(name)) return {
-                  internal: 'Disjoint Set Union maintains separate components and merges them. Path compression and union by rank/size keep trees shallow.',
-                  memory: 'Each element stores a parent and optionally rank/size metadata.',
-                  operations: 'With path compression plus union by rank/size, operations are amortized O(alpha(n)), effectively constant for practical input sizes.',
-                  mistakes: 'Forgetting to update component metadata, comparing non-root nodes incorrectly, or using DSU for problems that need actual path information.'
-                };
-                if (/Segment|Fenwick|Range/.test(name)) return {
-                  internal: 'Range-query structures preprocess an array so updates and queries can avoid scanning the entire range.',
-                  memory: 'A segment tree normally uses O(n) nodes; a Fenwick tree uses O(n) array storage.',
-                  operations: 'Typical update/query operations are O(log n). Standard construction is O(n).',
-                  mistakes: 'Mixing 0-based and 1-based indexing, getting range boundaries wrong, or forgetting lazy propagation for range updates.'
-                };
+                const detail = VARIANT_DETAILS[name] || ['', '', ''];
+                const [what, hinglish, where] = detail;
+
+                const specific = {
+                  'Linear Search': ['Walks from index 0 toward the end and stops at the first matching value.', 'Only the input and current index are needed; auxiliary space is O(1).', 'Best when data is unsorted or the collection is small.', 'Do not assume the target is sorted or skip positions while scanning.'],
+                  'Binary Search': ['Maintains a low/high candidate interval and discards half after every midpoint comparison.', 'Iterative form uses O(1) auxiliary memory; recursive form adds O(log n) stack.', 'Requires a sorted/monotonic search space and runs in O(log n).', 'Never use it on unsorted data; boundary updates must preserve the search invariant.'],
+                  'Bubble Sort': ['Repeated adjacent comparisons move an out-of-order larger value toward the right on each pass.', 'Works in place with O(1) auxiliary memory.', 'Typical time is O(n²); an early-exit check can improve sorted input.', 'The inner-loop range shrinks after each pass; getting that bound wrong breaks sorting.'],
+                  'Selection Sort': ['Finds the minimum of the remaining unsorted suffix and swaps it into the next output position.', 'Uses O(1) auxiliary space because it rearranges the original array.', 'Always performs O(n²) comparisons, even when input is sorted.', 'Do not swap before finishing the minimum scan.'],
+                  'Insertion Sort': ['Maintains a sorted prefix and shifts larger elements right to insert the current key.', 'Needs only the current key and indexes, so auxiliary space is O(1).', 'O(n²) worst case but close to O(n) when the input has few inversions.', 'Save the key before shifting or its original value can be overwritten.'],
+                  'Merge Sort': ['Splits ranges recursively, sorts each half, then merges two sorted ranges in linear time.', 'Typical implementations allocate O(n) temporary merge storage.', 'Runs in O(n log n) for best, average and worst cases.', 'The merge must copy remaining values from both halves.'],
+                  'Quick Sort': ['Chooses a pivot, partitions the range around it, then recursively sorts the two resulting ranges.', 'Partitioning can be in place; recursion stack depends on partition depth.', 'Average O(n log n), worst O(n²) with repeatedly unbalanced partitions.', 'Partition boundaries and pivot placement must be consistent.'],
+                  'Heap Sort': ['Builds a heap, moves the root to the sorted suffix, then restores heap order for the remaining range.', 'Uses the array itself and normally needs O(1) auxiliary storage.', 'Guaranteed O(n log n) worst-case time and in-place sorting.', 'Only the active heap should be heapified.'],
+                  'Stack': ['Exposes only the top end, enforcing last-in-first-out ordering.', 'Can use contiguous storage or linked nodes with a top position/reference.', 'push, pop and top are typically O(1).', 'Popping an empty stack or removing from the wrong end breaks LIFO.'],
+                  'Priority Queue': ['Always exposes the highest or lowest priority item instead of the oldest item.', 'A heap is commonly stored as an implicit array tree.', 'peek O(1); insertion and removal O(log n).', 'A priority queue is not a fully sorted container.'],
+                  'AVL Tree': ['Tracks subtree height/balance factor and performs LL, RR, LR or RL rotations after updates.', 'Nodes store height/balance metadata in addition to BST links.', 'Search/insert/delete are O(log n) because height is tightly controlled.', 'Choose the rotation from the imbalance pattern and update heights.'],
+                  'Red-Black Tree': ['Maintains color invariants through rotations and recoloring rather than exact subtree heights.', 'Each node carries a color field in addition to normal BST links.', 'Search/insert/delete are O(log n).', 'Red-child and black-height rules must remain valid.'],
+                  'Min Heap': ['Maintains parent <= child, so the minimum is always at the root.', 'Usually represented by a compact array with implicit child positions.', 'peek O(1); insert/extract-min O(log n).', 'Heap order does not mean the whole array is sorted.'],
+                  'Max Heap': ['Maintains parent >= child, so the maximum is always at the root.', 'Uses compact array storage without explicit child pointers.', 'peek O(1); insert/extract-max O(log n).', 'Use max comparisons consistently during sift operations.'],
+                  'Directed': ['Edges have source and destination; u→v does not imply v→u.', 'Adjacency lists store outgoing neighbors and can track indegree separately.', 'BFS/DFS are O(V+E) with adjacency lists.', 'Adding both directions changes the intended directed relationship.'],
+                  'Undirected': ['Each edge is symmetric, so u-v can be traversed either way.', 'Adjacency lists normally store each logical edge under both endpoints.', 'BFS/DFS are O(V+E).', 'Remember that one logical edge creates two adjacency entries.'],
+                  'Weighted': ['Each edge carries a cost that contributes to path comparisons or totals.', 'Adjacency entries store a neighbor plus its weight.', 'Algorithm choice depends on weights; Dijkstra requires non-negative weights.', 'Ignoring weights changes the shortest-path problem.'],
+                  'Unweighted': ['Every edge contributes the same unit distance, so shortest path means minimum edge count.', 'Adjacency entries need only neighbor identities.', 'BFS finds shortest edge-count paths in O(V+E).', 'DFS does not guarantee the shortest unweighted path.'],
+                  'DAG': ['Has directed edges but no directed cycle, enabling topological ordering.', 'Indegree or DFS finish states can be used for ordering.', 'Topological processing is O(V+E).', 'One directed cycle invalidates DAG-only assumptions.'],
+                  'Bipartite': ['Assigns vertices to two colors and requires every edge to cross between colors.', 'A color array stores the partition and an uncolored state.', 'BFS/DFS coloring tests it in O(V+E).', 'Every connected component must be checked.'],
+                  'Complete': ['Contains an edge between every pair of distinct vertices.', 'A simple undirected complete graph has V(V-1)/2 edges.', 'Traversal is O(V+E), while E itself is Θ(V²).', 'Complete means every pair is adjacent, not merely reachable.'],
+                  'Connected': ['Every vertex belongs to one reachable component in an undirected graph.', 'Connectivity is a property of the graph, not a special node field.', 'One BFS/DFS visits all vertices iff the graph is connected.', 'Checking only the starting vertex is insufficient.'],
+                  'Top-down Memoization': ['Starts at the requested state and recursively computes only reached states while caching results.', 'Uses a memo table plus recursion stack.', 'Repeated states are solved once; time is states × transition cost.', 'The memo key must include the complete DP state.'],
+                  'Bottom-up Tabulation': ['Starts from base cases and fills states iteratively in dependency order.', 'Stores an explicit table and avoids recursive stack frames.', 'Usually computes every planned state.', 'Dependencies must be filled before dependent states.'],
+                  'Space-Optimized DP': ['Drops states that can no longer affect future transitions.', 'Can reduce a full table to one/two rows or a few variables.', 'Time usually stays similar while auxiliary space decreases.', 'Do not overwrite a value before the transition has consumed it.'],
+                  '1D DP': ['Represents each state with one parameter such as index, amount or day.', 'Uses one vector with one answer per state.', 'Complexity depends on state count and transition cost.', 'Define dp[i] clearly before writing the recurrence.'],
+                  '2D DP': ['Represents each state using two parameters such as two indexes or capacities.', 'Uses a matrix-like table, commonly O(nm) space.', 'Time depends on number of cells and transition work.', 'Keep row/column meanings and boundaries consistent.'],
+                  'Bitmask DP': ['Encodes selected items as bits of an integer state.', 'One mask is compact, but there can be 2^n states.', 'Typical complexity is exponential such as O(n2^n).', 'Only use it when n is small enough.'],
+                  'Tree DP': ['Computes each node state from child states, commonly with postorder DFS.', 'Stores DP values per node plus recursion stack.', 'Usually O(n × transition cost).', 'Clearly define how the parent state depends on child states.'],
+                  'Standard Trie': ['Consumes one character per edge and marks terminal nodes for complete words.', 'Nodes hold child references and a terminal flag.', 'Insert/search/prefix operations are O(L).', 'A prefix is not automatically a complete word.'],
+                  'Compressed Trie / Radix Tree': ['Compresses chains of single-child nodes into multi-character edge labels.', 'Fewer nodes are stored, but edges hold string fragments.', 'Cost depends on characters compared along compressed edges.', 'Insertion must split an edge when keys diverge inside it.'],
+                  'Ternary Search Tree': ['Stores one character with left/equal/right links, combining BST comparison with trie progression.', 'Uses three links per character node instead of an alphabet-sized child array.', 'Search/insert depend on string length and tree shape.', 'Advance the character index only on the equal branch.'],
+                  'Prefix Hashing': ['Builds cumulative hashes so substring hashes can be derived from prefix values.', 'Stores prefix hashes and usually powers of the base.', 'Preprocessing O(n); common substring hash extraction O(1).', 'Hash equality is probabilistic unless collision-safe techniques are added.'],
+                  'Hash Table': ['Maps keys to buckets and uses chaining or probing for collisions.', 'Memory includes buckets, entries and collision metadata.', 'Average lookup/insert/delete O(1); collisions can degrade performance.', 'Load factor and collision behavior matter.'],
+                  'Hash Map': ['Stores key-value pairs and hashes keys to locate values.', 'Stores keys, mapped values and hash-table overhead.', 'Average find/insert/erase O(1).', 'Keys are not guaranteed to be sorted.'],
+                  'Hash Set': ['Stores each key at most once and hashes it for membership checks.', 'Stores keys plus bucket/collision overhead but no mapped values.', 'Average insert/find/erase O(1).', 'Do not expect duplicates or sorted order.'],
+                  'Collision Handling': ['Resolves different keys landing at the same bucket through chaining or probing.', 'Chaining needs bucket collections; open addressing needs spare slots.', 'Performance depends on load factor and collision distribution.', 'Probe termination and key equality must be handled separately.'],
+                  'Frequency Map': ['Maps every distinct value to its occurrence count.', 'Uses O(k) memory for k distinct values.', 'A full counting pass is average O(n) with hashing.', 'Frequency is a count, not the value or its first index.'],
+                  'Direct Recursion': ['Calls itself on a smaller or changed state until a base case is reached.', 'Each active call occupies a stack frame.', 'Time follows the recursion tree; space follows maximum depth.', 'The recursive argument must move toward termination.'],
+                  'Tail Recursion': ['Makes the recursive call the final operation, often carrying an accumulator.', 'Stack usage still depends on language/runtime tail-call optimization.', 'Time is proportional to the number of calls.', 'Tail position does not guarantee automatic optimization in C++.'],
+                  'Divide & Conquer': ['Splits a problem into subproblems, solves them, then combines their answers.', 'Memory includes recursion depth plus combine buffers.', 'Analyze with a recurrence such as T(n)=aT(n/b)+f(n).', 'The combine step is part of the complexity.'],
+                  'Backtracking': ['Makes a choice, explores it, then undoes the choice before another branch.', 'Stores the partial solution and recursion stack.', 'Often exponential because the decision tree can be large.', 'The undo step must restore the exact previous state.'],
+                  'Memoized Recursion': ['Adds caching to recursion so each unique state is computed once.', 'Uses a memo table plus active recursion stack.', 'Repeated states become cache hits.', 'The cache key must represent the complete state.'],
+                  'Activity Selection': ['Sorts by finish time and repeatedly chooses the next compatible earliest-finishing activity.', 'Tracks the last finish time and selected activities.', 'O(n log n) sorting plus O(n) scan.', 'Earliest finish is the proven rule; earliest start is not.'],
+                  'Fractional Knapsack': ['Ranks items by value/weight and takes as much of the best ratio as capacity allows.', 'Needs item ratios and remaining capacity, not a subset DP table.', 'O(n log n) after sorting.', 'This greedy rule does not solve 0/1 knapsack.'],
+                  'Huffman Coding': ['Repeatedly merges the two least-frequent nodes using a min-heap.', 'Stores the evolving heap and resulting binary code tree.', 'O(n log n) for n distinct symbols with a heap.', 'The two smallest frequencies must be merged at every step.'],
+                  'Interval Scheduling': ['Chooses a maximum compatible set using a proven interval ordering.', 'Tracks the finish time of the last selected interval.', 'O(n log n) sorting plus O(n) selection.', 'Shortest duration is not the same as earliest finish.'],
+                  'Greedy Graph Algorithms': ['Makes locally cheapest safe graph choices while preserving a global invariant, as in Kruskal or Prim.', 'Kruskal uses sorted edges and DSU; Prim uses a priority queue frontier.', 'Typical MST implementations are O(E log E) or O(E log V).', 'A cheap edge is not safe if it violates the algorithm invariant.'],
+                  'Bitwise AND/OR/XOR': ['Processes matching bit positions using three different rules: common bits, union of bits, or differing bits.', 'Uses fixed-width integer operands only.', 'Each operation is O(1).', 'Do not confuse bitwise operators with logical operators.'],
+                  'Bit Shifting': ['Moves the binary representation left or right by a chosen number of positions.', 'Operates directly on the integer word.', 'Fixed-width shifts are O(1).', 'Shift count and signed right-shift behavior require care.'],
+                  'Bit Mask': ['Uses selected 1-bits as flags to test or modify corresponding positions.', 'The mask is one fixed-size integer.', 'Set/test/apply operations are O(1).', 'Bit k is normally represented by 1 << k.'],
+                  'Set/Clear/Toggle Bit': ['Uses OR to set, AND with an inverted mask to clear, and XOR to toggle a selected bit.', 'Needs only the integer and mask.', 'Each operation is O(1).', 'Using the wrong operator changes the intended bit operation.'],
+                  'Bitmask Enumeration': ['Treats every integer from 0 to 2^n-1 as one subset.', 'One integer encodes each subset, but there are exponentially many.', 'Enumeration is O(2^n) before per-subset work.', 'Watch integer width and bit-to-item mapping.'],
+                  'Union-Find': ['Represents components by parent-root trees and merges their representatives.', 'Stores parent plus optional rank/size arrays.', 'With compression and union heuristics, operations are amortized O(alpha(n)).', 'Always compare representatives, not arbitrary nodes.'],
+                  'Path Compression': ['During find, rewires visited nodes directly toward the root.', 'Mutates the parent array in place.', 'Combined with union by rank/size, future finds are amortized near O(1).', 'Return the root while updating the current node parent.'],
+                  'Union by Rank': ['Attaches the lower-rank root below the higher-rank root.', 'Stores rank metadata for roots.', 'With compression, operations are amortized O(alpha(n)).', 'Rank is not the same thing as component size.'],
+                  'Union by Size': ['Attaches the smaller component below the larger component and updates the surviving size.', 'Stores component sizes for roots.', 'With compression, operations are amortized O(alpha(n)).', 'Update size only on the new representative.'],
+                  'Segment Tree': ['Recursively divides an array into intervals and stores an aggregate for each interval.', 'Uses O(n) tree storage plus optional lazy tags.', 'Range query and point update are typically O(log n).', 'Interval boundaries and overlap cases must be handled precisely.'],
+                  'Lazy Propagation': ['Stores a pending range update at an internal segment node and pushes it only when required.', 'Adds a lazy-tag value beside each relevant segment.', 'Suitable range updates and queries can be O(log n).', 'Push pending tags before descending and avoid applying them twice.'],
+                  'Fenwick Tree / BIT': ['Stores partial prefix aggregates whose ranges are determined by each index lowbit.', 'Uses a compact one-indexed array.', 'Point update and prefix sum are O(log n).', 'Mixing zero-based external indexes with one-based Fenwick indexes causes errors.'],
+                  'Range Sum Query': ['Combines values in [l,r] using addition; static prefix sums can answer ranges by subtraction.', 'Static data uses prefix storage; dynamic data commonly uses Fenwick/segment trees.', 'Static query O(1) after preprocessing; dynamic query typically O(log n).', 'l-1 boundary handling is the classic off-by-one trap.'],
+                  'Range Minimum Query': ['Returns the smallest value in an interval; unlike sum, minimum has no inverse subtraction.', 'Segment trees store interval minima; sparse tables suit static RMQ.', 'Segment-tree query is typically O(log n); static sparse-table query can be O(1).', 'Never derive a range minimum by subtracting prefix minima.']
+};
+
+                if (specific[name]) {
+                  const [internal, memory, operations, mistakes] = specific[name];
+                  return { internal, memory, operations, mistakes };
+                }
+
                 return {
-                  internal: 'This variant follows a specific structural or algorithmic rule. Understand that invariant first, then trace how operations preserve it.',
-                  memory: 'Memory depends on the nodes, auxiliary arrays, pointers or state maintained by the variant.',
-                  operations: 'Use the complexity guide and parent topic table together; the exact cost depends on the operation being performed.',
-                  mistakes: 'Using the variant without checking its invariant, constraints, memory requirements and worst-case behavior.'
+                  internal: name + ': ' + what,
+                  memory: name + ' memory focus: ' + hinglish,
+                  operations: name + ' usage focus: ' + where + ' Complexity depends on the exact operation.',
+                  mistakes: 'For ' + name + ', follow its own invariant and operation semantics instead of copying rules from a similar-looking structure.'
                 };
               };
-
-              const d = deep(selectedVariant);
-
               return (
                 <div className={`mt-4 p-5 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
                   <div className="flex items-start justify-between gap-4">
