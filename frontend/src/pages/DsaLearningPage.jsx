@@ -388,9 +388,7 @@ export default function DsaLearningPage() {
                 <h1 className="mt-3 text-2xl md:text-3xl font-extrabold">{selected.title}</h1>
                 <p className="mt-2 max-w-3xl text-sm leading-relaxed text-slate-400">{selected.summary}</p>
               </div>
-              <button onClick={() => setSelected(null)} className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer" aria-label="Close topic">
-                <X size={17} />
-              </button>
+
             </div>
           </div>
 
