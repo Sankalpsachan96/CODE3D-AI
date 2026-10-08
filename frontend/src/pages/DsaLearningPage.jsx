@@ -319,6 +319,66 @@ const TOPIC_DEEP = {
   }
 };
 
+
+const VARIANT_DETAILS = {
+  'Static Array': ['Fixed-size contiguous collection. Size is decided when the array is created.','Simple aur fast hota hai, lekin size fixed hota hai; random access O(1) milta hai.','Best for: fixed-size data, tables, small buffers.'],
+  'Dynamic Array / Vector': ['Resizable array that grows when capacity is exhausted.','Vector ko flexible array samjho: end par add karna usually fast hota hai, aur zarurat par capacity badh sakti hai.','Best for: collections whose size changes during execution.'],
+  '2D Array': ['An array arranged as rows and columns.','Matrix/table jaisa structure: a[i][j] se row i aur column j ka element access karte hain.','Best for: grids, matrices, DP tables.'],
+  'Multidimensional Array': ['An array with three or more dimensions.','2D se aage multiple indexes hote hain, jaise a[x][y][z]; useful but memory layout ko samajhna important hai.','Best for: 3D grids, tensors and state spaces.'],
+  'Singly Linked List': ['Each node stores data and one next reference.','Har node ko sirf next node ka address pata hota hai; forward traversal simple hai.','Best for: simple dynamic chains and stack-like structures.'],
+  'Doubly Linked List': ['Each node stores next and previous references.','Aage aur peeche dono direction me move kar sakte ho, lekin extra pointer memory lagti hai.','Best for: browser history, deques, LRU-style structures.'],
+  'Circular Singly Linked List': ['The last node points back to the first node.','Last ke baad list khatam nahi hoti; wapas first node par aa jate ho.','Best for: round-robin scheduling and cyclic processing.'],
+  'Circular Doubly Linked List': ['A doubly linked list whose ends connect in both directions.','Last next se first aur first previous se last milta hai, isliye cyclic traversal dono directions me possible hai.','Best for: playlists, circular deques and navigation.'],
+  'Skip List': ['A probabilistic linked structure with multiple levels of forward links.','Extra shortcut links ki wajah se average search O(log n) ho sakta hai, while structure remains simpler than many balanced trees.','Best for: ordered sets/maps where probabilistic balancing is acceptable.'],
+  'Linear Search': ['Checks elements one by one until the target is found or the collection ends.','Simple hai aur sorted data ki requirement nahi hoti, but worst case me poora array dekhna pad sakta hai.','Best for: small or unsorted collections.'],
+  'Binary Search': ['Repeatedly halves a sorted or monotonic search space.','Har comparison ke baad roughly aadha search space remove ho jata hai.','Best for: sorted arrays and monotonic answer spaces.'],
+  'Bubble Sort': ['Repeatedly swaps adjacent out-of-order elements.','Har pass me bade elements end ki taraf bubble hote hain; learning ke liye useful, practical large data ke liye usually slow.','Best for: teaching and tiny inputs.'],
+  'Selection Sort': ['Repeatedly selects the smallest remaining element and places it in position.','Har position ke liye minimum element find karke swap karte hain; swaps kam ho sakte hain, comparisons O(n²) hain.','Best for: simple in-place sorting on very small data.'],
+  'Insertion Sort': ['Builds a sorted prefix by inserting each new element into its correct position.','Cards arrange karne jaisa: next element ko sorted left part me correct jagah insert karte ho.','Best for: small or nearly sorted data.'],
+  'Merge Sort': ['Divide-and-conquer sort that recursively splits and then merges sorted halves.','Array ko halves me todkar sort karo aur merge karo; predictable O(n log n) time milta hai.','Best for: stable sorting and predictable performance.'],
+  'Quick Sort': ['Partitions data around a pivot and recursively sorts the partitions.','Pivot choose karke smaller/bigger elements ko sides me rakhte hain; average fast, but bad pivot choices can cause O(n²).','Best for: fast general-purpose in-memory sorting with a good implementation.'],
+  'Heap Sort': ['Uses a heap to repeatedly extract the next largest/smallest element.','Heap property se max/min efficiently milta hai; O(n log n) worst-case time aur in-place behavior possible hai.','Best for: guaranteed O(n log n) comparison sorting with low extra space.'],
+  'Stack': ['LIFO structure: last inserted item is removed first.','Plates ke stack jaisa: jo last me rakha, woh pehle niklega.','Best for: recursion-like processing, undo, parsing and DFS.'],
+  'Array Stack': ['Stack implemented using an array or vector.','Top ko index se maintain karte hain; cache-friendly aur simple implementation.','Best for: fast stack operations with contiguous storage.'],
+  'Linked Stack': ['Stack implemented using linked nodes.','Top node par push/pop karte hain; fixed capacity ki problem nahi hoti, but pointer overhead hota hai.','Best for: dynamically growing stacks.'],
+  'Circular Queue': ['Queue stored in a circular array so freed front positions can be reused.','Rear end par pahunchne ke baad index wapas beginning par aa sakta hai.','Best for: fixed-size buffers and streaming systems.'],
+  'Deque': ['Double-ended queue supporting insertion and deletion at both ends.','Front aur rear dono taraf se push/pop kar sakte ho.','Best for: sliding windows, task scheduling and bidirectional processing.'],
+  'Priority Queue': ['Returns the element with highest priority rather than oldest arrival.','Normal queue me first-in-first-out hota hai; priority queue me important item pehle nikalta hai.','Best for: scheduling, shortest paths and top-k problems.'],
+  'Monotonic Stack': ['A stack maintained in increasing or decreasing order.','Stack ko sorted-like invariant me rakhkar next greater/smaller type problems efficiently solve karte hain.','Best for: next greater element, histogram and contribution problems.'],
+  'Full Binary Tree': ['Every node has either zero or exactly two children.','Kisi node ka sirf ek child nahi hota; ya leaf hoga ya two children honge.','Best for: structures where strict branching is useful.'],
+  'Complete Binary Tree': ['Every level is full except possibly the last, which is filled left to right.','Last level ko left se fill kiya jata hai; isi property ki wajah se binary heap array me efficiently store hota hai.','Best for: heaps and compact tree storage.'],
+  'Perfect Binary Tree': ['All internal nodes have two children and all leaves are at the same depth.','Har level completely full hota hai. n nodes ke liye height tightly determined hoti hai.','Best for: theoretical analysis and ideal hierarchical structures.'],
+  'Balanced Tree': ['A tree whose height is kept close to logarithmic relative to its size.','Goal ye hai ki tree ek side bahut lamba na ho, taaki operations fast rahen.','Best for: guaranteed or near-guaranteed efficient searching.'],
+  'Skewed / Degenerate Tree': ['A tree where nodes mostly have only one child, making it chain-like.','Tree dekhne me linked list jaisa ban jata hai aur height O(n) ho sakti hai.','Best for: understanding worst-case tree behavior, not usually for performance.'],
+  'Unbalanced BST': ['A BST without a balancing guarantee.','Sorted input jaise cases me tree ek side lean kar sakta hai aur search O(n) tak degrade ho sakta hai.','Best for: simple ordered data when worst-case balance is not critical.'],
+  'Balanced BST': ['A BST designed to keep height small.','Ordering ke saath height bhi control ki jati hai, isliye search/insert/delete logarithmic ke close rehte hain.','Best for: ordered sets and maps needing reliable performance.'],
+  'AVL Tree': ['A self-balancing BST that keeps subtree height differences within a strict bound.','Har insertion/deletion ke baad rotations se balance restore hota hai.','Best for: lookup-heavy workloads where strict height balance helps.'],
+  'Red-Black Tree': ['A self-balancing BST using color invariants to control height.','Nodes ko red/black rules ke saath maintain karke rotations aur recoloring se balance rakha jata hai.','Best for: general-purpose ordered maps/sets.'],
+  'Min Heap': ['Complete binary tree where every parent is less than or equal to its children.','Root par smallest priority element milta hai.','Best for: minimum extraction and shortest-path style workloads.'],
+  'Max Heap': ['Complete binary tree where every parent is greater than or equal to its children.','Root par largest element milta hai.','Best for: maximum extraction and top-k largest problems.'],
+  'Binary Heap': ['Heap with at most two children per node, commonly stored in an array.','2 children hone ki wajah se parent/child indexes simple formulas se milte hain.','Best for: standard priority queues.'],
+  'd-ary Heap': ['Heap where each node can have d children.','Binary heap ke 2 children ki jagah d children hote hain; branching badhne se height kam hoti hai but per-level comparisons badhte hain.','Best for: workloads where fewer levels can improve cache or priority-queue behavior.'],
+  'Directed': ['Edges have a direction from one vertex to another.','A → B ka matlab B → A automatically nahi hota.','Best for: dependencies, workflows and one-way relationships.'],
+  'Undirected': ['Edges represent a two-way relationship.','A—B ka relation dono directions me considered hota hai.','Best for: mutual connections and many physical networks.'],
+  'Weighted': ['Edges carry a numeric cost, distance or weight.','Har connection ke saath cost/distance hoti hai, jise shortest-path ya optimization algorithms use karte hain.','Best for: roads, costs, distances and resource networks.'],
+  'Unweighted': ['Edges have no explicit cost; often every edge is treated equally.','Har step ki cost same maan sakte ho, isliye BFS shortest path de sakta hai in suitable graphs.','Best for: minimum-edge-count paths and simple connectivity.'],
+  'DAG': ['Directed Acyclic Graph: directed graph with no directed cycle.','Isme direction follow karke wapas same node par cycle nahi ban sakti; topological ordering possible hoti hai.','Best for: dependencies, scheduling and build systems.'],
+  'Bipartite': ['Vertices can be divided into two sets so every edge connects different sets.','Ek group ke nodes doosre group se connect hote hain; same group ke andar edge nahi hoti.','Best for: matching and two-group relationship problems.'],
+  'Complete': ['Every pair of distinct vertices has an edge in the graph.','Har node ka har doosre node se connection hota hai, isliye edges ki count bahut high hoti hai.','Best for: theoretical graph analysis and dense relationship models.'],
+  'Connected': ['In an undirected graph, every vertex is reachable from every other vertex.','Kisi bhi node se kisi bhi doosre node tak path mil jata hai.','Best for: connectivity and network reachability analysis.'],
+  'Top-down Memoization': ['Recursive DP that caches answers of solved states.','Recursion se natural solution likho, aur jo state solve ho gayi uska answer save kar do.','Best for: sparse state spaces and naturally recursive problems.'],
+  'Bottom-up Tabulation': ['Iterative DP that fills states from base cases toward the final answer.','Base se start karke table fill karte hain; recursion stack ki zarurat nahi hoti.','Best for: predictable state order and iterative implementations.'],
+  'Space-Optimized DP': ['DP that keeps only the states currently needed.','Agar current answer ko sirf previous row/few states chahiye, to poori table store karne ki zarurat nahi.','Best for: reducing memory from O(states) when dependencies allow it.'],
+  '1D DP': ['DP represented by one index.','dp[i] ek dimension ki state ko represent karta hai, jaise Fibonacci ya climbing stairs.','Best for: sequence and one-parameter state problems.'],
+  '2D DP': ['DP represented by two state dimensions.','dp[i][j] jaise states do changing parameters capture karte hain, e.g. LCS or grid problems.','Best for: grids, two strings and two-parameter optimization.'],
+  'Bitmask DP': ['DP that uses bits to represent subsets or selected items.','Ek integer ke bits se selected/not-selected elements represent karte hain; subset state compact ho jata hai.','Best for: small-n subset and assignment problems.'],
+  'Tree DP': ['DP performed over tree nodes and their subtrees.','Har node ka answer uske children/subtrees ke answers se build karte hain.','Best for: tree optimization, independent sets and path problems.'],
+  'Standard Trie': ['Character-by-character prefix tree for strings.','Common prefixes share the same path, so prefix search natural aur fast hota hai.','Best for: dictionaries and autocomplete.'],
+  'Compressed Trie / Radix Tree': ['Trie variant that compresses chains with single children into longer edge labels.','Unnecessary one-child nodes hata kar memory aur traversal overhead reduce kiya ja sakta hai.','Best for: large string sets where memory matters.'],
+  'Ternary Search Tree': ['String structure where each node stores a character and has lower, equal and higher links.','Trie aur BST ke ideas combine karta hai; alphabet-wide child array ki memory bach sakti hai.','Best for: dictionary/prefix workloads with memory constraints.'],
+  'Prefix Hashing': ['Uses hashes of prefixes to compare or query strings efficiently.','Prefix information ko numeric hash me represent karke substring/prefix comparisons fast kiye ja sakte hain, with collision considerations.','Best for: string matching and fast equality checks.']
+};
+
 function TopicCard({ topic, onOpen, isBright }) {
   return (
     <button
@@ -361,6 +421,7 @@ export default function DsaLearningPage() {
   const { isBright } = useTheme();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -394,8 +455,25 @@ export default function DsaLearningPage() {
 
           <DetailSection title="Types / Variants" icon={<Layers3 size={16} />} isBright={isBright}>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
-              {selected.types.map((type) => <div key={type} className="p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-xs font-semibold">{type}</div>)}
+              {selected.types.map((type) => (
+                <button key={type} type="button" onClick={() => setSelectedVariant(type)} className="text-left p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-xs font-semibold hover:border-cyan-400/50 hover:bg-cyan-500/10 transition-colors cursor-pointer">
+                  {type}<span className="block mt-1 text-[10px] font-normal text-cyan-500/70">Click to learn →</span>
+                </button>
+              ))}
             </div>
+            {selectedVariant && VARIANT_DETAILS[selectedVariant] && (
+              <div className={`mt-4 p-5 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-bold">{selectedVariant}</h3>
+                    <p className="mt-2 text-sm leading-7 text-slate-400">{VARIANT_DETAILS[selectedVariant][0]}</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Hinglish:</span> {VARIANT_DETAILS[selectedVariant][1]}</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Where to use:</span> {VARIANT_DETAILS[selectedVariant][2].replace('Best for: ','')}</p>
+                  </div>
+                  <button type="button" onClick={() => setSelectedVariant(null)} className="text-slate-500 hover:text-white cursor-pointer" aria-label="Close variant explanation"><X size={16} /></button>
+                </div>
+              </div>
+            )}
           </DetailSection>
 
           <DetailSection title="Core operations & complexity" icon={<Clock3 size={16} />} isBright={isBright}>
