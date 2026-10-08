@@ -433,7 +433,7 @@ function DetailSection({ title, icon, children, isBright }) {
     <section className={`rounded-2xl border p-5 ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'}`}>
       <div className="flex items-center gap-2 mb-3">
         <span className="text-cyan-400">{icon}</span>
-        <h2 className={`text-sm font-bold uppercase tracking-wider ${isBright ? 'text-slate-800' : 'text-slate-100'}`}>{title}</h2>
+        <h2 className={`text-sm font-bold uppercase tracking-wider ${isBright ? 'text-cyan-700' : 'text-cyan-300'}`}>{title}</h2>
       </div>
       {children}
     </section>
