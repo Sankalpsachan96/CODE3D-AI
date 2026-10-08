@@ -12,11 +12,18 @@ import AiTutorPage from './pages/AiTutorPage';
 import SheetsPage from './pages/SheetsPage';
 import DsaProblemPage from './pages/DsaProblemPage';
 import SavedVisualizationsPage from './pages/SavedVisualizationsPage';
+import ComingSoonPage from './pages/ComingSoonPage';
 import LoginModal from './components/LoginModal';
 import CodeDoctorModal from './components/CodeDoctorModal';
 import { AppErrorBoundary } from './components/ErrorBoundaries';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+
+function PlatformGate({ children }) {
+  const status = String(import.meta.env.VITE_PLATFORM_STATUS || 'LIVE').toUpperCase();
+  if (status !== 'LIVE') return <ComingSoonPage />;
+  return children;
+}
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
@@ -94,5 +101,5 @@ function MainAppContent() {
 }
 
 export default function App() {
-  return <AppErrorBoundary><ThemeProvider><AuthProvider><HashRouter><MainAppContent /></HashRouter></AuthProvider></ThemeProvider></AppErrorBoundary>;
+  return <AppErrorBoundary><ThemeProvider><AuthProvider><HashRouter><PlatformGate><MainAppContent /></PlatformGate></HashRouter></AuthProvider></ThemeProvider></AppErrorBoundary>;
 }
