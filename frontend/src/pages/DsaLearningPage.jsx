@@ -403,31 +403,7 @@ const TOPIC_DEEP = {
     interview: ['Implement trie', 'Autocomplete', 'Word dictionary with wildcard', 'Aho–Corasick basics'],
     when: 'Use for prefix-heavy string workloads, autocomplete and dictionary-style queries.',
     avoid: 'Avoid a full trie when memory is tight and hashing/string maps are enough.'
-  }
-};
-
-
-const DSA_INTRO = {
-  title: 'Introduction to DSA',
-  summary: 'Understand what Data Structures and Algorithms are, why they matter, where they are used, and how they help us build efficient software.',
-  sections: [
-    ['What is DSA?', 'DSA stands for Data Structures and Algorithms. A data structure is a way to organize and store data so we can work with it efficiently. An algorithm is a step-by-step method for solving a problem or performing a task. Together, they help us decide both how data should be stored and how it should be processed.'],
-    ['Data Structure — simple meaning', 'Think of data as things you need to keep: names, marks, messages, locations, products or connections. A data structure decides how those things are arranged so operations such as searching, inserting, deleting and updating can be performed effectively.'],
-    ['Hinglish: Data Structure kya hai?', 'Data Structure ko simple language me data ko arrange karne ka tareeka samjho. Jaise real life me books ko shelf par, files ko folders me aur people ko queue me arrange karte ho. Computer me bhi data ko situation ke hisaab se different structures me rakhte hain.'],
-    ['Algorithm — simple meaning', 'An algorithm is a clear sequence of steps used to solve a problem. For example, finding a name in a list, sorting marks from highest to lowest, or finding the shortest route between two places all require a sequence of decisions.'],
-    ['Hinglish: Algorithm kya hai?', 'Algorithm basically problem solve karne ke steps hain. Agar tum kisi ko chai banane ke exact steps bata rahe ho, woh ek simple real-life algorithm jaisa hai. Programming me ye steps precise aur executable hote hain.'],
-    ['Why do we need DSA?', 'A program can produce the correct answer and still be inefficient. With a small input, an inefficient approach may look fine. As data grows, the difference becomes huge. DSA helps us choose structures and algorithms that use reasonable time and memory.'],
-    ['Real-world example', 'A navigation system cannot try every possible road blindly. It represents locations and roads as a graph and uses path-finding algorithms. A search engine needs indexing structures and efficient search. A browser uses stacks and other structures for history, parsing and internal tasks.'],
-    ['Where is DSA used?', 'DSA appears throughout software: search engines, databases, operating systems, compilers, networks, maps, social platforms, recommendation systems, games, AI systems and everyday applications. Even when you do not see a data structure directly, software is constantly organizing and processing data.'],
-    ['How DSA helps a programmer', 'DSA improves problem-solving, helps you reason about performance, makes large inputs manageable, and gives you reusable patterns. It also helps you compare multiple solutions instead of accepting the first working solution.'],
-    ['Time & Space Complexity — basic idea', 'Time complexity describes how the amount of work grows as input size grows. Space complexity describes how extra memory usage grows. You will commonly see O(1), O(log n), O(n), O(n log n) and O(n²). These are growth-rate descriptions, not exact stopwatch timings.'],
-    ['Brute Force vs Efficient Approach', 'Brute force tries a straightforward solution, often exploring many possibilities. It is useful for understanding a problem and for small inputs. An efficient approach uses the structure of the problem to avoid unnecessary work—for example, binary search removes half the search space at each step.'],
-    ['Main types of Data Structures', 'Linear structures arrange data in a sequence, such as arrays, linked lists, stacks and queues. Non-linear structures represent hierarchy or relationships, such as trees and graphs. Other useful categories include static vs dynamic and contiguous vs linked storage.'],
-    ['Main algorithmic patterns', 'Common patterns include searching, sorting, traversal, divide and conquer, greedy algorithms, dynamic programming, backtracking, graph algorithms and string algorithms. Learning these patterns helps you recognize how a new problem can be approached.'],
-    ['How DSA connects with programming', 'Programming gives you the language and tools to implement a solution; DSA gives you ways to structure data and reason about the solution. The same idea can be implemented in C++, Java, Python or JavaScript—the underlying data-structure and algorithmic reasoning remains the important part.'],
-    ['What should you learn first?', 'Start with complexity basics and simple linear structures, then move through searching/sorting, linked lists, stacks/queues, trees, BSTs, heaps, graphs, dynamic programming and string structures. Along the way, practice problems and dry runs turn theory into problem-solving skill.'],
-    ['Why companies and interviews care about DSA', 'DSA questions test more than memorized syntax. They reveal how you break down a problem, choose a representation, analyze trade-offs and build a correct solution. These skills also matter in real engineering when software must handle larger workloads efficiently.']
-  ],
+  },
   hashing: {
     concept: 'Hashing converts a key into a bucket/index using a hash function, making average lookup very fast.',
     hinglish: 'Hashing ko locker system jaisa samjho: key ko hash function ek bucket deta hai, phir wahi se data quickly mil jata hai. Same bucket aaye to collision handle karni padti hai.',
@@ -507,7 +483,31 @@ const DSA_INTRO = {
     avoid: 'Avoid when data is static and a simpler prefix-sum or sparse-table solution is enough.'
   },
 
+
 };
+
+const DSA_INTRO = {
+  title: 'Introduction to DSA',
+  summary: 'Understand what Data Structures and Algorithms are, why they matter, where they are used, and how they help us build efficient software.',
+  sections: [
+    ['What is DSA?', 'DSA stands for Data Structures and Algorithms. A data structure is a way to organize and store data so we can work with it efficiently. An algorithm is a step-by-step method for solving a problem or performing a task. Together, they help us decide both how data should be stored and how it should be processed.'],
+    ['Data Structure — simple meaning', 'Think of data as things you need to keep: names, marks, messages, locations, products or connections. A data structure decides how those things are arranged so operations such as searching, inserting, deleting and updating can be performed effectively.'],
+    ['Hinglish: Data Structure kya hai?', 'Data Structure ko simple language me data ko arrange karne ka tareeka samjho. Jaise real life me books ko shelf par, files ko folders me aur people ko queue me arrange karte ho. Computer me bhi data ko situation ke hisaab se different structures me rakhte hain.'],
+    ['Algorithm — simple meaning', 'An algorithm is a clear sequence of steps used to solve a problem. For example, finding a name in a list, sorting marks from highest to lowest, or finding the shortest route between two places all require a sequence of decisions.'],
+    ['Hinglish: Algorithm kya hai?', 'Algorithm basically problem solve karne ke steps hain. Agar tum kisi ko chai banane ke exact steps bata rahe ho, woh ek simple real-life algorithm jaisa hai. Programming me ye steps precise aur executable hote hain.'],
+    ['Why do we need DSA?', 'A program can produce the correct answer and still be inefficient. With a small input, an inefficient approach may look fine. As data grows, the difference becomes huge. DSA helps us choose structures and algorithms that use reasonable time and memory.'],
+    ['Real-world example', 'A navigation system cannot try every possible road blindly. It represents locations and roads as a graph and uses path-finding algorithms. A search engine needs indexing structures and efficient search. A browser uses stacks and other structures for history, parsing and internal tasks.'],
+    ['Where is DSA used?', 'DSA appears throughout software: search engines, databases, operating systems, compilers, networks, maps, social platforms, recommendation systems, games, AI systems and everyday applications. Even when you do not see a data structure directly, software is constantly organizing and processing data.'],
+    ['How DSA helps a programmer', 'DSA improves problem-solving, helps you reason about performance, makes large inputs manageable, and gives you reusable patterns. It also helps you compare multiple solutions instead of accepting the first working solution.'],
+    ['Time & Space Complexity — basic idea', 'Time complexity describes how the amount of work grows as input size grows. Space complexity describes how extra memory usage grows. You will commonly see O(1), O(log n), O(n), O(n log n) and O(n²). These are growth-rate descriptions, not exact stopwatch timings.'],
+    ['Brute Force vs Efficient Approach', 'Brute force tries a straightforward solution, often exploring many possibilities. It is useful for understanding a problem and for small inputs. An efficient approach uses the structure of the problem to avoid unnecessary work—for example, binary search removes half the search space at each step.'],
+    ['Main types of Data Structures', 'Linear structures arrange data in a sequence, such as arrays, linked lists, stacks and queues. Non-linear structures represent hierarchy or relationships, such as trees and graphs. Other useful categories include static vs dynamic and contiguous vs linked storage.'],
+    ['Main algorithmic patterns', 'Common patterns include searching, sorting, traversal, divide and conquer, greedy algorithms, dynamic programming, backtracking, graph algorithms and string algorithms. Learning these patterns helps you recognize how a new problem can be approached.'],
+    ['How DSA connects with programming', 'Programming gives you the language and tools to implement a solution; DSA gives you ways to structure data and reason about the solution. The same idea can be implemented in C++, Java, Python or JavaScript—the underlying data-structure and algorithmic reasoning remains the important part.'],
+    ['What should you learn first?', 'Start with complexity basics and simple linear structures, then move through searching/sorting, linked lists, stacks/queues, trees, BSTs, heaps, graphs, dynamic programming and string structures. Along the way, practice problems and dry runs turn theory into problem-solving skill.'],
+    ['Why companies and interviews care about DSA', 'DSA questions test more than memorized syntax. They reveal how you break down a problem, choose a representation, analyze trade-offs and build a correct solution. These skills also matter in real engineering when software must handle larger workloads efficiently.']
+  ],};
+
 
 const VARIANT_DETAILS = {
   'Static Array': ['Fixed-size contiguous collection. Size is decided when the array is created.','Simple aur fast hota hai, lekin size fixed hota hai; random access O(1) milta hai.','Best for: fixed-size data, tables, small buffers.'],
