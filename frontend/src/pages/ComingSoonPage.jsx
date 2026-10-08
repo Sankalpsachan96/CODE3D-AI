@@ -1,9 +1,49 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import './ComingSoonPage.css';
 
 const status = String(import.meta.env.VITE_PLATFORM_STATUS || 'COMING_SOON').toUpperCase();
 
 const isMaintenance = status === 'MAINTENANCE';
+
+function CountdownTimer() {
+  const [remaining, setRemaining] = useState(() => {
+    const saved = localStorage.getItem('code3d-coming-soon-deadline');
+    if (saved) return Math.max(0, new Date(saved).getTime() - Date.now());
+    const deadline = Date.now() + 10 * 24 * 60 * 60 * 1000;
+    localStorage.setItem('code3d-coming-soon-deadline', new Date(deadline).toISOString());
+    return 10 * 24 * 60 * 60 * 1000;
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setRemaining(() => {
+        const saved = localStorage.getItem('code3d-coming-soon-deadline');
+        return Math.max(0, new Date(saved).getTime() - Date.now());
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const totalSeconds = Math.floor(remaining / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+
+  const pad = (value) => String(value).padStart(2, '0');
+
+  return (
+    <div className="cs-countdown" aria-label="Platform launch countdown">
+      <div><strong>{pad(days)}</strong><span>Days</span></div>
+      <i>:</i>
+      <div><strong>{pad(hours)}</strong><span>Hours</span></div>
+      <i>:</i>
+      <div><strong>{pad(minutes)}</strong><span>Minutes</span></div>
+      <i>:</i>
+      <div><strong>{pad(seconds)}</strong><span>Seconds</span></div>
+    </div>
+  );
+}
 
 function FloatingParticles() {
   return (
@@ -153,6 +193,7 @@ export default function ComingSoonPage() {
           <h2>{title}</h2>
           <p>Universal coding • DSA notes • AI Tutor • Interactive 3D visualization</p>
           <div className="cs-progress"><span /></div>
+          <CountdownTimer />
           <small>Building the future of interactive programming education.</small>
         </section>
 
