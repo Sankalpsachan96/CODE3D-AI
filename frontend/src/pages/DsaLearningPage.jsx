@@ -526,7 +526,7 @@ export default function DsaLearningPage() {
               <div className={`mt-4 p-5 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-base font-bold">{selectedVariant}</h3>
+                    <h3 className="text-base font-bold text-cyan-300">{selectedVariant}</h3>
                     <p className="mt-2 text-sm leading-7 text-slate-400">{VARIANT_DETAILS[selectedVariant][0]}</p>
                     <p className="mt-2 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Hinglish:</span> {VARIANT_DETAILS[selectedVariant][1]}</p>
                     <p className="mt-2 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Where to use:</span> {VARIANT_DETAILS[selectedVariant][2].replace('Best for: ','')}</p>
