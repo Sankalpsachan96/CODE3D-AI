@@ -103,6 +103,8 @@
 .cs-graph-card { margin-top:18px;padding:13px;transform:none; }
 .cs-graph-scene { height:105px;position:relative;margin-top:5px; }
 .cs-svg-graph-nodes circle { fill:#0891b2;stroke:#67e8f9;stroke-width:1.2; }
+.cs-dsa-art { width:100%; max-width:520px; margin:0 auto; }
+.cs-dsa-art img { display:block; width:100%; height:auto; }
 .cs-message { text-align:center;margin:0 auto 35px;max-width:780px;padding:22px;border-radius:22px;background:rgba(5,8,24,.55);border:1px solid rgba(139,92,246,.19);box-shadow:0 20px 55px rgba(0,0,0,.25); }
 .cs-message-line { width:100px;height:2px;margin:0 auto 16px;background:linear-gradient(90deg,transparent,#a855f7,#38bdf8,transparent); }
 .cs-message h2 { margin:0;font-size:25px; }
