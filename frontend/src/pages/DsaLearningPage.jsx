@@ -427,7 +427,7 @@ const DSA_INTRO = {
     ['How DSA connects with programming', 'Programming gives you the language and tools to implement a solution; DSA gives you ways to structure data and reason about the solution. The same idea can be implemented in C++, Java, Python or JavaScript—the underlying data-structure and algorithmic reasoning remains the important part.'],
     ['What should you learn first?', 'Start with complexity basics and simple linear structures, then move through searching/sorting, linked lists, stacks/queues, trees, BSTs, heaps, graphs, dynamic programming and string structures. Along the way, practice problems and dry runs turn theory into problem-solving skill.'],
     ['Why companies and interviews care about DSA', 'DSA questions test more than memorized syntax. They reveal how you break down a problem, choose a representation, analyze trade-offs and build a correct solution. These skills also matter in real engineering when software must handle larger workloads efficiently.']
-  ]
+  ],
   hashing: {
     concept: 'Hashing converts a key into a bucket/index using a hash function, making average lookup very fast.',
     hinglish: 'Hashing ko locker system jaisa samjho: key ko hash function ek bucket deta hai, phir wahi se data quickly mil jata hai. Same bucket aaye to collision handle karni padti hai.',
