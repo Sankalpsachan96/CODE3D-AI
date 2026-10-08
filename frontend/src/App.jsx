@@ -21,7 +21,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 
 function PlatformGate({ children }) {
-  const status = String(import.meta.env.VITE_PLATFORM_STATUS || 'COMING_SOON').toUpperCase();
+  const status = String(import.meta.env.VITE_PLATFORM_STATUS || 'LIVE').toUpperCase();
   if (status !== 'LIVE') return <ComingSoonPage />;
   return children;
 }
