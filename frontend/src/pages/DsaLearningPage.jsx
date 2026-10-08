@@ -644,6 +644,7 @@ export default function DsaLearningPage() {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [showIntro, setShowIntro] = useState(false);
   const [showComplexity, setShowComplexity] = useState(false);
+  const [revealedComplexity, setRevealedComplexity] = useState({});
   const scrollRef = useRef(null);
   const listScrollTopRef = useRef(0);
 
@@ -846,6 +847,95 @@ export default function DsaLearningPage() {
               <p><span className="text-cyan-400 font-semibold">n then log n nested:</span> O(n log n).</p>
               <p><span className="text-cyan-400 font-semibold">Variable shrinking by division:</span> usually O(log n).</p>
               <p><span className="text-cyan-400 font-semibold">Variable grows by multiplication:</span> usually O(log n).</p>
+            </div>
+          </DetailSection>
+
+          <DetailSection title="How to Find Complexity — Beginner Guided Practice" icon={<Target size={16} />} isBright={isBright}>
+            <div className="space-y-4">
+              <div className={`p-4 rounded-xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
+                <h3 className="text-sm font-bold text-cyan-300">The 5-Step Method — use this on almost every code question</h3>
+                <ol className="mt-3 space-y-2 list-decimal list-inside text-sm leading-7 text-slate-400">
+                  <li><span className="text-cyan-400 font-semibold">Find n:</span> decide what the input size means.</li>
+                  <li><span className="text-cyan-400 font-semibold">Find the repeated work:</span> count loops, comparisons, swaps, function calls, etc.</li>
+                  <li><span className="text-cyan-400 font-semibold">Understand the loop relationship:</span> sequential blocks add; nested independent loops multiply; shrinking/growing by a factor gives log n.</li>
+                  <li><span className="text-cyan-400 font-semibold">Check recursion and extra memory:</span> count active stack frames and data structures created.</li>
+                  <li><span className="text-cyan-400 font-semibold">Simplify:</span> remove constants and lower-order terms, then state Time + Auxiliary Space.</li>
+                </ol>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-500/5 border border-slate-700/50">
+                <h3 className="text-sm font-bold text-cyan-300">Golden pattern rules</h3>
+                <div className="mt-3 grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                  {[
+                    ['Sequential', 'ADD', 'O(n) + O(n) → O(n)'],
+                    ['Nested', 'MULTIPLY', 'O(n) × O(n) → O(n²)'],
+                    ['Halving / doubling', 'LOG', 'n → n/2 → ... → O(log n)'],
+                    ['Dominant term', 'KEEP BIGGEST', 'O(n² + n + 1) → O(n²)'],
+                  ].map(([a,b,d]) => <div key={a} className="p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><div className="text-xs font-bold text-cyan-300">{a}</div><div className="mt-1 text-[10px] font-mono text-purple-300">{b}</div><div className="mt-1 text-xs text-slate-400">{d}</div></div>)}
+                </div>
+              </div>
+
+              {[
+                ['P1 — One loop', `for (int i = 0; i < n; i++) {\n  cout << i;\n}`, 'O(n)', 'The loop executes once for every element. n iterations. Auxiliary space is O(1).'],
+                ['P2 — Sequential loops', `for (int i = 0; i < n; i++) work();\nfor (int j = 0; j < n; j++) work();`, 'O(n)', 'n + n = 2n. The loops are not nested, so we add them and drop the constant 2.'],
+                ['P3 — Nested loops', `for (int i = 0; i < n; i++)\n  for (int j = 0; j < n; j++) work();`, 'O(n²)', 'For every one of n outer iterations, the inner loop runs n times: n × n.'],
+                ['P4 — Halving', `for (int i = n; i > 1; i /= 2) work();`, 'O(log n)', 'The values are n, n/2, n/4, ... 1. The number of divisions by 2 is log₂n.'],
+                ['P5 — Doubling', `for (int i = 1; i < n; i *= 2) work();`, 'O(log n)', 'The values are 1, 2, 4, 8, ... n. Only about log₂n iterations occur.'],
+                ['P6 — n × log n', `for (int i = 0; i < n; i++)\n  for (int j = 1; j < n; j *= 2) work();`, 'O(n log n)', 'Outer loop gives n and inner loop gives log n; because it is nested, multiply them.'],
+                ['P7 — Triangular loop', `for (int i = 0; i < n; i++)\n  for (int j = 0; j < i; j++) work();`, 'O(n²)', 'Work is 0 + 1 + 2 + ... + (n−1) = n(n−1)/2, which simplifies to O(n²).'],
+                ['P8 — Square root', `for (int i = 1; i * i <= n; i++) work();`, 'O(√n)', 'The condition remains true until i reaches about √n, so there are √n iterations.'],
+                ['P9 — Dominant term', `for (int i = 0; i < n; i++) work();\nfor (int i = 0; i < n; i++)\n  for (int j = 0; j < n; j++) work();`, 'O(n²)', 'The total is n + n². The n² term dominates as n grows, so the final answer is O(n²).'],
+                ['P10 — Linear extra space', `vector<int> copy(n);\nfor (int i = 0; i < n; i++) copy[i] = a[i];`, 'Time O(n), Space O(n)', 'The loop copies n values and the new vector stores n values.'],
+                ['P11 — Constant space', `int sum = 0;\nfor (int i = 0; i < n; i++) sum += a[i];`, 'Time O(n), Space O(1)', 'One pass takes n operations, while only fixed-size variables are created.'],
+                ['P12 — Matrix space', `vector<vector<int>> grid(n, vector<int>(n));`, 'Space O(n²)', 'There are n rows and n columns, giving n × n stored elements.'],
+              ].map(([title, code, answer, explanation]) => (
+                <div key={title} className={`p-4 rounded-xl border ${isBright ? 'bg-white border-slate-200' : 'bg-black/20 border-slate-800'}`}>
+                  <h3 className="text-sm font-bold text-cyan-300">{title}</h3>
+                  <pre className="mt-3 overflow-x-auto p-3 rounded-lg bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre-wrap">{code}</pre>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={() => setRevealedComplexity(prev => ({...prev, [title]: !prev[title]}))} className="px-3 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/20 cursor-pointer">
+                      {revealedComplexity[title] ? 'Hide solution' : 'Think first → Reveal solution'}
+                    </button>
+                    {!revealedComplexity[title] && <span className="text-[10px] text-slate-500">Pause and calculate it yourself.</span>}
+                  </div>
+                  {revealedComplexity[title] && (
+                    <div className="mt-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                      <p className="text-sm font-bold text-emerald-300">Answer: {answer}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-400">{explanation}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Common Beginner Traps" icon={<X size={16} />} isBright={isBright}>
+            <div className="space-y-3">
+              {[
+                ['Two loops do not automatically mean O(n²)', 'If they run one after another, add: O(n) + O(n) = O(n).'],
+                ['Nested does not always mean O(n²)', 'If the inner loop is logarithmic, n × log n gives O(n log n).'],
+                ['Do not count constants', 'O(2n), O(100n) and O(n) have the same asymptotic growth.'],
+                ['Do not keep smaller terms', 'O(n² + n + 1) becomes O(n²).'],
+                ['Do not confuse total recursion calls with stack space', 'Space depends on the maximum number of calls active at the same time.'],
+                ['Do not blindly call every hash operation O(1)', 'Hash-table lookup is usually average O(1), but worst-case can be O(n) depending on the implementation and collision behavior.'],
+                ['Do not ignore constraints', 'An O(n²) solution may be fine for small n and completely impractical for large n.'],
+              ].map(([a,b]) => <div key={a} className="p-3 rounded-xl bg-rose-500/5 border border-rose-500/10"><p className="text-sm font-semibold text-rose-300">{a}</p><p className="mt-1 text-xs leading-6 text-slate-400">{b}</p></div>)}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="From Beginner to Interview Level — Practice Order" icon={<ChevronRight size={16} />} isBright={isBright}>
+            <ol className="space-y-3 list-decimal list-inside text-sm leading-7 text-slate-400">
+              <li>Master O(1), O(n) and O(n²) with simple loops.</li>
+              <li>Then learn sequential vs nested loop counting.</li>
+              <li>Then master log n patterns: divide by 2 and multiply by 2.</li>
+              <li>Combine them: O(n log n), O(n² + n), O(n + log n).</li>
+              <li>Learn triangular loops and summations.</li>
+              <li>Then learn recursion and recurrence relations.</li>
+              <li>Finally handle multiple variables, data structures, amortized costs and tricky code.</li>
+            </ol>
+            <div className={`mt-4 p-4 rounded-xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
+              <p className="text-sm font-semibold text-cyan-300">Final habit</p>
+              <p className="mt-1 text-sm leading-7 text-slate-400">Never guess the Big-O just by looking at the code. Say out loud: <span className="font-semibold text-cyan-400">“What is n? How many times does this block execute? Are the loops sequential or nested? Does the input shrink? What extra memory is created?”</span> Then simplify.</p>
             </div>
           </DetailSection>
 
