@@ -1102,6 +1102,7 @@ export default function DsaLearningPage() {
   const [showIntro, setShowIntro] = useState(false);
   const [showComplexity, setShowComplexity] = useState(false);
   const [showMemory, setShowMemory] = useState(false);
+  const [showProblemSolving, setShowProblemSolving] = useState(false);
   const [revealedComplexity, setRevealedComplexity] = useState({});
   const scrollRef = useRef(null);
   const listScrollTopRef = useRef(0);
@@ -1109,14 +1110,14 @@ export default function DsaLearningPage() {
   useLayoutEffect(() => {
     const frame = requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({
-        top: selected || showIntro || showComplexity || showMemory ? 0 : listScrollTopRef.current,
+        top: selected || showIntro || showComplexity || showMemory || showProblemSolving ? 0 : listScrollTopRef.current,
         left: 0,
         behavior: 'auto',
       });
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [selected, showIntro, showComplexity, showMemory]);
+  }, [selected, showIntro, showComplexity, showMemory, showProblemSolving]);
 
   const openTopic = (topic) => {
     listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
@@ -1150,6 +1151,16 @@ export default function DsaLearningPage() {
     setShowMemory(true);
   };
 
+  const openProblemSolving = () => {
+    listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
+    setSelected(null);
+    setSelectedVariant(null);
+    setShowIntro(false);
+    setShowComplexity(false);
+    setShowMemory(false);
+    setShowProblemSolving(true);
+  };
+
   const openVariant = (type) => {
     setSelectedVariant(type);
   };
@@ -1164,6 +1175,32 @@ export default function DsaLearningPage() {
         .includes(q)
     );
   }, [query]);
+
+  if (showProblemSolving) {
+    return (
+      <div ref={scrollRef} key="dsa-problem-solving" className={`h-[calc(100dvh-62px)] min-h-0 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
+        <div className="max-w-6xl mx-auto space-y-5">
+          <button onClick={() => setShowProblemSolving(false)} className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400 cursor-pointer">
+            <ArrowLeft size={15} /> Back to DSA Learning
+          </button>
+          <div className={`p-6 rounded-2xl border ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-slate-800'}`}>
+            <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/20">04 · FOUNDATION</span>
+            <h1 className="mt-3 text-2xl md:text-3xl font-extrabold">{PROBLEM_SOLVING.title}</h1>
+            <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-400">{PROBLEM_SOLVING.summary}</p>
+          </div>
+          <div className="space-y-4">
+            {PROBLEM_SOLVING.sections.map(([heading, content]) => (
+              <DetailSection key={heading} title={heading} icon={<Brain size={16} />} isBright={isBright}>
+                {heading === 'Structured code example'
+                  ? <pre className="max-w-full overflow-x-auto rounded-lg border border-slate-800 bg-black/30 p-4 text-xs leading-7 text-cyan-200 font-mono whitespace-pre">{content}</pre>
+                  : <p className="text-sm leading-7 text-slate-400">{content}</p>}
+              </DetailSection>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (showIntro) {
     return (
@@ -2428,12 +2465,12 @@ cout &lt;&lt; v.size(); // 3</pre></div>
                   <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Begin learning <ChevronRight size={17} /></div>
                 </div>
               </button>
-              <div className={`w-full p-6 rounded-2xl border ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-slate-800'}`}>
+              <button type="button" onClick={openProblemSolving} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-slate-800'}`}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20"><Brain size={23} /></div><div><span className="text-[10px] font-mono font-bold tracking-widest text-purple-400">04 · COMING NEXT</span><h2 className="mt-1 text-xl font-extrabold">Problem Solving &amp; Algorithmic Thinking</h2><p className="mt-1 text-xs text-slate-500">Learn how to break problems down, choose approaches, find bottlenecks and derive efficient solutions.</p></div></div>
-                  <span className="text-xs font-semibold text-purple-400">Learning module next</span>
+                  <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20"><Brain size={23} /></div><div><span className="text-[10px] font-mono font-bold tracking-widest text-purple-400">04 · FOUNDATION</span><h2 className="mt-1 text-xl font-extrabold">Problem Solving &amp; Algorithmic Thinking</h2><p className="mt-1 text-xs text-slate-500">Learn how to break problems down, choose approaches, find bottlenecks and derive efficient solutions.</p></div></div>
+                  <span className="text-xs font-semibold text-purple-400">Begin learning <ChevronRight size={17} className="inline" /></span>
                 </div>
-              </div>
+              </button>
             </div>
           </section>
 
