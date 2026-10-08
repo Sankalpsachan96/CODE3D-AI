@@ -34,6 +34,7 @@ The repository's `server/Dockerfile` installs:
 - g++
 - gcc
 - Python 3
+- bubblewrap and util-linux for isolated, network-disabled code execution
 - required Node/Prisma dependencies
 
 This is required for reliable five-language execution, especially Java.
@@ -44,15 +45,18 @@ Set the values for your deployment:
 
 - `DATABASE_URL`
 - `GROQ_API_KEY`
-- `FRONTEND_URL`
+- `FRONTEND_URL` (exact production frontend origin, e.g. `https://code-3d-ai.vercel.app`)
+- `CORS_ALLOWED_ORIGINS` (optional comma-separated exact additional origins; do not use wildcards)
 
 Do not commit `.env` or API keys.
+
+**Execution sandbox requirement:** production must run the `server/Dockerfile` image with bubblewrap user/PID/network namespaces permitted by the host. The backend deliberately refuses to execute submitted code if the sandbox probe fails. Check `executionRuntimes.sandbox` in `/api/health`; it must be `true` before testing code execution.
 
 After deployment, open:
 
 `https://<your-render-service>.onrender.com/api/health`
 
-The response includes `executionRuntimes`. For the active five-language backend, C++, C, Python and Java should report `true`, and JavaScript should be available through Node.
+The response includes `executionRuntimes`. For the active five-language backend, C++, C, Python and Java should report `true`, JavaScript should be available through Node, and `sandbox` must report `true` before submitted code can run.
 
 ## Vercel frontend
 
