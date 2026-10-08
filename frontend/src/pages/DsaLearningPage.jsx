@@ -320,6 +320,29 @@ const TOPIC_DEEP = {
 };
 
 
+const DSA_INTRO = {
+  title: 'Introduction to DSA',
+  summary: 'Understand what Data Structures and Algorithms are, why they matter, where they are used, and how they help us build efficient software.',
+  sections: [
+    ['What is DSA?', 'DSA stands for Data Structures and Algorithms. A data structure is a way to organize and store data so we can work with it efficiently. An algorithm is a step-by-step method for solving a problem or performing a task. Together, they help us decide both how data should be stored and how it should be processed.'],
+    ['Data Structure — simple meaning', 'Think of data as things you need to keep: names, marks, messages, locations, products or connections. A data structure decides how those things are arranged so operations such as searching, inserting, deleting and updating can be performed effectively.'],
+    ['Hinglish: Data Structure kya hai?', 'Data Structure ko simple language me data ko arrange karne ka tareeka samjho. Jaise real life me books ko shelf par, files ko folders me aur people ko queue me arrange karte ho. Computer me bhi data ko situation ke hisaab se different structures me rakhte hain.'],
+    ['Algorithm — simple meaning', 'An algorithm is a clear sequence of steps used to solve a problem. For example, finding a name in a list, sorting marks from highest to lowest, or finding the shortest route between two places all require a sequence of decisions.'],
+    ['Hinglish: Algorithm kya hai?', 'Algorithm basically problem solve karne ke steps hain. Agar tum kisi ko chai banane ke exact steps bata rahe ho, woh ek simple real-life algorithm jaisa hai. Programming me ye steps precise aur executable hote hain.'],
+    ['Why do we need DSA?', 'A program can produce the correct answer and still be inefficient. With a small input, an inefficient approach may look fine. As data grows, the difference becomes huge. DSA helps us choose structures and algorithms that use reasonable time and memory.'],
+    ['Real-world example', 'A navigation system cannot try every possible road blindly. It represents locations and roads as a graph and uses path-finding algorithms. A search engine needs indexing structures and efficient search. A browser uses stacks and other structures for history, parsing and internal tasks.'],
+    ['Where is DSA used?', 'DSA appears throughout software: search engines, databases, operating systems, compilers, networks, maps, social platforms, recommendation systems, games, AI systems and everyday applications. Even when you do not see a data structure directly, software is constantly organizing and processing data.'],
+    ['How DSA helps a programmer', 'DSA improves problem-solving, helps you reason about performance, makes large inputs manageable, and gives you reusable patterns. It also helps you compare multiple solutions instead of accepting the first working solution.'],
+    ['Time & Space Complexity — basic idea', 'Time complexity describes how the amount of work grows as input size grows. Space complexity describes how extra memory usage grows. You will commonly see O(1), O(log n), O(n), O(n log n) and O(n²). These are growth-rate descriptions, not exact stopwatch timings.'],
+    ['Brute Force vs Efficient Approach', 'Brute force tries a straightforward solution, often exploring many possibilities. It is useful for understanding a problem and for small inputs. An efficient approach uses the structure of the problem to avoid unnecessary work—for example, binary search removes half the search space at each step.'],
+    ['Main types of Data Structures', 'Linear structures arrange data in a sequence, such as arrays, linked lists, stacks and queues. Non-linear structures represent hierarchy or relationships, such as trees and graphs. Other useful categories include static vs dynamic and contiguous vs linked storage.'],
+    ['Main algorithmic patterns', 'Common patterns include searching, sorting, traversal, divide and conquer, greedy algorithms, dynamic programming, backtracking, graph algorithms and string algorithms. Learning these patterns helps you recognize how a new problem can be approached.'],
+    ['How DSA connects with programming', 'Programming gives you the language and tools to implement a solution; DSA gives you ways to structure data and reason about the solution. The same idea can be implemented in C++, Java, Python or JavaScript—the underlying data-structure and algorithmic reasoning remains the important part.'],
+    ['What should you learn first?', 'Start with complexity basics and simple linear structures, then move through searching/sorting, linked lists, stacks/queues, trees, BSTs, heaps, graphs, dynamic programming and string structures. Along the way, practice problems and dry runs turn theory into problem-solving skill.'],
+    ['Why companies and interviews care about DSA', 'DSA questions test more than memorized syntax. They reveal how you break down a problem, choose a representation, analyze trade-offs and build a correct solution. These skills also matter in real engineering when software must handle larger workloads efficiently.']
+  ]
+};
+
 const VARIANT_DETAILS = {
   'Static Array': ['Fixed-size contiguous collection. Size is decided when the array is created.','Simple aur fast hota hai, lekin size fixed hota hai; random access O(1) milta hai.','Best for: fixed-size data, tables, small buffers.'],
   'Dynamic Array / Vector': ['Resizable array that grows when capacity is exhausted.','Vector ko flexible array samjho: end par add karna usually fast hota hai, aur zarurat par capacity badh sakti hai.','Best for: collections whose size changes during execution.'],
@@ -422,6 +445,7 @@ export default function DsaLearningPage() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
+  const [showIntro, setShowIntro] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -433,6 +457,31 @@ export default function DsaLearningPage() {
         .includes(q)
     );
   }, [query]);
+
+  if (showIntro) {
+    return (
+      <div className={`flex-1 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
+        <div className="max-w-6xl mx-auto space-y-5">
+          <button onClick={() => setShowIntro(false)} className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400 cursor-pointer"><ArrowLeft size={15} /> Back to DSA Learning</button>
+          <div className={`p-6 rounded-2xl border ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-slate-800'}`}>
+            <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/20">Start Here</span>
+            <h1 className="mt-3 text-2xl md:text-3xl font-extrabold">{DSA_INTRO.title}</h1>
+            <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-400">{DSA_INTRO.summary}</p>
+          </div>
+          {DSA_INTRO.sections.map(([title, body]) => (
+            <DetailSection key={title} title={title} icon={<BookOpen size={16} />} isBright={isBright}>
+              <p className="text-sm leading-7 text-slate-400">{body}</p>
+            </DetailSection>
+          ))}
+          <div className={`p-5 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
+            <h3 className="font-bold text-sm">Ready to start?</h3>
+            <p className="mt-1 text-xs leading-relaxed text-slate-400">Now move to the core structures and algorithms below. Each topic goes deeper with examples, dry runs, code, Hinglish explanations and practical guidance.</p>
+            <button onClick={() => setShowIntro(false)} className="mt-3 px-4 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 cursor-pointer">Explore DSA Topics →</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (selected) {
     return (
@@ -552,6 +601,14 @@ export default function DsaLearningPage() {
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search topics, types, uses..." className={`w-full pl-9 pr-3 py-2 text-xs rounded-xl border outline-none focus:ring-1 focus:ring-cyan-500 ${isBright ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-800 text-white'}`} />
           </div>
         </div>
+
+        <button type="button" onClick={() => setShowIntro(true)} className={`w-full text-left p-5 rounded-2xl border transition-all hover:-translate-y-0.5 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-cyan-900/50'}`}>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3"><div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><BookOpen size={20} /></div><div><span className="text-[10px] font-mono font-semibold text-cyan-400">START HERE</span><h2 className="mt-1 text-lg font-bold">Introduction to DSA</h2></div></div>
+            <ChevronRight size={18} className="text-slate-500 mt-1" />
+          </div>
+          <p className="mt-3 text-sm leading-relaxed text-slate-400">Learn what DSA is, why we need it, where it is used, how data structures and algorithms work together, and how to begin your DSA journey.</p>
+        </button>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((topic) => <TopicCard key={topic.id} topic={topic} onOpen={setSelected} isBright={isBright} />)}
