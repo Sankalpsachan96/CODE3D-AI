@@ -185,6 +185,140 @@ const LEARNING_TOPICS = [
   },
 ];
 
+
+const TOPIC_DEEP = {
+  arrays: {
+    concept: 'An array stores elements in indexed positions, usually next to each other in memory. That is why arr[i] is fast: the address can be calculated directly from the base address and index.',
+    hinglish: 'Simple words me: array ek line me boxes jaisa hota hai. Har box ka index hota hai, isliye kisi bhi index par seedha jump kar sakte ho. Beech me insert karoge to baaki elements ko shift karna pad sakta hai.',
+    why: 'Arrays are the first choice when you need fast indexing, predictable memory layout, and repeated sequential processing.',
+    working: ['Index calculation gives direct access: base + index × element-size.', 'Dynamic vectors keep a size and capacity; when capacity is exhausted, a larger block is allocated and elements are copied.', 'Two-pointer and sliding-window techniques exploit the ordered, contiguous sequence.'],
+    example: 'For [10, 20, 30, 40], arr[2] directly gives 30. To insert 25 at index 2, 30 and 40 may need to shift right.',
+    dryRun: ['Start: [10, 20, 30, 40]', 'Insert 25 at index 2', 'Shift 40 → right, then 30 → right', 'Place 25 → [10, 20, 25, 30, 40]'],
+    code: 'int a[] = {10, 20, 30, 40};\ncout << a[2]; // 30',
+    mistakes: ['Off-by-one index errors', 'Accessing outside bounds', 'Assuming middle insertion is O(1)', 'Ignoring vector capacity/reallocation'],
+    interview: ['Why is array access O(1)?', 'Array vs linked list?', 'Why is vector push_back amortized O(1)?', 'How do prefix sums reduce repeated range-sum work?'],
+    when: 'Use for indexing, scanning, sorting, prefix sums, windows and two-pointer problems.',
+    avoid: 'Avoid when frequent middle insertion/deletion is the dominant operation.'
+  },
+  'sorting-searching': {
+    concept: 'Searching finds a target; sorting rearranges data into an order that can make later operations faster. Binary search is powerful because sorted data lets us discard half the remaining range each step.',
+    hinglish: 'Linear search me ek-ek karke check karte ho. Binary search me sorted array ke middle ko check karke half data hata dete ho. Sorting ka goal sirf order banana nahi, future operations ko efficient banana bhi hai.',
+    why: 'Ordering data often converts repeated linear work into logarithmic or structured processing.',
+    working: ['Binary search maintains a valid search interval [low, high].', 'Merge sort divides, solves both halves, then merges in linear time.', 'Quick sort partitions around a pivot and recursively processes both sides.', 'Stable sorting preserves the relative order of equal keys.'],
+    example: 'Search 42 in [10,20,30,40,42,50,60]: check 40, then the right half, then 50, then 42.',
+    dryRun: ['low=0, high=6, mid=3 → 40', '42 > 40 → low=4', 'mid=5 → 50', '42 < 50 → high=4', 'mid=4 → found 42'],
+    code: 'int l=0,r=n-1;\nwhile(l<=r){ int m=l+(r-l)/2; if(a[m]==x) return m; if(a[m]<x) l=m+1; else r=m-1; }',
+    mistakes: ['Using binary search on unsorted data', 'Overflow-prone midpoint (l+r)/2', 'Wrong loop boundary', 'Ignoring worst-case quicksort behavior'],
+    interview: ['Why O(log n) for binary search?', 'Merge sort vs quicksort?', 'What makes a sort stable?', 'When is sorting unnecessary?'],
+    when: 'Use binary search for monotonic/sorted search spaces and sorting when order enables simpler or faster downstream logic.',
+    avoid: 'Do not sort just to perform one lookup when a linear scan is cheaper overall.'
+  },
+  'linked-lists': {
+    concept: 'A linked list stores nodes connected by references. The list is about relationships between nodes, not contiguous memory positions.',
+    hinglish: 'Linked list ko train ke coaches ki tarah samjho. Har node ko next coach ka address pata hota hai. Isliye beech ka node insert karna easy hai agar correct position ka reference already mil gaya ho, lekin index 500 tak pahunchne ke liye nodes follow karne padenge.',
+    why: 'It is useful when structure size changes frequently and local link updates matter more than random access.',
+    working: ['Each node stores data plus next/previous references.', 'Insertion changes a constant number of links when the location is known.', 'Traversal follows references one by one.', 'Fast/slow pointers can detect cycles or find a middle node.'],
+    example: 'A → B → C. Insert X after B: B.next = X and X.next = C.',
+    dryRun: ['slow=A, fast=A', 'slow=B, fast=C', 'slow=C, fast=null → middle found', 'For cycle detection, slow moves 1 step and fast 2 steps; meeting implies a cycle.'],
+    code: 'Node* x = new Node(25);\nx->next = cur->next;\ncur->next = x;',
+    mistakes: ['Losing the next pointer before reconnecting', 'Null-pointer dereference', 'Forgetting to update head/tail', 'Confusing node reference with index'],
+    interview: ['Reverse a linked list', 'Detect a cycle', 'Find middle node', 'Merge two sorted lists'],
+    when: 'Use when frequent local insertion/deletion or node-based relationships are important.',
+    avoid: 'Avoid when random indexing and cache-friendly traversal are more important.'
+  },
+  'stacks-queues': {
+    concept: 'A stack exposes the newest item first (LIFO), while a queue exposes the oldest item first (FIFO). These access rules simplify many state-management problems.',
+    hinglish: 'Stack ko plates ka stack samjho: last plate pehle niklegi. Queue ko ticket line samjho: jo pehle aaya woh pehle niklega.',
+    why: 'The restricted access pattern is exactly what many algorithms need: nested work, BFS layers, undo history, scheduling and parsing.',
+    working: ['Stack maintains a top pointer/index.', 'Queue maintains front and rear; circular arrays avoid repeated shifting.', 'Deque supports both ends.', 'Priority queues choose by priority rather than arrival order.'],
+    example: 'Push 10,20,30 → pop gives 30, then 20. Enqueue A,B,C → dequeue gives A.',
+    dryRun: ['Stack: [] → push A → [A] → push B → [A,B] → pop → [A]', 'Queue: [] → A,B,C → dequeue A → remaining B,C'],
+    code: 'stack<int> st; st.push(10); st.push(20); st.pop();\nqueue<int> q; q.push(10); q.push(20); q.pop();',
+    mistakes: ['Pop/dequeue on empty structure', 'Implementing queue with O(n) shifting unnecessarily', 'Mixing LIFO and FIFO semantics'],
+    interview: ['Balanced parentheses', 'Next greater element', 'Implement queue using stacks', 'BFS using a queue'],
+    when: 'Use stack for nested/reverse processing; queue for level-order and arrival-order processing.',
+    avoid: 'Do not use them when arbitrary random access is the main requirement.'
+  },
+  'binary-trees': {
+    concept: 'A binary tree is a hierarchy where each node has at most two children. Its power comes from recursive structure: every subtree is itself a smaller tree.',
+    hinglish: 'Tree ko family hierarchy jaisa samjho. Har node ke maximum do children hain. Root se neeche levels bante hain, aur recursion naturally fit hoti hai.',
+    why: 'Trees represent hierarchy and allow divide-and-conquer reasoning over subtrees.',
+    working: ['Preorder: root → left → right.', 'Inorder: left → root → right.', 'Postorder: left → right → root.', 'Level-order uses a queue and visits one depth at a time.'],
+    example: 'For root 1 with children 2 and 3, preorder is 1,2,3; inorder is 2,1,3; postorder is 2,3,1.',
+    dryRun: ['Visit root', 'Recursively process left subtree', 'Return to root/right according to traversal', 'Continue until every node is visited once'],
+    code: 'void inorder(Node* r){ if(!r) return; inorder(r->left); cout<<r->val; inorder(r->right); }',
+    mistakes: ['Forgetting the null base case', 'Confusing traversal orders', 'Assuming every binary tree is a BST', 'Ignoring skewed-tree height'],
+    interview: ['Height of tree', 'Level-order traversal', 'Diameter', 'Lowest common ancestor'],
+    when: 'Use for hierarchical data, recursive decomposition, expression trees and tree-based algorithms.',
+    avoid: 'A plain binary tree is not automatically good for searching; use an ordered/balanced structure when that invariant is required.'
+  },
+  bst: {
+    concept: 'A BST adds an ordering invariant: keys in the left subtree are smaller and keys in the right subtree are larger (under the chosen duplicate policy).',
+    hinglish: 'BST me tree ke andar order maintained hota hai. Current node se chhota left, bada right. Isi rule ki wajah se search me har step par ek side discard kar sakte ho—agar tree balanced ho.',
+    why: 'The ordering invariant turns a general tree into a searchable ordered structure.',
+    working: ['Compare target with current node.', 'Smaller → left; larger → right; equal → found.', 'Insertion follows the same path.', 'Deletion handles leaf, one-child and two-child cases.'],
+    example: 'Insert 8,3,10,1,6. Search 6: 6<8 → left; 6>3 → right; found.',
+    dryRun: ['Root 8', '6 < 8 → node 3', '6 > 3 → node 6', '6 == 6 → found'],
+    code: 'bool search(Node* r,int x){ if(!r) return false; if(r->val==x) return true; return x<r->val ? search(r->left,x) : search(r->right,x); }',
+    mistakes: ['Assuming every BST is balanced', 'Breaking the ordering invariant during deletion', 'Ignoring duplicate-key policy'],
+    interview: ['Validate a BST', 'Kth smallest', 'Lowest common ancestor', 'AVL vs Red-Black tree'],
+    when: 'Use for ordered search, predecessor/successor and range-style queries when a suitable balanced implementation is available.',
+    avoid: 'Avoid plain BST for adversarial sorted input if guaranteed logarithmic height is required.'
+  },
+  heaps: {
+    concept: 'A heap is a complete binary tree with a priority property. In a min-heap the parent is ≤ children; in a max-heap the parent is ≥ children.',
+    hinglish: 'Heap ko priority line samjho jahan sabse important item root par milta hai. Ye fully sorted structure nahi hai; bas parent-child priority relation guarantee hota hai.',
+    why: 'It gives constant-time access to the highest-priority item while keeping insertion/extraction logarithmic.',
+    working: ['Array stores the complete tree compactly.', 'Insert appends at the end and bubbles upward.', 'Extract replaces root with last element and sifts downward.', 'Bottom-up heapify builds a heap in O(n), not O(n log n).'],
+    example: 'Min-heap [2,5,7,9] always exposes 2. Insert 1 → place at end, then swap upward until heap property returns.',
+    dryRun: ['Heap: [2,5,7,9]', 'Insert 1 → [2,5,7,9,1]', 'Compare 1 with parent 5 → swap', 'Compare with parent 2 → swap → [1,2,7,9,5]'],
+    code: 'priority_queue<int, vector<int>, greater<int>> pq;\npq.push(5); pq.push(2); cout << pq.top(); // 2',
+    mistakes: ['Thinking heap is completely sorted', 'Wrong child indices', 'Confusing heap size with array capacity', 'Claiming heapify is O(n log n)'],
+    interview: ['Kth largest/smallest', 'Top K elements', 'Merge K sorted lists', 'Dijkstra priority queue'],
+    when: 'Use whenever repeated min/max or priority extraction is required.',
+    avoid: 'Avoid when you need fast arbitrary search or fully sorted iteration.'
+  },
+  graphs: {
+    concept: 'A graph models relationships as vertices and edges. Unlike trees, graphs may contain cycles, multiple paths and disconnected components.',
+    hinglish: 'Graph ko cities aur roads jaisa samjho. City = vertex, road = edge. Road one-way ho sakti hai (directed), distance/cost ho sakta hai (weighted), aur cycles bhi ho sakte hain.',
+    why: 'Many real systems are relationship networks rather than simple hierarchies.',
+    working: ['Choose adjacency list for sparse graphs and matrix for dense/constant-time edge checks.', 'BFS explores layer by layer.', 'DFS explores deeply before backtracking.', 'Shortest-path/MST algorithms add problem-specific constraints.'],
+    example: 'A-B, A-C, B-D. BFS from A visits A, then B/C, then D.',
+    dryRun: ['Queue starts [A]', 'Pop A → add B,C', 'Pop B → add D', 'Pop C → nothing new', 'Pop D → done'],
+    code: 'queue<int> q; q.push(src); vis[src]=1;\nwhile(!q.empty()){ int u=q.front(); q.pop(); for(int v: adj[u]) if(!vis[v]) vis[v]=1,q.push(v); }',
+    mistakes: ['Forgetting visited array', 'Using Dijkstra with negative edges', 'Using topological sort on cyclic graphs', 'Choosing matrix for a huge sparse graph'],
+    interview: ['BFS/DFS', 'Cycle detection', 'Shortest path', 'MST', 'Topological sorting', 'SCC'],
+    when: 'Use for networks, dependencies, paths, connectivity and relationship problems.',
+    avoid: 'Do not force graph algorithms when the input is naturally a simple sequence or hierarchy.'
+  },
+  'dynamic-programming': {
+    concept: 'DP stores answers to overlapping subproblems so the same work is not repeated. A good DP solution needs a state, transition, base case and evaluation order.',
+    hinglish: 'DP ka core idea hai: jo subproblem ek baar solve ho chuka hai uska answer save kar lo. Phir same calculation baar-baar mat karo. Sabse important skill state define karna hai.',
+    why: 'It can turn exponential recursive exploration into manageable polynomial or pseudo-polynomial work when overlapping subproblems exist.',
+    working: ['Define state: what does dp[i] or dp[i][j] mean?', 'Define transition: how does the current answer depend on smaller states?', 'Set base cases.', 'Choose memoization or a dependency-safe tabulation order.'],
+    example: 'Fibonacci: naive recursion repeats F(3), F(2), etc. dp[i]=dp[i-1]+dp[i-2] computes each once.',
+    dryRun: ['dp[0]=0, dp[1]=1', 'dp[2]=1', 'dp[3]=2', 'dp[4]=3', 'dp[5]=5'],
+    code: 'vector<int> dp(n+1); dp[0]=0; dp[1]=1;\nfor(int i=2;i<=n;i++) dp[i]=dp[i-1]+dp[i-2];',
+    mistakes: ['Starting coding before defining state', 'Wrong base cases', 'Using too many dimensions', 'Confusing greedy choice with DP'],
+    interview: ['0/1 Knapsack', 'LCS', 'LIS', 'Coin Change', 'Grid DP', 'Partition DP'],
+    when: 'Use when subproblems overlap and an optimal/complete answer can be composed from smaller states.',
+    avoid: 'Avoid when subproblems do not overlap or a simpler greedy/math solution is provably sufficient.'
+  },
+  trie: {
+    concept: 'A trie represents strings character-by-character along paths. A node can represent a prefix, making prefix queries natural.',
+    hinglish: 'Trie ko words ke common prefix ka tree samjho. “car”, “card”, “care” me “car” ka path common rahega. Isliye autocomplete aur prefix search ke liye useful hai.',
+    why: 'It makes work depend primarily on key length rather than the number of stored keys for basic lookup.',
+    working: ['Start at root.', 'For each character, follow/create its child.', 'Mark terminal nodes for complete words.', 'For prefix queries, stop at the prefix node and explore its descendants.'],
+    example: 'Insert “cat” and “car”: c → a is shared, then branches to t and r.',
+    dryRun: ['Insert cat: c → a → t', 'Insert car: c → a already exists → r', 'Prefix “ca” reaches the shared node', 'DFS below it can report cat and car'],
+    code: 'struct Node{ Node* next[26]{}; bool end=false; };\n// follow one child per character',
+    mistakes: ['Not marking word termination', 'Memory blow-up with large alphabets', 'Deleting shared prefix nodes incorrectly'],
+    interview: ['Implement trie', 'Autocomplete', 'Word dictionary with wildcard', 'Aho–Corasick basics'],
+    when: 'Use for prefix-heavy string workloads, autocomplete and dictionary-style queries.',
+    avoid: 'Avoid a full trie when memory is tight and hashing/string maps are enough.'
+  }
+};
+
 function TopicCard({ topic, onOpen, isBright }) {
   return (
     <button
@@ -232,7 +366,7 @@ export default function DsaLearningPage() {
     const q = query.trim().toLowerCase();
     if (!q) return LEARNING_TOPICS;
     return LEARNING_TOPICS.filter((topic) =>
-      [topic.title, topic.summary, ...topic.types, ...topic.uses, ...topic.advanced]
+      [topic.title, topic.summary, ...topic.types, ...topic.uses, ...topic.advanced, ...(TOPIC_DEEP[topic.id] ? Object.values(TOPIC_DEEP[topic.id]).flat() : [])]
         .join(' ')
         .toLowerCase()
         .includes(q)
@@ -279,6 +413,28 @@ export default function DsaLearningPage() {
             </div>
           </DetailSection>
 
+          {TOPIC_DEEP[selected.id] && (() => { const d = TOPIC_DEEP[selected.id]; return (<>
+            <div className="grid lg:grid-cols-2 gap-5">
+              <DetailSection title="What is it? — Easy explanation" icon={<BookOpen size={16} />} isBright={isBright}><p className="text-sm leading-7 text-slate-400">{d.concept}</p></DetailSection>
+              <DetailSection title="Hinglish explanation" icon={<Sparkles size={16} />} isBright={isBright}><p className="text-sm leading-7 text-slate-400">{d.hinglish}</p></DetailSection>
+            </div>
+            <DetailSection title="Why do we need it?" icon={<Target size={16} />} isBright={isBright}><p className="text-sm leading-7 text-slate-400">{d.why}</p></DetailSection>
+            <DetailSection title="How it works internally" icon={<Brain size={16} />} isBright={isBright}><ul className="space-y-2">{d.working.map(x=><li key={x} className="text-sm leading-6 text-slate-400 flex gap-2"><span className="text-cyan-400">▸</span>{x}</li>)}</ul></DetailSection>
+            <div className="grid lg:grid-cols-2 gap-5">
+              <DetailSection title="Worked example" icon={<CheckCircle2 size={16} />} isBright={isBright}><p className="text-sm leading-7 text-slate-400">{d.example}</p></DetailSection>
+              <DetailSection title="Step-by-step dry run" icon={<Clock3 size={16} />} isBright={isBright}><ol className="space-y-2 list-decimal list-inside">{d.dryRun.map(x=><li key={x} className="text-sm leading-6 text-slate-400">{x}</li>)}</ol></DetailSection>
+            </div>
+            <DetailSection title="Code example" icon={<ChevronRight size={16} />} isBright={isBright}><pre className="overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre-wrap">{d.code}</pre></DetailSection>
+            <div className="grid lg:grid-cols-2 gap-5">
+              <DetailSection title="Common mistakes" icon={<Target size={16} />} isBright={isBright}><ul className="space-y-2">{d.mistakes.map(x=><li key={x} className="text-sm text-slate-400 flex gap-2"><span className="text-rose-400">✕</span>{x}</li>)}</ul></DetailSection>
+              <DetailSection title="Interview questions" icon={<Brain size={16} />} isBright={isBright}><ul className="space-y-2">{d.interview.map(x=><li key={x} className="text-sm text-slate-400 flex gap-2"><span className="text-purple-400">?</span>{x}</li>)}</ul></DetailSection>
+            </div>
+            <div className="grid lg:grid-cols-2 gap-5">
+              <DetailSection title="When should you use it?" icon={<CheckCircle2 size={16} />} isBright={isBright}><p className="text-sm leading-7 text-slate-400">{d.when}</p></DetailSection>
+              <DetailSection title="When should you avoid it?" icon={<X size={16} />} isBright={isBright}><p className="text-sm leading-7 text-slate-400">{d.avoid}</p></DetailSection>
+            </div>
+          </>); })()}
+
           <DetailSection title="Memory usage" icon={<HardDrive size={16} />} isBright={isBright}>
             <p className="text-sm leading-7 text-slate-400">{selected.memory}</p>
           </DetailSection>
@@ -305,7 +461,7 @@ export default function DsaLearningPage() {
               <BookOpen size={18} className="text-cyan-400 mt-0.5 shrink-0" />
               <div>
                 <h3 className="font-bold text-sm">Next learning layer</h3>
-                <p className="mt-1 text-xs leading-relaxed text-slate-400">This topic foundation is now structured for deeper additions: internal working, worked examples, language-specific implementations, dry runs, correctness reasoning, 3D visualization links, common mistakes and interview questions.</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">Foundation → internal working → worked example → dry run → code → mistakes → interview practice. More language-specific implementations, correctness proofs and links to the matching 3D visualizer can be added on top of this layer.</p>
               </div>
             </div>
           </div>
