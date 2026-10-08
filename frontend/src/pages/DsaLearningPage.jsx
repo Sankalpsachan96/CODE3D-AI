@@ -669,6 +669,10 @@ export default function DsaLearningPage() {
     setShowIntro(true);
   };
 
+  const openVariant = (type) => {
+    setSelectedVariant(type);
+  };
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return LEARNING_TOPICS;
@@ -739,7 +743,7 @@ export default function DsaLearningPage() {
           <DetailSection title="Types / Variants" icon={<Layers3 size={16} />} isBright={isBright}>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
               {selected.types.map((type) => (
-                <button key={type} type="button" onClick={() => setSelectedVariant(type)} className="text-left p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-xs font-semibold hover:border-cyan-400/50 hover:bg-cyan-500/10 transition-colors cursor-pointer">
+                <button key={type} type="button" onClick={() => openVariant(type)} className="text-left p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10 text-xs font-semibold hover:border-cyan-400/50 hover:bg-cyan-500/10 transition-colors cursor-pointer">
                   {type}<span className="block mt-1 text-[10px] font-normal text-cyan-500/70">Click to learn →</span>
                 </button>
               ))}
