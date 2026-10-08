@@ -441,6 +441,72 @@ const DSA_INTRO = {
     when: 'Use for frequency counts, membership checks, caching and fast key-based lookup.',
     avoid: 'Avoid when sorted iteration or ordered predecessor/successor operations are required.'
   },
+  'recursion-backtracking': {
+    concept: 'Recursion solves a problem through smaller calls. Backtracking adds choice, exploration and undo so alternatives can be tried systematically.',
+    hinglish: 'Recursion me function smaller problem ke saath khud ko call karta hai. Backtracking me choice lo, explore karo, galat ho to undo karke next choice try karo.',
+    why: 'Useful for trees, divide-and-conquer and problems where many possible choices must be explored.',
+    working: ['Define a base case.','Reduce the problem in each call.','For backtracking use choose → explore → undo.','Prune a branch as soon as it cannot work.'],
+    example: 'For subsets of [1,2], choose or skip each value to produce [], [1], [2], [1,2].',
+    dryRun: ['Start []','Choose 1 → [1]','Choose 2 → [1,2]','Undo 2 → [1]','Undo 1 → [] and try 2'],
+    code: 'void solve(int i){\n  if(i==n) return;\n  solve(i+1);\n  // choose a[i]\n  solve(i+1);\n}',
+    mistakes: ['Missing base case','Not reducing the state','Forgetting to undo a choice','Using unsafe recursion depth'],
+    interview: ['Recursion vs iteration?','What is backtracking?','How does pruning help?','How does memoization optimize recursion?'],
+    when: 'Use for trees, divide-and-conquer, subsets, permutations and constraint problems.',
+    avoid: 'Avoid deep recursion when stack depth is unsafe or iteration is clearer.'
+  },
+  greedy: {
+    concept: 'Greedy algorithms repeatedly take the best local choice and depend on a problem-specific proof that this can produce a global optimum.',
+    hinglish: 'Har step par jo choice abhi best lagti hai woh lete hain, lekin ye tabhi correct hai jab greedy-choice property prove ho.',
+    why: 'When valid, greedy gives simple and efficient solutions to many optimization problems.',
+    working: ['Define the candidates.','Choose a local priority rule.','Take the best valid candidate.','Prove the choice can belong to an optimal solution.'],
+    example: 'Activity selection works by repeatedly choosing the activity that finishes earliest.',
+    dryRun: ['Sort by finish time','Pick the first activity','Skip overlaps','Pick the next compatible activity','Continue'],
+    code: 'sort(a.begin(), a.end(), [](auto &x, auto &y){ return x.end < y.end; });',
+    mistakes: ['Assuming every optimization problem is greedy','Skipping the correctness proof'],
+    interview: ['Greedy vs DP?','What is an exchange argument?','Why does activity selection work?','Give a case where greedy fails.'],
+    when: 'Use for scheduling, MST and other problems with a proven greedy property.',
+    avoid: 'Avoid when a local choice can block a better future combination.'
+  },
+  'bit-manipulation': {
+    concept: 'Bit manipulation works directly on the binary representation of integers using operators such as &, |, ^, << and >>.',
+    hinglish: 'Integer ke binary bits ko boxes samjho. Mask se kisi bit ko check, set, clear ya toggle kar sakte ho.',
+    why: 'It gives compact state representation and fast low-level operations.',
+    working: ['Create a mask.','Use AND to test, OR to set, XOR to toggle.','Use shifts to move bit positions.','Combine masks to represent subsets or flags.'],
+    example: 'For x=10 (1010), x & 1 is 0, so x is even.',
+    dryRun: ['x=10 → 1010','mask=0010','x & mask=0010 → bit is set','x ^ mask=1000 → bit toggled'],
+    code: 'bool set = (x & (1 << k)) != 0;\nx |= (1 << k);',
+    mistakes: ['Wrong precedence','Confusing logical and bitwise operators','Ignoring integer width/sign behavior'],
+    interview: ['Why does x & 1 check parity?','How does XOR find a unique value?','What is a bitmask?','How do you count set bits?'],
+    when: 'Use for flags, parity, subset states and compact boolean state.',
+    avoid: 'Avoid clever bit tricks when they reduce readability without a real benefit.'
+  },
+  'disjoint-set': {
+    concept: 'DSU maintains disjoint components using representative parent trees. Path compression and union by rank/size make operations almost constant amortized time.',
+    hinglish: 'Har group ka ek leader hota hai. Find leader batata hai aur Union do groups ko merge karta hai.',
+    why: 'It is ideal when components only merge and connectivity must be checked repeatedly.',
+    working: ['Start with each element as its own parent.','Find follows parents to the representative.','Path compression shortens future paths.','Union by rank/size keeps trees shallow.'],
+    example: 'Union(1,2) and Union(2,3) makes 1, 2 and 3 part of the same component.',
+    dryRun: ['1 and 2 separate','Union(1,2)','2 points toward 1','Union(2,3)','All three now share a representative'],
+    code: 'int find(int x){ return parent[x]==x ? x : parent[x]=find(parent[x]); }',
+    mistakes: ['Skipping path compression','Not using rank/size','Using DSU where deletions are central'],
+    interview: ['Why is DSU nearly O(1)?','Path compression vs union by rank?','How does Kruskal use DSU?'],
+    when: 'Use for connectivity merging, Kruskal and undirected cycle detection.',
+    avoid: 'Avoid when shortest paths, ordered traversal or frequent deletions are required.'
+  },
+  'segment-fenwick-trees': {
+    concept: 'Segment and Fenwick trees maintain partial aggregates so repeated updates and range/prefix queries can be handled in logarithmic time.',
+    hinglish: 'Agar values update bhi hoti hain aur baar-baar range sum/min nikalna hai, poora range scan karna slow hoga. Ye trees partial answers store karke query fast banate hain.',
+    why: 'They are useful when both updates and repeated range queries are frequent.',
+    working: ['Segment Tree stores aggregates for intervals.','Queries combine only relevant intervals.','Updates recompute affected ancestors.','Fenwick Tree uses binary-indexed jumps for prefix aggregates.'],
+    example: 'For [2,4,6,8], after changing 6 to 10, a range query can use stored nodes instead of rescanning every value.',
+    dryRun: ['Build structure','Update one index','Recompute affected nodes','Query a range','Combine O(log n) relevant pieces'],
+    code: 'void update(int i,int d){ for(;i<=n;i+=i&-i) bit[i]+=d; }',
+    mistakes: ['Mixing 0-based and 1-based Fenwick indexing','Forgetting lazy propagation','Using a tree when prefix sums are enough'],
+    interview: ['Segment tree vs Fenwick tree?','Why is update O(log n)?','What is lazy propagation?','When are prefix sums enough?'],
+    when: 'Use for dynamic range sums/min/max and repeated updates plus queries.',
+    avoid: 'Avoid when data is static and a simpler prefix-sum or sparse-table solution is enough.'
+  },
+
 };
 
 const VARIANT_DETAILS = {
@@ -505,6 +571,31 @@ const VARIANT_DETAILS = {
   'Hash Set': ['A hash-based collection that stores unique keys.','Membership check fast hota hai aur duplicate values store nahi hoti.','Best for: duplicate detection and membership checks.'],
   'Collision Handling': ['Techniques used when different keys map to the same bucket.','Do keys same bucket me aa sakti hain; chaining ya probing se collision handle karte hain.','Best for: understanding hash table internals.'],
   'Frequency Map': ['A hash map from a value to the number of times it appears.','Har element ki counting store karne ka simple pattern hai.','Best for: frequency, anagram and duplicate problems.'],
+
+  'Direct Recursion': ['A function directly calls itself on a smaller or changed input.','Function khud ko smaller problem ke saath call karta hai aur base case par rukta hai.','Best for: trees and recursive definitions.'],
+  'Tail Recursion': ['The recursive call is the final operation of the function.','Last operation recursive call hota hai; optimization language/runtime par depend karti hai.','Best for: recursive loops where supported.'],
+  'Divide & Conquer': ['Split a problem, solve parts independently, then combine the results.','Problem ko parts me todkar solve karke answers combine karte hain.','Best for: merge sort and recursive search.'],
+  'Backtracking': ['Search by making a choice, exploring it, then undoing it.','Choice lo, explore karo, galat ho to undo karke next option try karo.','Best for: subsets and constraint problems.'],
+  'Memoized Recursion': ['Recursive states are cached so repeated states are solved once.','Same subproblem dobara aaye to stored answer use karte hain.','Best for: recursive DP.'],
+  'Activity Selection': ['Select maximum compatible activities by choosing earliest finishing activities.','Sabse pehle finish hone wali compatible activity choose karna key greedy idea hai.','Best for: interval scheduling.'],
+  'Fractional Knapsack': ['Items may be divided, so highest value/weight ratio is chosen first.','Item tod sakte ho, isliye value/weight ratio ke basis par greedy choice kaam karti hai.','Best for: divisible knapsack.'],
+  'Huffman Coding': ['A greedy compression method that combines the two least frequent nodes repeatedly.','Least-frequency nodes ko combine karke prefix-code tree banate hain.','Best for: lossless compression.'],
+  'Interval Scheduling': ['Choose a maximum compatible set of intervals using a proven ordering.','Intervals ko finish time ke order me process karke compatible ones choose karte hain.','Best for: scheduling conflicts.'],
+  'Greedy Graph Algorithms': ['Graph algorithms such as Kruskal and Prim use greedy edge choices under correctness proofs.','MST me valid cheapest edge choices repeatedly select karte hain.','Best for: minimum spanning trees.'],
+  'Bitwise AND/OR/XOR': ['Binary operators that combine corresponding integer bits.','Har bit position par AND, OR ya XOR apply hota hai.','Best for: masks and parity.'],
+  'Bit Shifting': ['Move binary bits left or right by selected positions.','Bits ko left/right shift karke positions change karte hain.','Best for: masks and bit operations.'],
+  'Bit Mask': ['An integer whose bits represent selected states.','Integer ke bits ko flags ya subset representation ki tarah use karte hain.','Best for: subset states and flags.'],
+  'Set/Clear/Toggle Bit': ['Mask operations that turn a bit on, off or invert it.','OR se set, AND se clear aur XOR se toggle kar sakte ho.','Best for: bit-level state changes.'],
+  'Bitmask Enumeration': ['Enumerate subsets using binary integer masks.','0 se 2^n-1 tak masks se subsets represent kar sakte ho.','Best for: subset problems and bitmask DP.'],
+  'Union-Find': ['Another name for DSU, maintaining disjoint connected components.','Har component ka representative maintain karke groups merge karta hai.','Best for: connectivity and Kruskal.'],
+  'Path Compression': ['Make DSU nodes point closer to the representative during find.','Find ke time parent ko root ke paas set karke future find fast karte hain.','Best for: repeated DSU queries.'],
+  'Union by Rank': ['Attach the lower-rank tree below the higher-rank tree.','Chhote rank wale tree ko bade rank ke root ke neeche attach karte hain.','Best for: keeping DSU shallow.'],
+  'Union by Size': ['Attach the smaller component under the larger component.','Chhote component ko bade component ke root ke neeche attach karte hain.','Best for: efficient DSU merging.'],
+  'Segment Tree': ['An interval tree supporting many range queries and updates in O(log n).','Array ko intervals me todkar partial answers store karta hai.','Best for: dynamic range queries.'],
+  'Lazy Propagation': ['Delay range updates until a segment must be pushed to its children.','Pending update store karke zarurat par children ko push karte hain.','Best for: range updates and queries.'],
+  'Fenwick Tree / BIT': ['A compact binary-indexed structure for prefix aggregates and updates in O(log n).','Prefix sum ko binary jumps se maintain karta hai.','Best for: dynamic prefix sums and frequencies.'],
+  'Range Sum Query': ['Find the aggregate sum over an interval.','Kisi range ka total sum efficiently nikalna.','Best for: Fenwick and segment trees.'],
+  'Range Minimum Query': ['Find the minimum value in an interval.','Kisi range ka minimum quickly nikalna.','Best for: segment trees and sparse tables.'],
 
 };
 
