@@ -469,15 +469,15 @@ export default function DsaLearningPage() {
             <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-400">{DSA_INTRO.summary}</p>
           </div>
           <div className="relative">
-            <div className="absolute left-5 top-5 bottom-5 w-px bg-cyan-500/15 hidden md:block" />
+            <div className="absolute left-5 top-10 bottom-10 w-px bg-cyan-500/15 hidden md:block" />
             <div className="space-y-4">
               {DSA_INTRO.sections.map(([title, body], index) => (
                 <div key={title} className="relative md:pl-14">
-                  <div className="absolute left-0 top-5 hidden md:flex w-10 h-10 rounded-full items-center justify-center bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 text-xs font-bold">{String(index + 1).padStart(2, '0')}</div>
+                  <div className="absolute left-0 top-5 z-10 hidden md:flex w-10 h-10 rounded-full items-center justify-center bg-[#070b14] border border-cyan-500/40 text-cyan-300 text-xs font-bold">{String(index + 1).padStart(2, '0')}</div>
                   <section className={`rounded-2xl border p-5 md:p-6 transition-all hover:border-cyan-500/25 ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/55 border-slate-800'}`}>
                     <div className="flex items-center gap-3">
                       <span className="md:hidden flex w-8 h-8 rounded-full items-center justify-center bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] font-bold">{String(index + 1).padStart(2, '0')}</span>
-                      <h2 className={`text-sm md:text-base font-bold ${isBright ? 'text-slate-800' : 'text-slate-100'}`}>{title}</h2>
+                      <h2 className={`text-sm md:text-base font-bold ${isBright ? 'text-cyan-700' : 'text-cyan-300'}`}>{title}</h2>
                     </div>
                     <p className="mt-3 text-sm leading-7 text-slate-400">{body}</p>
                   </section>
