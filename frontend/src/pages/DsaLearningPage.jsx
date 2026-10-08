@@ -456,15 +456,7 @@ export default function DsaLearningPage() {
             <ul className="grid sm:grid-cols-2 gap-2">{selected.advanced.map((item) => <li key={item} className="p-3 rounded-xl bg-purple-500/5 border border-purple-500/10 text-sm text-slate-400">{item}</li>)}</ul>
           </DetailSection>
 
-          <div className={`p-5 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
-            <div className="flex gap-3">
-              <BookOpen size={18} className="text-cyan-400 mt-0.5 shrink-0" />
-              <div>
-                <h3 className="font-bold text-sm">Next learning layer</h3>
-                <p className="mt-1 text-xs leading-relaxed text-slate-400">Foundation → internal working → worked example → dry run → code → mistakes → interview practice. More language-specific implementations, correctness proofs and links to the matching 3D visualizer can be added on top of this layer.</p>
-              </div>
-            </div>
-          </div>
+
         </div>
       </div>
     );
