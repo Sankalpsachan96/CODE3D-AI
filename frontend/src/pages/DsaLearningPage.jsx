@@ -2133,6 +2133,8 @@ int prefix = sum(index);`,
               
               const v = VARIANT_DETAILS[selectedVariant];
 
+              const d = deep(selectedVariant);
+
               const deep = (name) => {
                 const detail = VARIANT_DETAILS[name] || ['', '', ''];
                 const [what, hinglish, where] = detail;
