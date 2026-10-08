@@ -141,8 +141,9 @@ export default function ComingSoonPage() {
           </div>
 
           <div className="cs-visual right">
-            <TreeGraphic />
-            <GraphGraphic />
+            <div className="cs-dsa-art">
+              <img src="/coming-soon-dsa.svg" alt="DSA visualization preview" />
+            </div>
           </div>
         </section>
 
