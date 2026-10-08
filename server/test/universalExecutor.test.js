@@ -34,6 +34,11 @@ const cases = [
 test('Real universal executor: all supported languages produce real stdout', async (t) => {
   const availability = universalExecutor.getRuntimeAvailability();
 
+  if (!availability.sandbox) {
+    t.skip('bubblewrap namespace sandbox is unavailable; executor intentionally fails closed');
+    return;
+  }
+
   for (const item of cases) {
     await t.test(item.language, async () => {
       const available = item.language === 'cpp'
