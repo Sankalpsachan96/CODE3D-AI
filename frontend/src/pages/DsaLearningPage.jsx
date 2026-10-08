@@ -604,7 +604,7 @@ function TopicCard({ topic, onOpen, isBright }) {
     <button
       type="button"
       onClick={() => onOpen(topic)}
-      className={`text-left p-5 rounded-2xl border transition-all hover:-translate-y-0.5 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${
+      className={`w-full min-w-0 text-left p-5 rounded-2xl border transition-all hover:-translate-y-0.5 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${
         isBright ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'
       }`}
     >
