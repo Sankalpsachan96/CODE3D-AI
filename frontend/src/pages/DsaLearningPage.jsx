@@ -2217,6 +2217,23 @@ int prefix = sum(index);`,
             })()}
           </DetailSection>
 
+          {TOPIC_DEEP_DIVE[selected.id] && (
+            <DetailSection title={TOPIC_DEEP_DIVE[selected.id].title} icon={<BookOpen size={16} />} isBright={isBright}>
+              <div className="space-y-5">
+                {TOPIC_DEEP_DIVE[selected.id].sections.map(([heading, content]) => (
+                  <div key={heading} className="rounded-xl border border-cyan-500/10 bg-cyan-500/5 p-4">
+                    <h3 className="text-sm font-bold text-cyan-300">{heading}</h3>
+                    {heading === 'Structured code example' ? (
+                      <pre className="mt-3 max-w-full overflow-x-auto rounded-lg border border-slate-800 bg-black/30 p-4 text-xs leading-7 text-cyan-200 font-mono whitespace-pre">{content}</pre>
+                    ) : (
+                      <p className="mt-2 text-sm leading-7 text-slate-400">{content}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </DetailSection>
+          )}
+
           <DetailSection title="Core operations & complexity" icon={<Clock3 size={16} />} isBright={isBright}>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
