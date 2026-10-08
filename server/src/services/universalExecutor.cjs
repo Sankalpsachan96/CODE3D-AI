@@ -40,7 +40,20 @@ function sandboxAvailable() {
   for (const directory of ["/usr", "/etc", "/lib", "/lib64"]) {
     if (fs.existsSync(directory)) args.push("--ro-bind", directory, directory);
   }
-  args.push("--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp", "--", "/usr/bin/true");
+  args.push(
+    "--proc", "/proc",
+    "--dev", "/dev",
+    "--tmpfs", "/tmp",
+    "--",
+    "/usr/bin/prlimit",
+    "--cpu=2",
+    "--as=2147483648",
+    "--nproc=64",
+    "--fsize=104857600",
+    "--nofile=64",
+    "--",
+    "/usr/bin/true"
+  );
   try {
     const result = spawnSync("bwrap", args, {
       stdio: "ignore",
@@ -94,7 +107,7 @@ function sandboxArguments(command, args, cwd) {
     "--",
     "/usr/bin/prlimit",
     "--cpu=20",
-    "--as=536870912",
+    "--as=2147483648",
     "--nproc=64",
     "--fsize=104857600",
     "--nofile=64",
