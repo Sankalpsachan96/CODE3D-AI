@@ -41,15 +41,25 @@ void insert(TreeNode*& root, int val) {
 function TreeGraphic() {
   return (
     <div className="cs-tree-card" aria-hidden="true">
-      <div className="cs-tree-title">3D DSA Visualization</div>
+      <div className="cs-tree-title">DSA Visualization</div>
       <div className="cs-tree-scene">
-        <div className="cs-tree-node n1">8</div>
-        <div className="cs-tree-node n2">3</div>
-        <div className="cs-tree-node n3">10</div>
-        <div className="cs-tree-node n4">1</div>
-        <div className="cs-tree-node n5">6</div>
-        <div className="cs-tree-node n6">14</div>
-        <i className="e e1" /><i className="e e2" /><i className="e e3" /><i className="e e4" /><i className="e e5" />
+        <svg viewBox="0 0 420 190" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <g className="cs-svg-edges">
+            <line x1="210" y1="38" x2="105" y2="92" />
+            <line x1="210" y1="38" x2="315" y2="92" />
+            <line x1="105" y1="92" x2="48" y2="150" />
+            <line x1="105" y1="92" x2="162" y2="150" />
+            <line x1="315" y1="92" x2="366" y2="150" />
+          </g>
+          <g className="cs-svg-tree-nodes">
+            <circle cx="210" cy="38" r="18" /><text x="210" y="38">8</text>
+            <circle cx="105" cy="92" r="18" /><text x="105" y="92">3</text>
+            <circle cx="315" cy="92" r="18" /><text x="315" y="92">10</text>
+            <circle cx="48" cy="150" r="18" /><text x="48" y="150">1</text>
+            <circle cx="162" cy="150" r="18" /><text x="162" y="150">6</text>
+            <circle cx="366" cy="150" r="18" /><text x="366" y="150">14</text>
+          </g>
+        </svg>
       </div>
       <div className="cs-tree-caption">Binary Search Tree</div>
     </div>
@@ -59,10 +69,24 @@ function TreeGraphic() {
 function GraphGraphic() {
   return (
     <div className="cs-graph-card" aria-hidden="true">
-      <div className="cs-graph-title">AI + Execution + 3D</div>
+      <div className="cs-graph-title">AI + Execution + Visualization</div>
       <div className="cs-graph-scene">
-        <span className="g g1">A</span><span className="g g2">B</span><span className="g g3">C</span><span className="g g4">D</span><span className="g g5">E</span>
-        <i className="ge ge1" /><i className="ge ge2" /><i className="ge ge3" /><i className="ge ge4" /><i className="ge ge5" />
+        <svg viewBox="0 0 420 125" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+          <g className="cs-svg-edges">
+            <line x1="48" y1="62" x2="145" y2="28" />
+            <line x1="48" y1="62" x2="145" y2="96" />
+            <line x1="145" y1="28" x2="270" y2="62" />
+            <line x1="145" y1="96" x2="270" y2="62" />
+            <line x1="270" y1="62" x2="370" y2="28" />
+          </g>
+          <g className="cs-svg-graph-nodes">
+            <circle cx="48" cy="62" r="18" /><text x="48" y="62">A</text>
+            <circle cx="145" cy="28" r="18" /><text x="145" y="28">B</text>
+            <circle cx="145" cy="96" r="18" /><text x="145" y="96">D</text>
+            <circle cx="270" cy="62" r="18" /><text x="270" y="62">C</text>
+            <circle cx="370" cy="28" r="18" /><text x="370" y="28">E</text>
+          </g>
+        </svg>
       </div>
     </div>
   );
