@@ -2362,21 +2362,36 @@ int prefix = sum(index);`,
                   <p className="mt-2 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Hinglish:</span> Vector ko expandable array samjho. Array ka size usually fixed hota hai, lekin vector me elements add karte jao aur zarurat padne par vector apni storage badha leta hai.</p>
                 </div>
                 <div className="grid lg:grid-cols-2 gap-5 min-w-0">
-                  <div className="min-w-0"><h3 className="text-sm font-bold text-cyan-300">size vs capacity</h3><p className="mt-2 text-sm leading-6 text-slate-400"><span className="font-mono text-cyan-300">size()</span> = current elements. <span className="font-mono text-cyan-300">capacity()</span> = current allocated element capacity.</p><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre">vector&lt;int&gt; v;
+                  <div className="min-w-0"><h3 className="text-sm font-bold text-cyan-300">size vs capacity</h3><p className="mt-2 text-sm leading-6 text-slate-400"><span className="font-mono text-cyan-300">size()</span> = current elements. <span className="font-mono text-cyan-300">capacity()</span> = current allocated element capacity.</p><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">vector&lt;int&gt; v;
+
 v.push_back(10);
 v.push_back(20);
 
-size = 2
-capacity &gt;= 2</pre></div>
+Current state:
+size     = 2
+capacity = 2 or more</pre></div>
                   <div className="min-w-0"><h3 className="text-sm font-bold text-cyan-300">Why capacity can be bigger</h3><p className="mt-2 text-sm leading-6 text-slate-400">Spare capacity avoids allocating new storage for every append. When growth is needed, a larger block is allocated and existing elements are moved or copied.</p></div>
                 </div>
-                <div><h3 className="text-sm font-bold text-cyan-300">What happens when it becomes full?</h3><ol className="mt-2 space-y-2 list-decimal list-inside text-sm leading-7 text-slate-400"><li>A larger block is allocated.</li><li>Existing elements are moved or copied.</li><li>Old storage is released.</li><li>The vector continues with the new block and larger capacity.</li></ol><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre">Before:
-[10][20][30][40]  capacity = 4
+                <div><h3 className="text-sm font-bold text-cyan-300">What happens when it becomes full?</h3><ol className="mt-2 space-y-2 list-decimal list-inside text-sm leading-7 text-slate-400"><li>A larger block is allocated.</li><li>Existing elements are moved or copied.</li><li>Old storage is released.</li><li>The vector continues with the new block and larger capacity.</li></ol><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">Before growth:
+capacity = 4
+size     = 4
+
+[10]
+[20]
+[30]
+[40]
 
 push_back(50)
 
 After growth:
-[10][20][30][40][50][ ][ ][ ]  capacity = larger</pre></div>
+capacity = larger
+size     = 5
+
+[10]
+[20]
+[30]
+[40]
+[50]</pre></div>
                 <div><h3 className="text-sm font-bold text-cyan-300">Important Vector Operations</h3><div className="overflow-x-auto mt-3"><table className="w-full text-xs"><thead><tr className="text-left text-slate-500 border-b border-slate-800"><th className="py-2 pr-4">Operation</th><th className="py-2 pr-4">Typical complexity</th><th className="py-2">Meaning</th></tr></thead><tbody>{[['v[i]','O(1)','Direct indexed access.'],['push_back(x)','Amortized O(1)','Append; occasional growth can cost O(n).'],['pop_back()','O(1)','Remove the last element.'],['insert(begin()+i,x)','O(n)','Elements may need to shift.'],['erase(begin()+i)','O(n)','Elements after i may shift left.'],['size()','O(1)','Current number of elements.'],['capacity()','O(1)','Current allocated capacity.'],['reserve(n)','At most O(n) when growth happens','Requests capacity for at least n elements.']].map(([op,complexity,meaning])=><tr key={op} className="border-b border-slate-800/60"><td className="py-2.5 pr-4 font-mono text-cyan-300">{op}</td><td className="py-2.5 pr-4 font-mono text-cyan-400">{complexity}</td><td className="py-2.5 text-slate-400">{meaning}</td></tr>)}</tbody></table></div></div>
                 <div className="grid lg:grid-cols-2 gap-5 min-w-0"><div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><h3 className="text-sm font-bold text-cyan-300">Array vs Vector</h3><ul className="mt-2 space-y-2 text-sm leading-6 text-slate-400"><li>• Array: fixed-size storage in the basic model.</li><li>• Vector: dynamic-size array abstraction.</li><li>• Both provide O(1) indexed access.</li><li>• Vector manages growth for you.</li></ul></div><div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/10"><h3 className="text-sm font-bold text-purple-300">When should you use Vector?</h3><p className="mt-2 text-sm leading-6 text-slate-400">Use vector when you need an indexed collection whose size may change. It is the default practical choice for many C++ DSA problems.</p></div></div>
                 <div><h3 className="text-sm font-bold text-cyan-300">Code Example</h3><pre className="mt-3 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre">#include &lt;vector&gt;
