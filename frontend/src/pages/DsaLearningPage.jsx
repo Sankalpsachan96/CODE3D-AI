@@ -1329,12 +1329,6 @@ Node* b = a;
               <div className="h-px flex-1 bg-slate-800" />
             </div>
             <div className="space-y-4">
-              <button type="button" onClick={openIntro} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><BookOpen size={23} /></div><div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">01 · START HERE</span><h2 className="mt-1 text-xl font-extrabold">Introduction to DSA</h2><p className="mt-1 text-xs text-slate-500">Build the foundation before diving into data structures and algorithms.</p></div></div>
-                  <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Begin learning <ChevronRight size={17} /></div>
-                </div>
-              </button>
               <button type="button" onClick={openMemory} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><HardDrive size={23} /></div><div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">02 · UNDERSTAND THIS</span><h2 className="mt-1 text-xl font-extrabold">Memory &amp; Memory Management</h2><p className="mt-1 text-xs text-slate-500">Understand memory, addresses, pointers, stack, heap and dynamic allocation.</p></div></div>
