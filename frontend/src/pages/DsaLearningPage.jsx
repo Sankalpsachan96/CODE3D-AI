@@ -807,10 +807,10 @@ Node* b = a;`, 'This copies the address, so a and b refer to the same node. A de
 
           <DetailSection title="Addresses, Variables &amp; Pointers" icon={<Target size={16} />} isBright={isBright}>
             <p className="text-sm leading-7 text-slate-400">Suppose <span className="font-mono text-cyan-300">int x = 10;</span>. If an example address is 1000, then <span className="font-mono text-cyan-300">&amp;x</span> means “address of x”.</p>
-            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">Address     Value
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre overflow-x-auto">Address     Value
 1000        10       ← x</pre>
             <p className="mt-3 text-sm leading-7 text-slate-400"><span className="font-mono text-cyan-300">int* p = &amp;x;</span> makes p hold x's address. <span className="font-mono text-cyan-300">*p</span> means “the value stored at the address p points to”.</p>
-            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">x
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre overflow-x-auto">x
 ┌─────────┐
 │   10    │  address 1000
 └─────────┘
@@ -821,7 +821,7 @@ p ───┘      p contains 1000</pre>
 
           <DetailSection title="Dynamic Memory Allocation — new &amp; delete" icon={<ChevronRight size={16} />} isBright={isBright}>
             <p className="text-sm leading-7 text-slate-400">In C++, <span className="font-mono text-cyan-300">new</span> creates an object in dynamically managed storage and returns its address. <span className="font-mono text-cyan-300">delete</span> releases a single object created with matching scalar new. For arrays created with <span className="font-mono text-cyan-300">new[]</span>, use matching <span className="font-mono text-cyan-300">delete[]</span>.</p>
-            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">int* p = new int(10);
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre overflow-x-auto">int* p = new int(10);
 
 Stack                 Dynamic storage
 p ─────────────────► [ 10 ]
@@ -832,7 +832,7 @@ delete p;</pre>
 
           <DetailSection title="Linked List — Exactly How Memory Gets Allocated" icon={<BookOpen size={16} />} isBright={isBright}>
             <p className="text-sm leading-7 text-slate-400">A node normally stores its data plus one or more link/reference fields. Nodes can be allocated separately, so their addresses do not have to be adjacent.</p>
-            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">Node* first = new Node(10);
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre overflow-x-auto">Node* first = new Node(10);
 Node* second = new Node(20);
 first-&gt;next = second;
 
@@ -852,7 +852,7 @@ first -&gt; second -&gt; nullptr</pre>
 
           <DetailSection title="Array vs Linked List — Memory Layout" icon={<Layers3 size={16} />} isBright={isBright}>
             <div className="grid md:grid-cols-2 gap-4">
-              <div><h3 className="text-sm font-bold text-cyan-300">Array — contiguous storage</h3><pre className="mt-2 p-3 rounded-lg bg-black/30 border border-slate-800 text-xs text-cyan-200 font-mono">[10][20][30][40]
+              <div><h3 className="text-sm font-bold text-cyan-300">Array — contiguous storage</h3><pre className="mt-2 p-3 rounded-lg bg-black/30 border border-slate-800 text-xs text-cyan-200 font-mono whitespace-pre overflow-x-auto">[10][20][30][40]
 1000 1004 1008 1012</pre><p className="mt-2 text-xs leading-6 text-slate-400">Conceptually adjacent fixed-size elements help O(1) indexing and cache locality.</p></div>
               <div><h3 className="text-sm font-bold text-purple-300">Linked list — linked storage</h3><pre className="mt-2 p-3 rounded-lg bg-black/30 border border-slate-800 text-xs text-cyan-200 font-mono">[10 | 5000]    [20 | 2300]    [30 | null]
  1000            5000            2300</pre><p className="mt-2 text-xs leading-6 text-slate-400">Nodes may be far apart. Each link stores where the next node is.</p></div>
@@ -861,7 +861,7 @@ first -&gt; second -&gt; nullptr</pre>
 
           <DetailSection title="Vector Memory — Size vs Capacity" icon={<Layers3 size={16} />} isBright={isBright}>
             <p className="text-sm leading-7 text-slate-400">C++ vector tracks <span className="font-semibold text-cyan-300">size</span> (elements stored) and <span className="font-semibold text-cyan-300">capacity</span> (storage currently available). Capacity can exceed size.</p>
-            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">size = 4
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre overflow-x-auto">size = 4
 capacity = 4
 [10][20][30][40]
 
@@ -894,10 +894,10 @@ push_back(50)
 
           <DetailSection title="Shallow Copy vs Deep Copy" icon={<Layers3 size={16} />} isBright={isBright}>
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10"><h3 className="font-bold text-amber-300">Shallow copy</h3><p className="mt-2 text-sm leading-6 text-slate-400">Copies pointer values/addresses, so two pointers can refer to the same dynamically allocated resource.</p><pre className="mt-3 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono">Node* a = new Node(10);
+              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10"><h3 className="font-bold text-amber-300">Shallow copy</h3><p className="mt-2 text-sm leading-6 text-slate-400">Copies pointer values/addresses, so two pointers can refer to the same dynamically allocated resource.</p><pre className="mt-3 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono whitespace-pre overflow-x-auto">Node* a = new Node(10);
 Node* b = a;
 // same node</pre></div>
-              <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10"><h3 className="font-bold text-emerald-300">Deep copy</h3><p className="mt-2 text-sm leading-6 text-slate-400">Creates independent storage for the copied object/resource. A linked structure may need every node cloned.</p><pre className="mt-3 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono">Node* b = cloneList(a);
+              <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10"><h3 className="font-bold text-emerald-300">Deep copy</h3><p className="mt-2 text-sm leading-6 text-slate-400">Creates independent storage for the copied object/resource. A linked structure may need every node cloned.</p><pre className="mt-3 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono whitespace-pre overflow-x-auto">Node* b = cloneList(a);
 // separate nodes</pre></div>
             </div>
           </DetailSection>
@@ -914,7 +914,7 @@ Node* b = a;
 
           <DetailSection title="Guided Memory Practice — Think First" icon={<CheckCircle2 size={16} />} isBright={isBright}>
             <div className="space-y-4">
-              {memoryExamples.map(([title,code,question,answer]) => <div key={title} className="p-4 rounded-xl border bg-black/20 border-slate-800"><h3 className="text-sm font-bold text-cyan-300">{title}</h3><pre className="mt-3 p-3 rounded-lg bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre-wrap">{code}</pre><p className="mt-3 text-sm font-semibold text-slate-200">{question}</p><div className="mt-2 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10"><p className="text-sm leading-6 text-slate-400"><span className="text-emerald-300 font-semibold">Answer:</span> {answer}</p></div></div>)}
+              {memoryExamples.map(([title,code,question,answer]) => <div key={title} className="p-4 rounded-xl border bg-black/20 border-slate-800"><h3 className="text-sm font-bold text-cyan-300">{title}</h3><pre className="mt-3 p-3 rounded-lg bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre overflow-x-auto">{code}</pre><p className="mt-3 text-sm font-semibold text-slate-200">{question}</p><div className="mt-2 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10"><p className="text-sm leading-6 text-slate-400"><span className="text-emerald-300 font-semibold">Answer:</span> {answer}</p></div></div>)}
             </div>
           </DetailSection>
 
