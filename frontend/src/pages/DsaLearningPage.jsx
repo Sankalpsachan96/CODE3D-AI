@@ -447,14 +447,30 @@ export default function DsaLearningPage() {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [showIntro, setShowIntro] = useState(false);
   const scrollRef = useRef(null);
+  const listScrollTopRef = useRef(0);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'auto',
+    const frame = requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({
+        top: selected || showIntro ? 0 : listScrollTopRef.current,
+        left: 0,
+        behavior: 'auto',
+      });
     });
+
+    return () => cancelAnimationFrame(frame);
   }, [selected, showIntro]);
+
+  const openTopic = (topic) => {
+    listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
+    setSelectedVariant(null);
+    setSelected(topic);
+  };
+
+  const openIntro = () => {
+    listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
+    setShowIntro(true);
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -623,7 +639,7 @@ export default function DsaLearningPage() {
           </div>
         </div>
 
-        <button type="button" onClick={() => setShowIntro(true)} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
+        <button type="button" onClick={openIntro} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><BookOpen size={23} /></div>
@@ -634,7 +650,7 @@ export default function DsaLearningPage() {
         </button>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((topic) => <TopicCard key={topic.id} topic={topic} onOpen={setSelected} isBright={isBright} />)}
+          {filtered.map((topic) => <TopicCard key={topic.id} topic={topic} onOpen={openTopic} isBright={isBright} />)}
         </div>
 
         {filtered.length === 0 && (
