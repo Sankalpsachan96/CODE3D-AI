@@ -20,6 +20,38 @@ export async function explainContext(req, res) {
       questionCount = 10,
     } = req.body || {};
 
+    // Bound the amount of user-controlled content forwarded to the AI provider.
+    if (typeof code !== 'string' || code.length > 20000) {
+      return res.status(413).json({
+        success: false,
+        error: { code: 'AI_CODE_LIMIT', message: 'Code must be a string of at most 20,000 characters.' },
+      });
+    }
+    if (typeof question !== 'string' || question.length > 4000) {
+      return res.status(413).json({
+        success: false,
+        error: { code: 'AI_QUESTION_LIMIT', message: 'Question must be a string of at most 4,000 characters.' },
+      });
+    }
+    if (!Array.isArray(history) || history.length > 12) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'AI_HISTORY_LIMIT', message: 'Conversation history may contain at most 12 messages.' },
+      });
+    }
+    if (Array.isArray(output) && output.length > 40) {
+      return res.status(413).json({
+        success: false,
+        error: { code: 'AI_OUTPUT_LIMIT', message: 'Output context may contain at most 40 lines.' },
+      });
+    }
+    if (!Number.isInteger(questionCount) || questionCount < 1 || questionCount > 20) {
+      return res.status(400).json({
+        success: false,
+        error: { code: 'AI_QUESTION_COUNT_LIMIT', message: 'Question count must be between 1 and 20.' },
+      });
+    }
+
     const response = await askCodeTutor({
       action,
       code,
