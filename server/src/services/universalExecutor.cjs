@@ -26,6 +26,35 @@ function getPythonCommand() {
   return null;
 }
 
+let sandboxAvailabilityCache;
+
+function sandboxAvailable() {
+  if (sandboxAvailabilityCache !== undefined) return sandboxAvailabilityCache;
+  if (!commandAvailable("bwrap", ["--version"])) {
+    sandboxAvailabilityCache = false;
+    return false;
+  }
+
+  // Probe actual namespace setup, not just whether the binary exists.
+  const args = ["--unshare-all", "--die-with-parent"];
+  for (const directory of ["/usr", "/etc", "/lib", "/lib64"]) {
+    if (fs.existsSync(directory)) args.push("--ro-bind", directory, directory);
+  }
+  args.push("--proc", "/proc", "--dev", "/dev", "--tmpfs", "/tmp", "--", "/usr/bin/true");
+  try {
+    const result = spawnSync("bwrap", args, {
+      stdio: "ignore",
+      windowsHide: true,
+      timeout: 2500,
+      env: { PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" },
+    });
+    sandboxAvailabilityCache = result.status === 0;
+  } catch {
+    sandboxAvailabilityCache = false;
+  }
+  return sandboxAvailabilityCache;
+}
+
 function getRuntimeAvailability() {
   return {
     javascript: Boolean(process.execPath),
@@ -33,6 +62,7 @@ function getRuntimeAvailability() {
     c: commandAvailable("gcc"),
     python: Boolean(getPythonCommand()),
     java: commandAvailable("javac") && commandAvailable("java"),
+    sandbox: sandboxAvailable(),
     nodeVersion: process.version,
   };
 }
@@ -46,49 +76,106 @@ function createTempDirectory() {
   return directory;
 }
 
+function sandboxArguments(command, args, cwd) {
+  const bwrapArgs = ["--unshare-all", "--die-with-parent", "--new-session"];
+  for (const directory of ["/usr", "/etc", "/lib", "/lib64"]) {
+    if (fs.existsSync(directory)) bwrapArgs.push("--ro-bind", directory, directory);
+  }
+  bwrapArgs.push(
+    "--proc", "/proc",
+    "--dev", "/dev",
+    "--tmpfs", "/tmp",
+    "--bind", cwd, "/work",
+    "--chdir", "/work",
+    "--setenv", "PATH", "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "--setenv", "HOME", "/work",
+    "--setenv", "TMPDIR", "/tmp",
+    "--setenv", "LANG", "C.UTF-8",
+    "--",
+    "/usr/bin/prlimit",
+    "--cpu=20",
+    "--as=536870912",
+    "--nproc=64",
+    "--fsize=104857600",
+    "--nofile=64",
+    "--",
+    command,
+    ...args.map((arg) => {
+      if (typeof arg !== "string") return String(arg);
+      if (arg === cwd) return "/work";
+      if (arg.startsWith(cwd + path.sep)) return "/work" + arg.slice(cwd.length);
+      return arg;
+    })
+  );
+  return bwrapArgs;
+}
+
+function killProcessTree(child) {
+  if (!child?.pid) return;
+  try {
+    if (process.platform !== "win32") process.kill(-child.pid, "SIGKILL");
+    else child.kill();
+  } catch {
+    try { child.kill("SIGKILL"); } catch {}
+  }
+}
+
 function runProcess(command, args, options = {}) {
   return new Promise((resolve) => {
-    const child = spawn(command, args, {
-      cwd: options.cwd,
-      shell: false,
-      windowsHide: true,
-    });
+    if (!options.cwd || !sandboxAvailable()) {
+      resolve({
+        success: false,
+        stdout: "",
+        stderr: "Secure execution sandbox is unavailable. The backend must permit bubblewrap user, PID, and network namespaces; unisolated execution is disabled.",
+        timedOut: false,
+        outputLimitExceeded: false,
+        exitCode: null,
+      });
+      return;
+    }
 
     let stdout = "";
     let stderr = "";
     let timedOut = false;
     let outputLimitExceeded = false;
+    const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : TIME_LIMIT;
 
-    const timeoutMs = Number.isFinite(options.timeoutMs)
-      ? options.timeoutMs
-      : TIME_LIMIT;
+    const child = spawn("bwrap", sandboxArguments(command, args, options.cwd), {
+      cwd: options.cwd,
+      shell: false,
+      detached: process.platform !== "win32",
+      windowsHide: true,
+      env: {
+        PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        HOME: options.cwd,
+        TMPDIR: "/tmp",
+        LANG: "C.UTF-8",
+      },
+    });
 
     const timer = setTimeout(() => {
       timedOut = true;
-      child.kill();
+      killProcessTree(child);
     }, timeoutMs);
 
     child.stdout.on("data", (data) => {
       stdout += data.toString();
-
       if (Buffer.byteLength(stdout, "utf8") > MAX_OUTPUT) {
         outputLimitExceeded = true;
-        child.kill();
+        killProcessTree(child);
       }
     });
 
     child.stderr.on("data", (data) => {
       stderr += data.toString();
-
       if (Buffer.byteLength(stderr, "utf8") > MAX_OUTPUT) {
         outputLimitExceeded = true;
-        child.kill();
+        killProcessTree(child);
       }
     });
 
     child.on("error", (error) => {
       clearTimeout(timer);
-
       resolve({
         success: false,
         stdout,
@@ -101,13 +188,8 @@ function runProcess(command, args, options = {}) {
 
     child.on("close", (code) => {
       clearTimeout(timer);
-
       resolve({
-        success:
-          code === 0 &&
-          !timedOut &&
-          !outputLimitExceeded,
-
+        success: code === 0 && !timedOut && !outputLimitExceeded,
         stdout,
         stderr,
         timedOut,
@@ -116,14 +198,10 @@ function runProcess(command, args, options = {}) {
       });
     });
 
-    if (options.input) {
-      child.stdin.write(options.input);
-    }
-
+    if (options.input) child.stdin.write(options.input);
     child.stdin.end();
   });
 }
-
 
 /* =========================
    C++ EXECUTION
@@ -695,6 +773,35 @@ async function executeCode(language, code, input = "") {
       stage: "validation",
       output: "",
       error: "Code cannot be empty.",
+      executionTime: null,
+    };
+  }
+
+  if (Buffer.byteLength(code, "utf8") > 100 * 1024) {
+    return {
+      success: false,
+      stage: "validation",
+      output: "",
+      error: "Code exceeds the 100 KB execution limit.",
+      executionTime: null,
+    };
+  }
+  if (typeof input !== "string" || Buffer.byteLength(input, "utf8") > 20 * 1024) {
+    return {
+      success: false,
+      stage: "validation",
+      output: "",
+      error: "Execution input must be a string no larger than 20 KB.",
+      executionTime: null,
+    };
+  }
+
+  if (!sandboxAvailable()) {
+    return {
+      success: false,
+      stage: "sandbox",
+      output: "",
+      error: "Secure execution sandbox is unavailable. Please contact the administrator; code was not executed.",
       executionTime: null,
     };
   }
