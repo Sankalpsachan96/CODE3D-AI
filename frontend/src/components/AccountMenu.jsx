@@ -30,6 +30,7 @@ export default function AccountMenu({ onClose }) {
       <button onClick={() => go('/dsa')}><BookOpen size={15} /> DSA Hub</button>
       <button onClick={() => go('/ai')}><Bot size={15} /> AI Tutor</button>
       <button onClick={() => go('/quiz')}><Trophy size={15} /> Quiz Arena</button>
+      <button onClick={() => go('/dsa-learning')}><BookOpen size={15} /> DSA Learning</button>
       <div className="account-menu-label">Your activity</div>
       <button onClick={() => go('/history')}><History size={15} /> Execution History</button>
       <button onClick={() => go('/saved')}><Clock3 size={15} /> Saved Visualizations</button>
