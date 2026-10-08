@@ -158,8 +158,10 @@ export default function Navbar({ activeTab, setActiveTab }) {
           ================================= */}
       <nav className="app-nav-links">
         {navLinks.map((item) => {
-          const active = location.pathname === item.path ||
-  (item.path !== '/app' && location.pathname.startsWith(item.path));
+          const active =
+              location.pathname === item.path ||
+              (item.path !== '/app' &&
+                location.pathname.startsWith(`${item.path}/`));
 
           const Icon = item.icon;
 
