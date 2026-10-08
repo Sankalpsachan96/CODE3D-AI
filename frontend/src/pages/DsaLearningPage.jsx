@@ -643,20 +643,21 @@ export default function DsaLearningPage() {
   const [selected, setSelected] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [showIntro, setShowIntro] = useState(false);
+  const [showComplexity, setShowComplexity] = useState(false);
   const scrollRef = useRef(null);
   const listScrollTopRef = useRef(0);
 
   useLayoutEffect(() => {
     const frame = requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({
-        top: selected || showIntro ? 0 : listScrollTopRef.current,
+        top: selected || showIntro || showComplexity ? 0 : listScrollTopRef.current,
         left: 0,
         behavior: 'auto',
       });
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [selected, showIntro]);
+  }, [selected, showIntro, showComplexity]);
 
   const openTopic = (topic) => {
     listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
@@ -666,7 +667,18 @@ export default function DsaLearningPage() {
 
   const openIntro = () => {
     listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
+    setSelected(null);
+    setSelectedVariant(null);
+    setShowComplexity(false);
     setShowIntro(true);
+  };
+
+  const openComplexity = () => {
+    listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
+    setSelected(null);
+    setSelectedVariant(null);
+    setShowIntro(false);
+    setShowComplexity(true);
   };
 
   const openVariant = (type) => {
@@ -715,6 +727,184 @@ export default function DsaLearningPage() {
             <div className="flex items-center gap-3"><span className="text-xl">🚀</span><h3 className="font-bold">Ready to start DSA?</h3></div>
             <p className="mt-2 text-sm leading-7 text-slate-400">Now that the foundation is clear, start with Arrays & Vectors and move forward step by step. Each topic goes deeper with examples, dry runs, code, Hinglish explanations and practical guidance.</p>
             <button onClick={() => setShowIntro(false)} className="mt-4 px-4 py-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 cursor-pointer">Start Learning →</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+  if (showComplexity) {
+    const complexityRows = [
+      ['O(1) — Constant', 'Time/Space stays roughly the same as input grows.', 'Array index access: a[5], stack push/pop, hash lookup on average.', 'One direct operation → O(1).'],
+      ['O(log n) — Logarithmic', 'Work grows slowly because the problem is repeatedly divided by a constant factor.', 'Binary search, heap height, balanced BST search.', 'If n becomes half each iteration → O(log n).'],
+      ['O(√n) — Square Root', 'The number of iterations grows as the square root of n.', 'Trial division up to √n for checking primality.', 'Loop while i*i <= n → O(√n).'],
+      ['O(n) — Linear', 'Work grows directly with the number of input elements.', 'Linear search, array traversal, finding min/max.', 'One full pass over n items → O(n).'],
+      ['O(n log n) — Linearithmic', 'A linear amount of work is performed across logarithmic levels.', 'Merge sort, heap sort, efficient divide-and-conquer sorting.', 'n work per level × log n levels → O(n log n).'],
+      ['O(n²) — Quadratic', 'Work grows with the square of input size.', 'Nested loops over the same n elements, bubble sort worst case.', 'n × n iterations → O(n²).'],
+      ['O(n³) — Cubic', 'Three independent n-sized loops multiply their work.', 'Checking every triple, some matrix algorithms.', 'n × n × n → O(n³).'],
+      ['O(nᵏ) — Polynomial', 'A fixed number k of nested n-sized loops gives polynomial growth.', 'O(n⁴), O(n⁵) style brute-force algorithms.', 'k independent loops → O(nᵏ).'],
+      ['O(2ⁿ) — Exponential', 'Work roughly doubles when one more input item is added.', 'Generating all subsets, naive recursive Fibonacci.', 'Two recursive branches for each item → often O(2ⁿ).'],
+      ['O(n!) — Factorial', 'Work grows extremely fast because all permutations are explored.', 'Generating all permutations by brute force.', 'n choices × (n−1) × ... × 1 → O(n!).'],
+    ];
+
+    return (
+      <div ref={scrollRef} key="dsa-complexity" className={`h-[calc(100dvh-62px)] min-h-0 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
+        <div className="max-w-6xl mx-auto space-y-5">
+          <button onClick={() => setShowComplexity(false)} className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400 cursor-pointer"><ArrowLeft size={15} /> Back to DSA Learning</button>
+
+          <div className={`p-6 rounded-2xl border ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-slate-800'}`}>
+            <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/20">02 · LEARN THIS NEXT</span>
+            <h1 className="mt-3 text-2xl md:text-3xl font-extrabold">Time & Space Complexity</h1>
+            <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-400">Learn how to measure algorithm efficiency, find Big-O from code, understand every important complexity class, and compare brute-force and optimized solutions.</p>
+          </div>
+
+          <DetailSection title="What is Time Complexity?" icon={<Clock3 size={16} />} isBright={isBright}>
+            <p className="text-sm leading-7 text-slate-400">Time complexity describes how the number of basic operations performed by an algorithm grows as the input size n grows. It is not normally the exact clock time in seconds; it is a growth-rate model that lets us compare algorithms independent of machine speed.</p>
+            <p className="mt-3 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Simple idea:</span> If an algorithm checks every element once, its work grows with n → O(n). If it keeps cutting the search space in half, its work grows with log n → O(log n).</p>
+          </DetailSection>
+
+          <DetailSection title="What is Space Complexity?" icon={<HardDrive size={16} />} isBright={isBright}>
+            <p className="text-sm leading-7 text-slate-400">Space complexity describes how much memory an algorithm needs as n grows. Always separate <span className="font-semibold text-cyan-400">input space</span> from <span className="font-semibold text-cyan-400">auxiliary space</span> when discussing algorithms.</p>
+            <ul className="mt-3 space-y-2">{[
+              'O(1) auxiliary space: only a fixed number of variables are used.',
+              'O(n) auxiliary space: an extra array/list of size n is created.',
+              'O(log n) auxiliary space: common in balanced recursion such as binary search.',
+              'Recursion stack counts as space: recursive calls that remain active consume stack memory.'
+            ].map(x => <li key={x} className="text-sm leading-6 text-slate-400 flex gap-2"><span className="text-cyan-400">▸</span>{x}</li>)}</ul>
+          </DetailSection>
+
+          <DetailSection title="Big-O, Big-Ω and Big-Θ" icon={<Brain size={16} />} isBright={isBright}>
+            <div className="grid lg:grid-cols-3 gap-3">
+              {[
+                ['Big-O — O(f(n))', 'Upper-bound / growth ceiling. It tells us the algorithm will not grow asymptotically faster than the stated bound under the chosen model.', 'Linear search is O(n).'],
+                ['Big-Ω — Ω(f(n))', 'Lower-bound / guaranteed growth floor. It describes a lower asymptotic bound.', 'Any algorithm that must inspect all n items in a particular case is Ω(n) for that case.'],
+                ['Big-Θ — Θ(f(n))', 'Tight bound: both upper and lower bounds match asymptotically.', 'A loop that always runs exactly n times is Θ(n), and therefore also O(n) and Ω(n).'],
+              ].map(([title, body, ex]) => <div key={title} className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><h3 className="font-bold text-sm text-cyan-300">{title}</h3><p className="mt-2 text-xs leading-6 text-slate-400">{body}</p><p className="mt-2 text-xs leading-6 text-slate-500"><span className="text-cyan-400 font-semibold">Example:</span> {ex}</p></div>)}
+            </div>
+            <p className="mt-4 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Interview rule:</span> Most coding interviews ask for Big-O time and space, but understanding Ω and Θ prevents you from confusing a worst-case upper bound with an exact/tight growth rate.</p>
+          </DetailSection>
+
+          <DetailSection title="All Important Time Complexity Classes" icon={<Target size={16} />} isBright={isBright}>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead><tr className="text-left text-slate-500 border-b border-slate-800"><th className="py-2 pr-4">Complexity</th><th className="py-2 pr-4">Meaning</th><th className="py-2 pr-4">Typical example</th><th className="py-2">How to recognize</th></tr></thead>
+                <tbody>{complexityRows.map(([a,b,c,d]) => <tr key={a} className="border-b border-slate-800/60 align-top"><td className="py-3 pr-4 font-semibold text-cyan-300 whitespace-nowrap">{a}</td><td className="py-3 pr-4 text-slate-400">{b}</td><td className="py-3 pr-4 text-slate-400">{c}</td><td className="py-3 text-slate-400">{d}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </DetailSection>
+
+          <div className="grid lg:grid-cols-2 gap-5">
+            <DetailSection title="How to Find Time Complexity — Step by Step" icon={<ChevronRight size={16} />} isBright={isBright}>
+              <ol className="space-y-3 list-decimal list-inside text-sm leading-7 text-slate-400">
+                <li>Identify the input size: usually n, but sometimes there are multiple inputs such as n and m.</li>
+                <li>Find the basic operation that repeats: comparison, assignment, arithmetic, swap, function call, etc.</li>
+                <li>Count how many times each loop or operation can execute in terms of n.</li>
+                <li>For sequential blocks, add their costs: O(n) + O(n) = O(n).</li>
+                <li>For nested independent loops, multiply: O(n) × O(n) = O(n²).</li>
+                <li>For halving/doubling loops, use logarithms: n → n/2 → n/4 → ... → 1 gives O(log n).</li>
+                <li>For conditionals, analyze the branch that performs the most work for worst-case Big-O.</li>
+                <li>For recursion, write the recurrence and identify the number of levels/branches.</li>
+                <li>Drop constants and lower-order terms: O(3n + 10) becomes O(n), and O(n² + n) becomes O(n²).</li>
+              </ol>
+            </DetailSection>
+            <DetailSection title="How to Find Space Complexity" icon={<HardDrive size={16} />} isBright={isBright}>
+              <ol className="space-y-3 list-decimal list-inside text-sm leading-7 text-slate-400">
+                <li>Count variables whose memory does not depend on n → O(1).</li>
+                <li>Count arrays, strings, maps, sets or other structures created from n input items → usually O(n).</li>
+                <li>For a matrix of n × n cells → O(n²).</li>
+                <li>For recursion, count the maximum number of active stack frames, not just total calls.</li>
+                <li>If multiple extra structures coexist, add their memory and keep the dominant term.</li>
+                <li>Do not automatically count the input itself as auxiliary space unless the question asks for total space.</li>
+              </ol>
+            </DetailSection>
+          </div>
+
+          <DetailSection title="Code Examples — Find the Complexity Yourself" icon={<CheckCircle2 size={16} />} isBright={isBright}>
+            <div className="space-y-4">
+              {[
+                ['Example 1 — One loop', 'for (int i = 0; i < n; i++) {\n  cout << a[i];\n}', 'The loop runs n times → Time O(n). Only i and a few variables are used → Auxiliary Space O(1).'],
+                ['Example 2 — Two separate loops', 'for (int i = 0; i < n; i++) work();\nfor (int j = 0; j < n; j++) work();', 'n + n = 2n → O(n), not O(n²), because the loops are sequential, not nested.'],
+                ['Example 3 — Nested loops', 'for (int i = 0; i < n; i++)\n  for (int j = 0; j < n; j++) work();', 'n × n = n² → Time O(n²).'],
+                ['Example 4 — Halving', 'for (int i = n; i > 1; i /= 2) work();', 'Values are n, n/2, n/4, ... → about log₂n iterations → O(log n).'],
+                ['Example 5 — Doubling', 'for (int i = 1; i < n; i *= 2) work();', 'Values are 1, 2, 4, 8, ... → O(log n).'],
+                ['Example 6 — Triangular loop', 'for (int i = 0; i < n; i++)\n  for (int j = 0; j < i; j++) work();', 'Work is 0 + 1 + 2 + ... + (n−1) = n(n−1)/2 → O(n²).'],
+                ['Example 7 — Log inside linear', 'for (int i = 0; i < n; i++)\n  for (int j = n; j > 1; j /= 2) work();', 'Outer loop n times and inner loop log n times → O(n log n).'],
+                ['Example 8 — √n loop', 'for (int i = 1; i * i <= n; i++) work();', 'i reaches √n → O(√n).'],
+                ['Example 9 — Linear extra memory', 'vector<int> copy(n);', 'Creating n elements requires O(n) auxiliary space.'],
+                ['Example 10 — Matrix memory', 'vector<vector<int>> grid(n, vector<int>(n));', 'n × n elements → O(n²) space.'],
+              ].map(([title,code,ex]) => <div key={title} className={`p-4 rounded-xl border ${isBright ? 'bg-slate-50 border-slate-200' : 'bg-black/20 border-slate-800'}`}><h3 className="text-sm font-bold text-cyan-300">{title}</h3><pre className="mt-3 overflow-x-auto p-3 rounded-lg bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre-wrap">{code}</pre><p className="mt-3 text-sm leading-6 text-slate-400">{ex}</p></div>)}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Loops — The Most Important Shortcut" icon={<Clock3 size={16} />} isBright={isBright}>
+            <div className="space-y-3 text-sm leading-7 text-slate-400">
+              <p><span className="text-cyan-400 font-semibold">One n-loop:</span> O(n).</p>
+              <p><span className="text-cyan-400 font-semibold">Two nested n-loops:</span> O(n²).</p>
+              <p><span className="text-cyan-400 font-semibold">Three nested n-loops:</span> O(n³).</p>
+              <p><span className="text-cyan-400 font-semibold">Sequential loops:</span> Add them, then keep the dominant term.</p>
+              <p><span className="text-cyan-400 font-semibold">n then log n nested:</span> O(n log n).</p>
+              <p><span className="text-cyan-400 font-semibold">Variable shrinking by division:</span> usually O(log n).</p>
+              <p><span className="text-cyan-400 font-semibold">Variable grows by multiplication:</span> usually O(log n).</p>
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Recursion — How to Calculate It" icon={<Brain size={16} />} isBright={isBright}>
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><h3 className="text-sm font-bold text-cyan-300">Binary Search</h3><pre className="mt-2 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono whitespace-pre-wrap">{`T(n) = T(n/2) + O(1)`}</pre><p className="mt-2 text-sm text-slate-400">The input halves every call → O(log n) time. Recursion depth is O(log n) → O(log n) auxiliary space.</p></div>
+              <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><h3 className="text-sm font-bold text-cyan-300">Merge Sort</h3><pre className="mt-2 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono whitespace-pre-wrap">{`T(n) = 2T(n/2) + O(n)`}</pre><p className="mt-2 text-sm text-slate-400">Two half-size subproblems create log n levels, and each level processes n total elements → O(n log n).</p></div>
+              <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><h3 className="text-sm font-bold text-cyan-300">Naive Fibonacci</h3><pre className="mt-2 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono whitespace-pre-wrap">{`T(n) = T(n-1) + T(n-2) + O(1)`}</pre><p className="mt-2 text-sm text-slate-400">Repeated branching causes exponential growth; commonly stated as O(2ⁿ) time. The active recursion depth is O(n) space.</p></div>
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Best Case, Average Case & Worst Case" icon={<Target size={16} />} isBright={isBright}>
+            <div className="grid md:grid-cols-3 gap-3">
+              {[
+                ['Best Case', 'Minimum work for a favorable input.', 'Linear search finds the target at index 0 → O(1).'],
+                ['Average Case', 'Expected work over an input distribution/model.', 'Linear search is O(n) average under a common uniform-position assumption.'],
+                ['Worst Case', 'Maximum work over valid inputs.', 'Linear search target is last/absent → O(n).'],
+              ].map(([t,b,e]) => <div key={t} className="p-4 rounded-xl bg-slate-500/5 border border-slate-700/50"><h3 className="font-bold text-sm text-cyan-300">{t}</h3><p className="mt-2 text-xs leading-6 text-slate-400">{b}</p><p className="mt-2 text-xs leading-6 text-slate-500">{e}</p></div>)}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Amortized vs Average vs Expected Complexity" icon={<Sparkles size={16} />} isBright={isBright}>
+            <p className="text-sm leading-7 text-slate-400"><span className="text-cyan-400 font-semibold">Amortized:</span> average cost over a sequence of operations, without assuming random input. Example: dynamic-array append is amortized O(1), even though an occasional resize costs O(n).</p>
+            <p className="mt-3 text-sm leading-7 text-slate-400"><span className="text-cyan-400 font-semibold">Average-case:</span> average over an input distribution or case model. Example: quicksort is average O(n log n) under common assumptions, but worst-case O(n²).</p>
+            <p className="mt-3 text-sm leading-7 text-slate-400"><span className="text-cyan-400 font-semibold">Expected:</span> often used for randomized algorithms where the expectation is over random choices. Example: randomized quicksort has expected O(n log n).</p>
+          </DetailSection>
+
+          <DetailSection title="How to Compare Two Algorithms" icon={<Layers3 size={16} />} isBright={isBright}>
+            <ol className="space-y-2 list-decimal list-inside text-sm leading-7 text-slate-400">
+              <li>Write both complexities in terms of n.</li>
+              <li>Ignore machine-dependent constants for asymptotic comparison.</li>
+              <li>Keep the dominant growth term.</li>
+              <li>Compare both time and auxiliary space; faster is not automatically better if memory is severely constrained.</li>
+              <li>Check constraints. O(n²) may be acceptable for n = 1,000 in some settings but impossible for n = 1,000,000.</li>
+            </ol>
+          </DetailSection>
+
+          <DetailSection title="Complexity Cheat Sheet" icon={<CheckCircle2 size={16} />} isBright={isBright}>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {[
+                ['O(1)', 'Direct access, swap, stack top'],
+                ['O(log n)', 'Binary search, balanced tree search'],
+                ['O(√n)', 'Trial division to √n'],
+                ['O(n)', 'One traversal, linear search'],
+                ['O(n log n)', 'Merge sort, heap sort'],
+                ['O(n²)', 'Double nested loop, many simple comparison sorts'],
+                ['O(n³)', 'Triple nested loop'],
+                ['O(2ⁿ)', 'All subsets, naive Fibonacci'],
+                ['O(n!)', 'All permutations'],
+                ['Space O(1)', 'Few fixed variables'],
+                ['Space O(n)', 'Copy/list/map proportional to n'],
+                ['Space O(n²)', 'n × n matrix'],
+              ].map(([a,b]) => <div key={a+b} className="p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><span className="font-mono text-cyan-300 text-xs font-bold">{a}</span><p className="mt-1 text-xs text-slate-400">{b}</p></div>)}
+            </div>
+          </DetailSection>
+
+          <div className={`p-6 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
+            <div className="flex items-center gap-3"><span className="text-xl">🎯</span><h3 className="font-bold">Your goal</h3></div>
+            <p className="mt-2 text-sm leading-7 text-slate-400">Whenever you see code, first identify n, then count how loops grow, check recursion, count extra data structures, remove constants/lower-order terms, and finally state Time Complexity + Auxiliary Space Complexity.</p>
           </div>
         </div>
       </div>
@@ -857,6 +1047,17 @@ export default function DsaLearningPage() {
         {filtered.length === 0 && (
           <div className="py-16 text-center text-sm text-slate-500">No DSA learning topic matched your search.</div>
         )}
+
+
+        <button type="button" onClick={openComplexity} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><Clock3 size={23} /></div>
+              <div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">02 · LEARN THIS NEXT</span><h2 className="mt-1 text-xl font-extrabold">Time & Space Complexity</h2><p className="mt-1 text-xs text-slate-500">Learn how to find complexity from code, compare algorithms and understand Big-O properly.</p></div>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Start learning <ChevronRight size={17} /></div>
+          </div>
+        </button>
 
         <div className={`p-5 rounded-2xl border flex gap-3 ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/50 border-slate-800'}`}>
           <Brain size={18} className="text-purple-400 mt-0.5 shrink-0" />
