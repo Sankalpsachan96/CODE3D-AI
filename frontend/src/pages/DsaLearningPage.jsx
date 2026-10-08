@@ -485,7 +485,7 @@ export default function DsaLearningPage() {
 
   if (showIntro) {
     return (
-      <div ref={scrollRef} key={showIntro ? 'dsa-intro' : selected ? `dsa-topic-${selected.id}` : 'dsa-list'} className={`flex-1 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
+      <div ref={scrollRef} key={showIntro ? 'dsa-intro' : selected ? `dsa-topic-${selected.id}` : 'dsa-list'} className={`h-[calc(100dvh-62px)] min-h-0 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
         <div className="max-w-6xl mx-auto space-y-5">
           <button onClick={() => setShowIntro(false)} className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400 cursor-pointer"><ArrowLeft size={15} /> Back to DSA Learning</button>
           <div className={`p-6 rounded-2xl border ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-slate-800'}`}>
@@ -522,7 +522,7 @@ export default function DsaLearningPage() {
 
   if (selected) {
     return (
-      <div ref={scrollRef} key={showIntro ? 'dsa-intro' : selected ? `dsa-topic-${selected.id}` : 'dsa-list'} className={`flex-1 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
+      <div ref={scrollRef} key={showIntro ? 'dsa-intro' : selected ? `dsa-topic-${selected.id}` : 'dsa-list'} className={`h-[calc(100dvh-62px)] min-h-0 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
         <div className="max-w-6xl mx-auto space-y-5">
           <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400 cursor-pointer">
             <ArrowLeft size={15} /> Back to DSA Learning
@@ -625,7 +625,7 @@ export default function DsaLearningPage() {
   }
 
   return (
-    <div ref={scrollRef} key={showIntro ? 'dsa-intro' : selected ? `dsa-topic-${selected.id}` : 'dsa-list'} className={`flex-1 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
+    <div ref={scrollRef} key={showIntro ? 'dsa-intro' : selected ? `dsa-topic-${selected.id}` : 'dsa-list'} className={`h-[calc(100dvh-62px)] min-h-0 overflow-y-auto p-4 md:p-8 ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
       <div className="max-w-7xl mx-auto space-y-6">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
