@@ -29,4 +29,6 @@
 <g fill="#00a9c7" stroke="#00d9ff"><circle cx="70" cy="135" r="24"/><circle cx="320" cy="135" r="24"/></g>
 <g fill="#ff7a18" stroke="#ffb07c"><circle cx="200" cy="82" r="24"/><circle cx="200" cy="188" r="24"/><circle cx="460" cy="82" r="24"/></g>
 <g fill="#fff"><text x="70" y="135">A</text><text x="200" y="82">B</text><text x="200" y="188">D</text><text x="320" y="135">C</text><text x="460" y="82">E</text></g></g>
+<rect x="185" y="226" width="150" height="30" rx="15" fill="#080b16" stroke="#ff6b9d"/>
+<text x="260" y="246" fill="#d9dcf0" font-family="Inter,Arial,sans-serif" font-size="13" text-anchor="middle">Directed Graph</text>
 </g></svg>
