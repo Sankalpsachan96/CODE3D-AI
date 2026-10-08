@@ -468,15 +468,27 @@ export default function DsaLearningPage() {
             <h1 className="mt-3 text-2xl md:text-3xl font-extrabold">{DSA_INTRO.title}</h1>
             <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-400">{DSA_INTRO.summary}</p>
           </div>
-          {DSA_INTRO.sections.map(([title, body]) => (
-            <DetailSection key={title} title={title} icon={<BookOpen size={16} />} isBright={isBright}>
-              <p className="text-sm leading-7 text-slate-400">{body}</p>
-            </DetailSection>
-          ))}
-          <div className={`p-5 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
-            <h3 className="font-bold text-sm">Ready to start?</h3>
-            <p className="mt-1 text-xs leading-relaxed text-slate-400">Now move to the core structures and algorithms below. Each topic goes deeper with examples, dry runs, code, Hinglish explanations and practical guidance.</p>
-            <button onClick={() => setShowIntro(false)} className="mt-3 px-4 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 cursor-pointer">Explore DSA Topics →</button>
+          <div className="relative">
+            <div className="absolute left-5 top-5 bottom-5 w-px bg-cyan-500/15 hidden md:block" />
+            <div className="space-y-4">
+              {DSA_INTRO.sections.map(([title, body], index) => (
+                <div key={title} className="relative md:pl-14">
+                  <div className="absolute left-0 top-5 hidden md:flex w-10 h-10 rounded-full items-center justify-center bg-cyan-500/10 border border-cyan-500/25 text-cyan-300 text-xs font-bold">{String(index + 1).padStart(2, '0')}</div>
+                  <section className={`rounded-2xl border p-5 md:p-6 transition-all hover:border-cyan-500/25 ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/55 border-slate-800'}`}>
+                    <div className="flex items-center gap-3">
+                      <span className="md:hidden flex w-8 h-8 rounded-full items-center justify-center bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[10px] font-bold">{String(index + 1).padStart(2, '0')}</span>
+                      <h2 className={`text-sm md:text-base font-bold ${isBright ? 'text-slate-800' : 'text-slate-100'}`}>{title}</h2>
+                    </div>
+                    <p className="mt-3 text-sm leading-7 text-slate-400">{body}</p>
+                  </section>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className={`p-6 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
+            <div className="flex items-center gap-3"><span className="text-xl">🚀</span><h3 className="font-bold">Ready to start DSA?</h3></div>
+            <p className="mt-2 text-sm leading-7 text-slate-400">Now that the foundation is clear, start with Arrays & Vectors and move forward step by step. Each topic goes deeper with examples, dry runs, code, Hinglish explanations and practical guidance.</p>
+            <button onClick={() => setShowIntro(false)} className="mt-4 px-4 py-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-xs font-semibold text-cyan-300 hover:bg-cyan-500/20 cursor-pointer">Start Learning →</button>
           </div>
         </div>
       </div>
@@ -602,12 +614,14 @@ export default function DsaLearningPage() {
           </div>
         </div>
 
-        <button type="button" onClick={() => setShowIntro(true)} className={`w-full text-left p-5 rounded-2xl border transition-all hover:-translate-y-0.5 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-cyan-900/50'}`}>
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3"><div className="p-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><BookOpen size={20} /></div><div><span className="text-[10px] font-mono font-semibold text-cyan-400">START HERE</span><h2 className="mt-1 text-lg font-bold">Introduction to DSA</h2></div></div>
-            <ChevronRight size={18} className="text-slate-500 mt-1" />
+        <button type="button" onClick={() => setShowIntro(true)} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><BookOpen size={23} /></div>
+              <div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">01 · START HERE</span><h2 className="mt-1 text-xl font-extrabold">Introduction to DSA</h2><p className="mt-1 text-xs text-slate-500">Build the foundation before diving into data structures and algorithms.</p></div>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Begin learning <ChevronRight size={17} /></div>
           </div>
-          <p className="mt-3 text-sm leading-relaxed text-slate-400">Learn what DSA is, why we need it, where it is used, how data structures and algorithms work together, and how to begin your DSA journey.</p>
         </button>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
