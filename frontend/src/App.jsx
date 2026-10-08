@@ -11,6 +11,7 @@ import SettingsPage from './pages/SettingsPage';
 import AiTutorPage from './pages/AiTutorPage';
 import SheetsPage from './pages/SheetsPage';
 import DsaProblemPage from './pages/DsaProblemPage';
+import DsaLearningPage from './pages/DsaLearningPage';
 import SavedVisualizationsPage from './pages/SavedVisualizationsPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 import LoginModal from './components/LoginModal';
@@ -84,6 +85,7 @@ function MainAppContent() {
           <Route path="/dsa/:problemSlug" element={<ProtectedRoute><DsaProblemPage onVisualizeProblem={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/ai" element={<ProtectedRoute><AiTutorPage onSendToVisualizer={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/quiz" element={<ProtectedRoute><QuizArena /></ProtectedRoute>} />
+          <Route path="/dsa-learning" element={<ProtectedRoute><DsaLearningPage /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><HistoryPage onRerunProgram={handleRerunFromHistory} /></ProtectedRoute>} />
           <Route path="/saved" element={<ProtectedRoute><SavedVisualizationsPage onReplay={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
