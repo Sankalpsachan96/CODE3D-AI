@@ -2211,7 +2211,7 @@ int prefix = sum(index);`,
                   internal: name + ': ' + what,
                   memory: name + ' memory focus: ' + hinglish,
                   operations: name + ' usage focus: ' + where + ' Complexity depends on the exact operation.',
-                  mistakes: 'For ' + name + ', follow its own invariant and operation semantics instead of copying rules from a similar-looking structure.'
+                  mistakes: 'For ' + name + ', remember this defining rule: ' + what + ' Do not copy assumptions from a similar-looking structure.'
                 };
               };
               return (
