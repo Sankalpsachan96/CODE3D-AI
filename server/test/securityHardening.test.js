@@ -20,34 +20,22 @@ async function request(path, options = {}) {
   }
 }
 
-test('security hardening: rejects untrusted browser origins for writes', async () => {
-  const response = await request('/api/ai/explain', {
+test('security hardening: CORS, AI payload limits, and AI rate limiting', async () => {
+  const blockedOrigin = await request('/api/ai/explain', {
     method: 'POST',
     headers: { Origin: 'https://untrusted.invalid' },
     body: { code: 'x', question: 'hello' },
   });
+  assert.equal(blockedOrigin.status, 403);
+  assert.equal(blockedOrigin.data.error, 'ORIGIN_NOT_ALLOWED');
 
-  assert.equal(response.status, 403);
-  assert.equal(response.data.error, 'ORIGIN_NOT_ALLOWED');
-});
-
-test('security hardening: AI payload size is bounded', async () => {
-  const response = await request('/api/ai/explain', {
-    method: 'POST',
-    body: { code: 'x'.repeat(20001), question: '', history: [] },
-  });
-
-  assert.equal(response.status, 413);
-  assert.equal(response.data.error.code, 'AI_CODE_LIMIT');
-});
-
-test('security hardening: AI requests are rate limited', async () => {
   for (let i = 0; i < 10; i += 1) {
     const response = await request('/api/ai/explain', {
       method: 'POST',
       body: { code: 'x'.repeat(20001), question: '', history: [] },
     });
     assert.equal(response.status, 413, `request ${i + 1} should reach payload validation`);
+    assert.equal(response.data.error.code, 'AI_CODE_LIMIT');
   }
 
   const limited = await request('/api/ai/explain', {
