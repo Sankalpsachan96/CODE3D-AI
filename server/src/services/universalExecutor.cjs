@@ -75,6 +75,16 @@ function sandboxAvailable() {
   return sandboxAvailabilityCache;
 }
 
+const JUDGE0_URL = (process.env.JUDGE0_URL || "").trim().replace(/\/+$/, "");
+const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY || "";
+const JUDGE0_LANGUAGES = {
+  c: 50,
+  cpp: 54,
+  java: 62,
+  javascript: 63,
+  python: 71,
+};
+
 function getRuntimeAvailability() {
   return {
     javascript: Boolean(process.execPath),
@@ -82,9 +92,101 @@ function getRuntimeAvailability() {
     c: commandAvailable("gcc"),
     python: Boolean(getPythonCommand()),
     java: commandAvailable("javac") && commandAvailable("java"),
-    sandbox: sandboxAvailable(),
+    sandbox: sandboxAvailable() || Boolean(JUDGE0_URL),
+    executionProvider: sandboxAvailable() ? "local-bubblewrap" : (JUDGE0_URL ? "remote-judge0" : "unavailable"),
     nodeVersion: process.version,
   };
+}
+
+async function executeWithJudge0(language, code, input = "") {
+  if (!JUDGE0_URL) {
+    return {
+      success: false, stage: "sandbox", output: "",
+      error: "Secure execution sandbox is unavailable and no remote sandbox provider is configured. Code was not executed.",
+      executionTime: null,
+    };
+  }
+
+  const normalizedLanguage = String(language).toLowerCase().trim();
+  const languageKey = ["c++", "cpp"].includes(normalizedLanguage) ? "cpp"
+    : ["py", "python"].includes(normalizedLanguage) ? "python"
+    : ["js", "node", "javascript"].includes(normalizedLanguage) ? "javascript"
+    : normalizedLanguage;
+  const languageId = JUDGE0_LANGUAGES[languageKey];
+  if (!languageId) {
+    return { success: false, stage: "validation", output: "", error: `Language "${language}" is not supported.`, executionTime: null };
+  }
+
+  const startedAt = Date.now();
+  const headers = { "Content-Type": "application/json", Accept: "application/json" };
+  if (JUDGE0_API_KEY) headers["X-Auth-Token"] = JUDGE0_API_KEY;
+  const requestTimeout = 12000;
+
+  try {
+    const createResponse = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=false&wait=false`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        language_id: languageId,
+        source_code: code,
+        stdin: input,
+        cpu_time_limit: 3,
+        cpu_extra_time: 1,
+        wall_time_limit: 6,
+        memory_limit: 128000,
+        stack_limit: 64000,
+        max_processes_and_or_threads: 30,
+        enable_network: false,
+      }),
+      signal: AbortSignal.timeout(requestTimeout),
+    });
+    if (!createResponse.ok) {
+      const details = (await createResponse.text()).slice(0, 500);
+      throw new Error(`Remote sandbox submission failed (HTTP ${createResponse.status}): ${details}`);
+    }
+    const submission = await createResponse.json();
+    if (!submission.token) throw new Error("Remote sandbox did not return a submission token.");
+
+    const deadline = Date.now() + 20000;
+    let result;
+    while (Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const pollResponse = await fetch(
+        `${JUDGE0_URL}/submissions/${encodeURIComponent(submission.token)}?base64_encoded=false&fields=stdout,stderr,compile_output,message,status,time`,
+        { headers, signal: AbortSignal.timeout(requestTimeout) }
+      );
+      if (!pollResponse.ok) {
+        const details = (await pollResponse.text()).slice(0, 500);
+        throw new Error(`Remote sandbox status check failed (HTTP ${pollResponse.status}): ${details}`);
+      }
+      result = await pollResponse.json();
+      if (result.status?.id > 2) break;
+    }
+    if (!result || result.status?.id <= 2) {
+      return { success: false, stage: "timeout", output: "", error: "Remote sandbox timed out while waiting for execution. Please retry.", executionTime: Date.now() - startedAt };
+    }
+
+    const output = String(result.stdout || "");
+    const error = String(result.compile_output || result.stderr || result.message || "");
+    if (Buffer.byteLength(output, "utf8") > MAX_OUTPUT) {
+      return { success: false, stage: "runtime", output: output.slice(0, MAX_OUTPUT), error: "Output Limit Exceeded.", executionTime: Date.now() - startedAt };
+    }
+    const accepted = result.status?.id === 3;
+    return {
+      success: accepted,
+      stage: accepted ? "complete" : (result.status?.id === 6 ? "compile" : "runtime"),
+      output,
+      error: accepted ? "" : (error || `Remote execution failed: ${result.status?.description || "unknown status"}`),
+      executionTime: Date.now() - startedAt,
+    };
+  } catch (error) {
+    console.error("[sandbox] Remote Judge0 execution failed:", error.message);
+    return {
+      success: false, stage: "sandbox", output: "",
+      error: "Secure remote code execution is currently unavailable. Please try again later; code was not executed locally.",
+      executionTime: Date.now() - startedAt,
+    };
+  }
 }
 
 function createTempDirectory() {
@@ -817,13 +919,7 @@ async function executeCode(language, code, input = "") {
   }
 
   if (!sandboxAvailable()) {
-    return {
-      success: false,
-      stage: "sandbox",
-      output: "",
-      error: "Secure execution sandbox is unavailable. Please contact the administrator; code was not executed.",
-      executionTime: null,
-    };
+    return executeWithJudge0(language, code, input);
   }
 
   const normalizedLanguage = language
