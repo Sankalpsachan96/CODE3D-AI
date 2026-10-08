@@ -56,12 +56,19 @@ function sandboxAvailable() {
   );
   try {
     const result = spawnSync("bwrap", args, {
-      stdio: "ignore",
+      encoding: "utf8",
       windowsHide: true,
       timeout: 2500,
       env: { PATH: "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" },
     });
     sandboxAvailabilityCache = result.status === 0;
+    if (!sandboxAvailabilityCache) {
+      const reason = (result.error?.message || result.stderr || result.stdout || `bwrap probe exited with status ${result.status}`)
+        .toString()
+        .trim()
+        .slice(0, 1000);
+      console.error("[sandbox] Bubblewrap probe failed:", reason || "no diagnostic output");
+    }
   } catch {
     sandboxAvailabilityCache = false;
   }
