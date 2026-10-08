@@ -8,6 +8,8 @@ RUN apt-get update && \
         gcc \
         python3 \
         python3-pip \
+        bubblewrap \
+        util-linux \
         ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
