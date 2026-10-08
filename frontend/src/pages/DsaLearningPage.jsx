@@ -1222,435 +1222,167 @@ Node* b = a;
             </div>
             {selectedVariant && VARIANT_DETAILS[selectedVariant] && (() => {
               const v = VARIANT_DETAILS[selectedVariant];
-              const exampleFor = (name) => {
-                const examples = {
-                  'Static Array': `int a[5] = {10, 20, 30, 40, 50};
 
-cout << a[2];  // 30`,
-                  'Dynamic Array / Vector': `vector<int> v;
-
-v.push_back(10);
-v.push_back(20);
-v.push_back(30);
-
-cout << v[1];  // 20`,
-                  '2D Array': `int grid[2][3] = {
-    {1, 2, 3},
-    {4, 5, 6}
-};
-
-cout << grid[1][2];  // 6`,
-                  'Multidimensional Array': `int a[2][2][2] = {};
-
-a[0][1][1] = 10;`,
-                  'Singly Linked List': `Node* first = new Node(10);
-first->next = new Node(20);
-
-cout << first->next->data;  // 20`,
-                  'Doubly Linked List': `node->next = second;
-second->prev = node;`,
-                  'Circular Singly Linked List': `tail->next = head;
-
-// From tail, next points back to head.`,
-                  'Circular Doubly Linked List': `tail->next = head;
-head->prev = tail;`,
-                  'Skip List': `skipList.insert(25);
-
-// Multiple forward levels may be created.`,
-                  'Linear Search': `for (int i = 0; i < n; i++) {
-    if (a[i] == target) {
-        return i;
-    }
-}
-
-return -1;`,
-                  'Binary Search': `while (lo <= hi) {
-    int mid = lo + (hi - lo) / 2;
-
-    if (a[mid] == target) {
-        return mid;
-    }
-}`,
-                  'Bubble Sort': `for (int pass = 0; pass < n - 1; pass++) {
-    for (int i = 0; i < n - pass - 1; i++) {
-        if (a[i] > a[i + 1]) {
-            swap(a[i], a[i + 1]);
-        }
-    }
-}`,
-                  'Selection Sort': `for (int i = 0; i < n - 1; i++) {
-    int minIndex = i;
-
-    for (int j = i + 1; j < n; j++) {
-        if (a[j] < a[minIndex]) {
-            minIndex = j;
-        }
-    }
-
-    swap(a[i], a[minIndex]);
-}`,
-                  'Insertion Sort': `for (int i = 1; i < n; i++) {
-    int key = a[i];
-    int j = i - 1;
-
-    while (j >= 0 && a[j] > key) {
-        a[j + 1] = a[j];
-        j--;
-    }
-
-    a[j + 1] = key;
-}`,
-                  'Merge Sort': `mergeSort(left, right);
-
-1. Split the array.
-2. Sort the left half.
-3. Sort the right half.
-4. Merge both sorted halves.`,
-                  'Quick Sort': `quickSort(low, high);
-
-1. Choose a pivot.
-2. Partition the array.
-3. Recursively sort both sides.`,
-                  'Heap Sort': `buildMaxHeap(a);
-
-for (int end = n - 1; end > 0; end--) {
-    swap(a[0], a[end]);
-    heapify(a, end, 0);
-}`,
-                  'Array Stack': `stack.push(x);
-int x = stack.top();
-stack.pop();`,
-                  'Linked Stack': `Node* node = new Node(x);
-
-node->next = top;
-top = node;`,
-                  'Circular Queue': `rear = (rear + 1) % capacity;
-queue[rear] = value;`,
-                  'Deque': `dq.push_front(10);
-dq.push_back(20);
-
-int first = dq.front();`,
-                  'Priority Queue': `priority_queue<int> pq;
-
-pq.push(10);
-pq.push(30);
-pq.push(20);
-
-cout << pq.top();  // 30`,
-                  'Monotonic Stack': `while (!st.empty() && a[st.top()] <= a[i]) {
-    st.pop();
-}
-
-st.push(i);`,
-                  'Full Binary Tree': `// Every node has either 0 or 2 children.
-
-        1
-       / \\
-      2   3`,
-                  'Complete Binary Tree': `// Fill levels from left to right.
-
-        1
-       / \\
-      2   3
-     /
-    4`,
-                  'Perfect Binary Tree': `// Every internal node has 2 children
-// and all leaves have the same depth.
-
-        1
-       / \\
-      2   3
-     / \\
-    4   5 6  7`,
-                  'Balanced Tree': `// Keep subtree heights close
-// so the tree stays approximately logarithmic in height.`,
-                  'Skewed / Degenerate Tree': `10
-  \\
-   20
-     \\
-      30
-        \\
-         40`,
-                  'Unbalanced BST': `insert(10);
-insert(20);
-insert(30);
-
-// Repeated increasing inserts can create
-// a chain-like tree.`,
-                  'Balanced BST': `insert(10);
-insert(20);
-insert(15);
-
-// Rebalancing keeps height near O(log n).`,
-                  'AVL Tree': `insert(30);
-insert(20);
-insert(10);
-
-// Balance factor becomes invalid.
-// A right rotation restores balance.`,
-                  'Red-Black Tree': `insert(10);
-insert(20);
-insert(30);
-
-// Recoloring and rotations maintain
-// logarithmic height.`,
-                  'Min Heap': `// Parent value <= child values.
-
-        10
-       /  \\
-      20   30`,
-                  'Max Heap': `// Parent value >= child values.
-
-        30
-       /  \\
-      20   10`,
-                  'Binary Heap': `// Array representation of a heap.
-
-vector<int> heap = {30, 20, 10, 15, 5};`,
-                  'd-ary Heap': `// A node can have up to d children.
-// Example: d = 4 for a 4-ary heap.`,
-                  'Directed': `addEdge(u, v);
-
-// Edge direction:
-u -> v`,
-                  'Undirected': `addEdge(u, v);
-addEdge(v, u);
-
-// Movement is possible in both directions.`,
-                  'Weighted': `addEdge(u, v, weight);
-
-// Example:
-addEdge(1, 2, 7);`,
-                  'Unweighted': `adj[u].push_back(v);
-
-// Every edge has equal cost.`,
-                  'DAG': `1 -> 2 -> 3
-     \\
-      -> 4
-
-// No directed cycle exists.`,
-                  'Bipartite': `color[u] = 0;
-color[v] = 1;
-
-// Adjacent vertices get opposite colors.`,
-                  'Complete': `// Every pair of distinct vertices
-// has an edge.`,
-                  'Connected': `// Starting from any vertex,
-// every other vertex is reachable.`,
-                  'Top-down Memoization': `int solve(int state) {
-    if (memo[state] != -1) {
-        return memo[state];
-    }
-
-    return memo[state] = solve(smallerState);
-}`,
-                  'Bottom-up Tabulation': `vector<int> dp(n + 1);
-
-dp[0] = baseCase;
-
-for (int i = 1; i <= n; i++) {
-    dp[i] = transition(dp, i);
-}`,
-                  'Space-Optimized DP': `int previous = baseCase;
-
-for (int i = 1; i <= n; i++) {
-    int current = transition(previous);
-    previous = current;
-}`,
-                  '1D DP': `vector<int> dp(n + 1);
-
-dp[i] = best answer for state i;`,
-                  '2D DP': `vector<vector<int>> dp(n, vector<int>(m));
-
-dp[i][j] = transition(dp, i, j);`,
-                  'Bitmask DP': `// mask represents selected items.
-
-dp[mask] = best answer for this subset;`,
-                  'Tree DP': `void dfs(Node* node, Node* parent) {
-    for (Node* child : node->children) {
-        dfs(child, node);
-    }
-
-    // Compute node's DP state.
-}`,
-                  'Standard Trie': `trie.insert("cat");
-
-if (trie.search("cat")) {
-    cout << "found";
-}`,
-                  'Compressed Trie / Radix Tree': `// Common character paths are
-// stored as compressed edge labels.`,
-                  'Ternary Search Tree': `// Each node has:
-// left  <  character
-// equal = character
-// right > character`,
-                  'Prefix Hashing': `long long prefixHash = hashPrefix(s, i);
-
-// Equal prefix hashes can be compared
-// with collision-aware techniques.`,
-                  'Hash Table': `int index = hash(key) % capacity;
-
-table[index] = value;`,
-                  'Hash Map': `unordered_map<string, int> freq;
-
-freq["cat"]++;
-freq["dog"]++;`,
-                  'Hash Set': `unordered_set<int> seen;
-
-seen.insert(10);
-
-if (seen.count(10)) {
-    cout << "present";
-}`,
-                  'Collision Handling': `// Two keys may map to the same slot.
-
-// Common solutions:
-// 1. Chaining
-// 2. Open addressing / probing`,
-                  'Frequency Map': `unordered_map<int, int> freq;
-
-for (int x : a) {
-    freq[x]++;
-}`,
-                  'Direct Recursion': `int factorial(int n) {
-    if (n <= 1) {
-        return 1;
-    }
-
-    return n * factorial(n - 1);
-}`,
-                  'Tail Recursion': `int fact(int n, int result) {
-    if (n == 0) {
-        return result;
-    }
-
-    return fact(n - 1, result * n);
-}`,
-                  'Divide & Conquer': `1. Divide the problem.
-2. Solve each smaller problem.
-3. Combine their answers.`,
-                  'Backtracking': `choose();
-
-solve(nextState);
-
-undoChoice();`,
-                  'Memoized Recursion': `if (memo[state] != -1) {
-    return memo[state];
-}
-
-memo[state] = solve(nextState);`,
-                  'Activity Selection': `sort(activities, byFinishTime);
-
-for (activity : activities) {
-    if (activity.start >= lastFinish) {
-        choose(activity);
-        lastFinish = activity.finish;
-    }
-}`,
-                  'Fractional Knapsack': `sort(items, byValuePerWeight);
-
-for (item : items) {
-    take as much as possible;
-}`,
-                  'Huffman Coding': `while (heap.size() > 1) {
-    Node* a = popMin();
-    Node* b = popMin();
-
-    push(a + b);
-}`,
-                  'Interval Scheduling': `sort(intervals, byFinishTime);
-
-choose the next interval
-whose start >= lastFinish;`,
-                  'Greedy Graph Algorithms': `sort(edges, byWeight);
-
-for (edge : edges) {
-    if (safe(edge)) {
-        choose(edge);
-    }
-}`,
-                  'Bitwise AND/OR/XOR': `int andResult = a & b;
-int orResult  = a | b;
-int xorResult = a ^ b;`,
-                  'Bit Shifting': `int x = 5;
-
-x <<= 1;  // shift left
-x >>= 1;  // shift right`,
-                  'Bit Mask': `int mask = 0;
-
-mask |= (1 << k);  // set bit k`,
-                  'Set/Clear/Toggle Bit': `x |= (1 << k);   // set
-x &= ~(1 << k);  // clear
-x ^= (1 << k);   // toggle`,
-                  'Bitmask Enumeration': `for (int mask = 0; mask < (1 << n); mask++) {
-    // mask represents one subset.
-}`,
-                  'Union-Find': `dsu.unite(a, b);
-
-if (dsu.find(a) == dsu.find(b)) {
-    // Same component.
-}`,
-                  'Path Compression': `int find(int x) {
-    if (parent[x] == x) {
-        return x;
-    }
-
-    return parent[x] = find(parent[x]);
-}`,
-                  'Union by Rank': `if (rank[rootA] < rank[rootB]) {
-    swap(rootA, rootB);
-}
-
-parent[rootB] = rootA;`,
-                  'Union by Size': `if (size[rootA] < size[rootB]) {
-    swap(rootA, rootB);
-}
-
-parent[rootB] = rootA;
-size[rootA] += size[rootB];`,
-                  'Segment Tree': `build(node, left, right);
-
-query(node, left, right, ql, qr);
-
-update(node, left, right, index, value);`,
-                  'Lazy Propagation': `lazy[node] += value;
-
-// Push the pending update only when
-// we need to visit child nodes.`,
-                  'Fenwick Tree / BIT': `add(index, delta);
-
-int prefix = sum(index);`,
-                  'Range Sum Query': `int rangeSum = prefixSum(r) - prefixSum(l - 1);`,
-                  'Range Minimum Query': `int answer = segmentTree.query(left, right);`
+              const deep = (name) => {
+                if (/Array|Vector/.test(name)) return {
+                  internal: 'Elements are stored in indexed positions. A normal array has fixed storage; a vector manages a resizable contiguous block and may reallocate when capacity is exhausted.',
+                  memory: 'Array/vector elements are contiguous, so index i can be reached directly using the base address plus an offset.',
+                  operations: 'Access is O(1). Vector append is amortized O(1); insertion/deletion in the middle can be O(n) because elements may shift.',
+                  mistakes: 'Confusing size with capacity, using an invalid index, and forgetting that vector reallocation can invalidate iterators, references and pointers.'
                 };
-                return examples[name] || `Start with a small example, trace the structure step by step, and observe how the state changes.`;
+                if (/Search|Binary Search/.test(name)) return {
+                  internal: 'Searching repeatedly compares the target with stored values. Binary search eliminates half of the remaining search space after each comparison.',
+                  memory: 'Linear search needs only the input array and a few variables. Iterative binary search also uses O(1) auxiliary space.',
+                  operations: 'Linear search scans one by one. Binary search needs sorted/monotonic data and repeatedly chooses the middle.',
+                  mistakes: 'Using binary search on unsorted data, calculating the wrong midpoint, or forgetting boundary updates.'
+                };
+                if (/Sort/.test(name)) return {
+                  internal: 'Sorting rearranges elements according to an ordering rule. Different algorithms trade simplicity, stability, extra memory and worst-case performance.',
+                  memory: 'Some sorts work in-place; merge sort normally needs extra temporary storage. Recursive algorithms also use call-stack space.',
+                  operations: 'Compare the number of comparisons, swaps/moves, recursion depth and extra storage when choosing a sorting algorithm.',
+                  mistakes: 'Memorizing only average complexity, ignoring worst-case behavior, or using an algorithm without checking stability/in-place requirements.'
+                };
+                if (/Stack|Queue|Deque|Priority Queue|Monotonic/.test(name)) return {
+                  internal: 'These structures restrict how elements enter and leave. Stack uses LIFO, queue uses FIFO, deque supports both ends, and a priority queue removes the highest/lowest priority element.',
+                  memory: 'They can be backed by arrays/vectors or linked nodes. A priority queue is commonly implemented with a heap.',
+                  operations: 'Stack push/pop, queue enqueue/dequeue, and deque end operations are typically O(1). Heap-based priority insertion/removal is O(log n), with peek O(1).',
+                  mistakes: 'Mixing LIFO and FIFO, removing from the wrong end, or assuming a priority queue preserves full sorted order.'
+                };
+                if (/Binary Tree|BST|AVL|Red-Black|Balanced|Skewed|Perfect|Complete|Full/.test(name)) return {
+                  internal: 'Tree nodes form parent-child relationships. Binary trees have at most two children; BSTs add an ordering rule; balanced trees maintain height so operations stay efficient.',
+                  memory: 'Each node stores its value plus child references. BST/AVL/Red-Black nodes may also store parent, height, balance or color metadata.',
+                  operations: 'Traversal is O(n). BST search/insert/delete is O(h), where h is height; balanced variants keep h near O(log n).',
+                  mistakes: 'Confusing depth and height, forgetting the BST ordering invariant, or assuming every binary tree is balanced.'
+                };
+                if (/Heap|Priority/.test(name)) return {
+                  internal: 'A heap is a complete-tree structure satisfying a parent-child priority rule. It is usually stored compactly in an array.',
+                  memory: 'For a zero-based array heap, children of i are at 2i+1 and 2i+2; no explicit node pointers are required.',
+                  operations: 'Peek is O(1). Insert and extract are O(log n). Building a heap from n elements can be O(n).',
+                  mistakes: 'Treating a heap as a fully sorted array, using the wrong parent/child indices, or confusing min-heap and max-heap.'
+                };
+                if (/Hash|Frequency|Collision/.test(name)) return {
+                  internal: 'A hash function maps a key to a table position. Collisions occur when different keys map to the same position, so the implementation needs chaining or probing.',
+                  memory: 'A hash table maintains buckets/slots and may allocate additional nodes or probe positions depending on the collision strategy.',
+                  operations: 'Average lookup/insert/delete is O(1) with a good hash function and controlled load factor; worst-case can become O(n).',
+                  mistakes: 'Assuming O(1) is guaranteed, ignoring collisions/load factor, or modifying a key in a way that changes its hash identity.'
+                };
+                if (/Recursion|Backtracking|Divide|Memoized/.test(name)) return {
+                  internal: 'Recursion solves a problem by calling the same logic on a smaller state. Backtracking adds a choose-explore-undo cycle. Memoization stores repeated states.',
+                  memory: 'Every active recursive call occupies call-stack space. Memoization additionally stores computed states.',
+                  operations: 'Complexity depends on the number of recursive states and branches. Memoization can reduce repeated work dramatically.',
+                  mistakes: 'Missing the base case, changing state without undoing it in backtracking, or forgetting the memoization state definition.'
+                };
+                if (/Trie|Prefix/.test(name)) return {
+                  internal: 'A trie stores characters along paths so a prefix corresponds to a path from the root. Variants compress or reorganize those paths.',
+                  memory: 'Each node can contain child references plus an end-of-word marker. Memory depends on the number of stored characters and branching.',
+                  operations: 'Search/insert/prefix operations are typically O(L), where L is the string length, independent of the number of stored words in the ideal model.',
+                  mistakes: 'Forgetting the end-of-word marker, confusing a prefix with a complete word, or using a trie when memory cost is unjustified.'
+                };
+                if (/Graph|Directed|Undirected|Weighted|Unweighted|DAG|Bipartite|Complete|Connected/.test(name)) return {
+                  internal: 'A graph consists of vertices and edges. Direction, weight and connectivity change what algorithms are valid and what each edge means.',
+                  memory: 'Adjacency lists use O(V+E) space and are efficient for sparse graphs. Adjacency matrices use O(V²) space and give O(1) edge lookup.',
+                  operations: 'BFS/DFS with adjacency lists are typically O(V+E). Weighted graphs may require algorithms such as Dijkstra or Bellman-Ford.',
+                  mistakes: 'Using an algorithm with incompatible edge weights, forgetting visited tracking, or confusing directed and undirected connectivity.'
+                };
+                if (/DP|Memoization|Tabulation/.test(name)) return {
+                  internal: 'Dynamic programming stores answers to overlapping subproblems. The key is defining a state and a transition that covers every required case.',
+                  memory: 'A DP table stores states. Space can often be reduced when a state depends only on the previous row/step.',
+                  operations: 'Time is usually number of states × transition cost. Space is the number of stored states unless optimized.',
+                  mistakes: 'Choosing an incomplete state, writing a wrong transition, or optimizing space before understanding the full DP table.'
+                };
+                if (/Greedy|Activity|Knapsack|Huffman|Interval/.test(name)) return {
+                  internal: 'Greedy algorithms make the best-looking local choice and rely on a proof that those choices can lead to a global optimum.',
+                  memory: 'Usually low auxiliary memory beyond sorting or a small selection structure.',
+                  operations: 'Many greedy solutions are dominated by sorting, often O(n log n), followed by a linear scan.',
+                  mistakes: 'Assuming every locally best choice is globally optimal without proving the greedy-choice property.'
+                };
+                if (/Bit/.test(name)) return {
+                  internal: 'Bit manipulation treats an integer as a collection of binary bits and changes individual bits using AND, OR, XOR and shifts.',
+                  memory: 'Operations work inside a fixed-width machine word, so auxiliary space is normally O(1).',
+                  operations: 'Basic bit operations are O(1) for fixed-width integers.',
+                  mistakes: 'Ignoring signed shifts, operator precedence, overflow and the difference between setting, clearing and toggling a bit.'
+                };
+                if (/Union|Path Compression|Rank|Size/.test(name)) return {
+                  internal: 'Disjoint Set Union maintains separate components and merges them. Path compression and union by rank/size keep trees shallow.',
+                  memory: 'Each element stores a parent and optionally rank/size metadata.',
+                  operations: 'With path compression plus union by rank/size, operations are amortized O(alpha(n)), effectively constant for practical input sizes.',
+                  mistakes: 'Forgetting to update component metadata, comparing non-root nodes incorrectly, or using DSU for problems that need actual path information.'
+                };
+                if (/Segment|Fenwick|Range/.test(name)) return {
+                  internal: 'Range-query structures preprocess an array so updates and queries can avoid scanning the entire range.',
+                  memory: 'A segment tree normally uses O(n) nodes; a Fenwick tree uses O(n) array storage.',
+                  operations: 'Typical update/query operations are O(log n). Standard construction is O(n).',
+                  mistakes: 'Mixing 0-based and 1-based indexing, getting range boundaries wrong, or forgetting lazy propagation for range updates.'
+                };
+                return {
+                  internal: 'This variant follows a specific structural or algorithmic rule. Understand that invariant first, then trace how operations preserve it.',
+                  memory: 'Memory depends on the nodes, auxiliary arrays, pointers or state maintained by the variant.',
+                  operations: 'Use the complexity guide and parent topic table together; the exact cost depends on the operation being performed.',
+                  mistakes: 'Using the variant without checking its invariant, constraints, memory requirements and worst-case behavior.'
+                };
               };
-              const complexityFor = (name) => {
-                if (/Search|Sort/.test(name)) return name === 'Linear Search' ? 'O(n) worst case' : /Binary/.test(name) ? 'O(log n) on sorted/monotonic data' : /Merge/.test(name) ? 'O(n log n)' : /Quick/.test(name) ? 'O(n log n) average, O(n²) worst' : 'O(n²) typical for this elementary sort';
-                if (/Heap|Priority Queue/.test(name)) return 'Core heap operations are typically O(log n); top/peek is O(1).';
-                if (/Trie/.test(name) || /Prefix/.test(name)) return 'Typically O(L), where L is the key/prefix length, subject to implementation.';
-                if (/Hash|Frequency|Collision/.test(name)) return 'Average lookup/insert is O(1); worst case can degrade with collisions.';
-                if (/Graph|DAG|Bipartite|Connected|Weighted|Unweighted|Directed|Undirected|Complete/.test(name)) return 'Depends on the algorithm; traversal with adjacency lists is typically O(V + E).';
-                if (/DP|Memoization|Tabulation/.test(name)) return 'Depends on number of states × transition cost; identify both explicitly.';
-                if (/Union|Path Compression|Rank|Size/.test(name)) return 'With path compression + union by rank/size, operations are amortized near O(1), formally O(α(n)).';
-                if (/Segment|Fenwick|Range/.test(name)) return 'Typical query/update is O(log n); build is commonly O(n) for standard segment/Fenwick constructions.';
-                if (/Bit/.test(name)) return 'A fixed-width integer has O(1) bit operations in the usual word-RAM model.';
-                return 'Use the parent topic operations table, then account for the specific variant’s extra pointers, levels, or invariants.';
-              };
+
+              const d = deep(selectedVariant);
+
               return (
                 <div className={`mt-4 p-5 rounded-2xl border ${isBright ? 'bg-cyan-50 border-cyan-200' : 'bg-cyan-950/20 border-cyan-900/50'}`}>
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 w-full">
                       <span className="text-[10px] font-mono font-bold tracking-widest text-cyan-500">VARIANT DEEP DIVE</span>
                       <h3 className="mt-1 text-lg font-bold text-cyan-300">{selectedVariant}</h3>
-                      <p className="mt-2 text-sm leading-7 text-slate-400">{v[0]}</p>
-                      <p className="mt-2 text-sm leading-7 text-slate-400"><span className="font-semibold text-cyan-400">Hinglish:</span> {v[1]}</p>
-                      <div className="grid md:grid-cols-2 gap-4 mt-5">
-                        <div className="p-4 rounded-xl bg-black/10 border border-slate-800/60"><h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Where to use</h4><p className="mt-2 text-sm leading-6 text-slate-400">{v[2].replace('Best for: ','')}</p></div>
-                        <div className="p-4 rounded-xl bg-black/10 border border-slate-800/60"><h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Complexity guide</h4><p className="mt-2 text-sm leading-6 text-slate-400">{complexityFor(selectedVariant)}</p></div>
+
+                      <div className="mt-4 grid lg:grid-cols-2 gap-5 min-w-0">
+                        <div>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">What is it?</h4>
+                          <p className="mt-2 text-sm leading-7 text-slate-400">{v[0]}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Hinglish</h4>
+                          <p className="mt-2 text-sm leading-7 text-slate-400">{v[1]}</p>
+                        </div>
                       </div>
-                      <div className="mt-4"><h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Worked example</h4><pre className="mt-2 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre">{exampleFor(selectedVariant)}</pre></div>
-                      <div className="mt-4 p-4 rounded-xl bg-amber-500/5 border border-amber-500/10"><h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">How to learn this variant</h4><p className="mt-2 text-sm leading-6 text-slate-400">First understand the invariant or rule above, then trace the worked example by hand, identify the changing state, and finally calculate time and auxiliary space. Compare it with the parent structure before choosing it in a problem.</p></div>
+
+                      <div className="mt-5 grid lg:grid-cols-2 gap-5 min-w-0">
+                        <div className="p-4 rounded-xl bg-black/10 border border-slate-800/60">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">How it works internally</h4>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">{d.internal}</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-black/10 border border-slate-800/60">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Memory representation</h4>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">{d.memory}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-5 grid lg:grid-cols-3 gap-4 min-w-0">
+                        <div className="p-4 rounded-xl bg-black/10 border border-slate-800/60">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Where to use</h4>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">{v[2].replace('Best for: ','')}</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-black/10 border border-slate-800/60">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Key operations</h4>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">{d.operations}</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-black/10 border border-slate-800/60">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Complexity</h4>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">{complexityFor(selectedVariant)}</p>
+                        </div>
+                      </div>
+
+                      <div className="mt-5">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-300">Worked example</h4>
+                        <pre className="mt-2 max-w-full overflow-x-auto p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre">{exampleFor(selectedVariant)}</pre>
+                      </div>
+
+                      <div className="mt-5 grid lg:grid-cols-2 gap-5 min-w-0">
+                        <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-amber-300">Common mistakes</h4>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">{d.mistakes}</p>
+                        </div>
+                        <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/10">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-purple-300">How to learn it</h4>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">First understand the rule/invariant, then trace the example line by line, calculate time and auxiliary space, and finally compare this variant with the other choices in the parent topic.</p>
+                        </div>
+                      </div>
                     </div>
                     <button type="button" onClick={() => setSelectedVariant(null)} className="shrink-0 text-slate-500 hover:text-white cursor-pointer" aria-label="Close variant explanation"><X size={16} /></button>
                   </div>
