@@ -1322,34 +1322,66 @@ Node* b = a;
           </div>
         </button>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map((topic) => <TopicCard key={topic.id} topic={topic} onOpen={openTopic} isBright={isBright} />)}
+        <div className="space-y-8">
+          <section>
+            <div className="mb-4 flex items-center gap-3">
+              <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-mono font-bold tracking-widest text-cyan-400">FOUNDATION</span>
+              <div className="h-px flex-1 bg-slate-800" />
+            </div>
+            <div className="space-y-4">
+              <button type="button" onClick={openIntro} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><BookOpen size={23} /></div><div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">01 · START HERE</span><h2 className="mt-1 text-xl font-extrabold">Introduction to DSA</h2><p className="mt-1 text-xs text-slate-500">Build the foundation before diving into data structures and algorithms.</p></div></div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Begin learning <ChevronRight size={17} /></div>
+                </div>
+              </button>
+              <button type="button" onClick={openMemory} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><HardDrive size={23} /></div><div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">02 · UNDERSTAND THIS</span><h2 className="mt-1 text-xl font-extrabold">Memory &amp; Memory Management</h2><p className="mt-1 text-xs text-slate-500">Understand memory, addresses, pointers, stack, heap and dynamic allocation.</p></div></div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Begin learning <ChevronRight size={17} /></div>
+                </div>
+              </button>
+              <button type="button" onClick={openComplexity} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><Clock3 size={23} /></div><div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">03 · LEARN THIS NEXT</span><h2 className="mt-1 text-xl font-extrabold">Time &amp; Space Complexity</h2><p className="mt-1 text-xs text-slate-500">Learn how to find complexity from code and analyze algorithms.</p></div></div>
+                  <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Begin learning <ChevronRight size={17} /></div>
+                </div>
+              </button>
+              <div className={`w-full p-6 rounded-2xl border ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/70 border-slate-800'}`}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4"><div className="p-3 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20"><Brain size={23} /></div><div><span className="text-[10px] font-mono font-bold tracking-widest text-purple-400">04 · COMING NEXT</span><h2 className="mt-1 text-xl font-extrabold">Problem Solving &amp; Algorithmic Thinking</h2><p className="mt-1 text-xs text-slate-500">Learn how to break problems down, choose approaches, find bottlenecks and derive efficient solutions.</p></div></div>
+                  <span className="text-xs font-semibold text-purple-400">Learning module next</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {[
+            ['CORE DATA STRUCTURES', ['arrays','sorting-searching','linked-lists','stacks-queues','binary-trees','bst','heaps','hashing']],
+            ['ALGORITHMIC PATTERNS', ['recursion-backtracking','greedy']],
+            ['ADVANCED', ['graphs','dynamic-programming','trie','bit-manipulation','disjoint-set','segment-fenwick-trees']],
+          ].map(([phase, ids]) => {
+            const phaseTopics = ids.map(id => filtered.find(topic => topic.id === id)).filter(Boolean);
+            if (!phaseTopics.length) return null;
+            return (
+              <section key={phase}>
+                <div className="mb-4 flex items-center gap-3">
+                  <span className="px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-[10px] font-mono font-bold tracking-widest text-cyan-400">{phase}</span>
+                  <div className="h-px flex-1 bg-slate-800" />
+                </div>
+                <div className="space-y-4">
+                  {phaseTopics.map((topic) => (
+                    <TopicCard key={topic.id} topic={topic} onOpen={openTopic} isBright={isBright} />
+                  ))}
+                </div>
+              </section>
+            );
+          })}
         </div>
 
         {filtered.length === 0 && (
           <div className="py-16 text-center text-sm text-slate-500">No DSA learning topic matched your search.</div>
         )}
-
-
-        <button type="button" onClick={openComplexity} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><Clock3 size={23} /></div>
-              <div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">02 · LEARN THIS NEXT</span><h2 className="mt-1 text-xl font-extrabold">Time & Space Complexity</h2><p className="mt-1 text-xs text-slate-500">Learn how to find complexity from code, compare algorithms and understand Big-O properly.</p></div>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Start learning <ChevronRight size={17} /></div>
-          </div>
-        </button>
-
-        <button type="button" onClick={openMemory} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><HardDrive size={23} /></div>
-              <div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">03 · UNDERSTAND THIS</span><h2 className="mt-1 text-xl font-extrabold">Memory &amp; Memory Management</h2><p className="mt-1 text-xs text-slate-500">Understand stack, heap, pointers, dynamic allocation and how DSA structures use memory.</p></div>
-            </div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Start learning <ChevronRight size={17} /></div>
-          </div>
-        </button>
 
         <div className={`p-5 rounded-2xl border flex gap-3 ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/50 border-slate-800'}`}>
           <Brain size={18} className="text-purple-400 mt-0.5 shrink-0" />
