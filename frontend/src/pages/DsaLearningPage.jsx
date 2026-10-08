@@ -644,6 +644,7 @@ export default function DsaLearningPage() {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [showIntro, setShowIntro] = useState(false);
   const [showComplexity, setShowComplexity] = useState(false);
+  const [showMemory, setShowMemory] = useState(false);
   const [revealedComplexity, setRevealedComplexity] = useState({});
   const scrollRef = useRef(null);
   const listScrollTopRef = useRef(0);
@@ -651,14 +652,14 @@ export default function DsaLearningPage() {
   useLayoutEffect(() => {
     const frame = requestAnimationFrame(() => {
       scrollRef.current?.scrollTo({
-        top: selected || showIntro || showComplexity ? 0 : listScrollTopRef.current,
+        top: selected || showIntro || showComplexity || showMemory ? 0 : listScrollTopRef.current,
         left: 0,
         behavior: 'auto',
       });
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [selected, showIntro, showComplexity]);
+  }, [selected, showIntro, showComplexity, showMemory]);
 
   const openTopic = (topic) => {
     listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
@@ -679,7 +680,17 @@ export default function DsaLearningPage() {
     setSelected(null);
     setSelectedVariant(null);
     setShowIntro(false);
+    setShowMemory(false);
     setShowComplexity(true);
+  };
+
+  const openMemory = () => {
+    listScrollTopRef.current = scrollRef.current?.scrollTop || 0;
+    setSelected(null);
+    setSelectedVariant(null);
+    setShowIntro(false);
+    setShowComplexity(false);
+    setShowMemory(true);
   };
 
   const openVariant = (type) => {
@@ -734,6 +745,187 @@ export default function DsaLearningPage() {
     );
   }
 
+
+  if (showMemory) {
+    const memoryExamples = [
+      ['M1 — A normal variable', `int x = 10;`, 'A fixed-size int is stored in memory. The variable name x refers to that storage.', 'Fixed-size local variable → usually O(1) extra space.'],
+      ['M2 — Pointer stores an address', `int x = 10;
+int* p = &x;`, 'x stores 10. p stores the address of x. *p accesses the value at that address.', 'A fixed number of variables → O(1) auxiliary space.'],
+      ['M3 — Dynamic allocation', `int* p = new int(10);
+delete p;`, 'new asks dynamic storage for an object and returns its address. delete releases that object.', 'One dynamically allocated int → O(1) extra space.'],
+      ['M4 — Linked-list node', `Node* node = new Node(10);
+node->next = nullptr;`, 'A Node contains data plus a link/reference. node is a pointer holding the node address.', 'n nodes need O(n) total storage plus per-node link overhead.'],
+      ['M5 — Array vs linked list', `int a[4] = {10,20,30,40};`, 'Array elements are contiguous in the usual model. Linked-list nodes can live at unrelated addresses and connect through pointers.', 'Both store n values, but linked lists need extra link/reference storage.'],
+      ['M6 — Vector growth', `vector<int> v;
+v.push_back(10);
+v.push_back(20);`, 'A vector has size and capacity. When capacity is exhausted it may allocate a larger block and move/copy elements.', 'Append is commonly amortized O(1), with occasional O(n) resize work.'],
+      ['M7 — Recursion stack', `int fact(int n) {
+  if (n <= 1) return 1;
+  return n * fact(n-1);
+}`, 'Each active recursive call needs a stack frame. The frames remain active until the base case returns.', 'A linear recursion chain has O(n) auxiliary stack space.'],
+      ['M8 — Tree nodes', `root->left = new Node(5);
+root->right = new Node(15);`, 'Each dynamically allocated tree node has its own storage. Child pointers connect the objects.', 'A tree with n nodes uses O(n) node storage.'],
+      ['M9 — Graph representations', `vector<vector<int>> adj(V);`, 'An adjacency list stores neighbors for each vertex. An adjacency matrix stores a V×V table.', 'Adjacency list: O(V+E); adjacency matrix: O(V²).'],
+      ['M10 — Memory leak', `int* p = new int(10);
+p = nullptr;`, 'The allocation still exists, but the only pointer to it was lost. That storage cannot be released through p.', 'A memory leak wastes allocated storage.'],
+      ['M11 — Dangling pointer', `int* p = new int(10);
+delete p;
+// p is now dangling`, 'delete releases the allocation. The old pointer must not be dereferenced afterwards.', 'Using a released object is invalid.'],
+      ['M12 — Shallow vs deep copy', `Node* a = new Node(10);
+Node* b = a;`, 'This copies the address, so a and b refer to the same node. A deep copy creates separate storage.', 'Pointer assignment is O(1); cloning n nodes is generally O(n).'],
+    ];
+
+    return (
+      <div ref={scrollRef} key="dsa-memory" className="h-[calc(100dvh-62px)] min-h-0 overflow-y-auto p-4 md:p-8 bg-[#070b14] text-slate-100">
+        <div className="max-w-6xl mx-auto space-y-5">
+          <button onClick={() => setShowMemory(false)} className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-cyan-400 cursor-pointer"><ArrowLeft size={15} /> Back to DSA Learning</button>
+          <div className="p-6 rounded-2xl border bg-slate-900/70 border-slate-800">
+            <span className="inline-flex px-2.5 py-1 rounded-full text-[10px] font-mono text-cyan-300 bg-cyan-500/10 border border-cyan-500/20">03 · UNDERSTAND THIS</span>
+            <h1 className="mt-3 text-2xl md:text-3xl font-extrabold">Memory &amp; Memory Management</h1>
+            <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-400">Understand where data lives, how addresses and pointers work, how dynamic memory is allocated, and why linked lists, trees, graphs and recursion use memory the way they do.</p>
+          </div>
+
+          <DetailSection title="What is Computer Memory?" icon={<HardDrive size={16} />} isBright={isBright}>
+            <p className="text-sm leading-7 text-slate-400">Computer memory is the storage area a running program uses for instructions, variables, objects and temporary data. Every memory location has an address. A variable is a name associated with a region of storage.</p>
+            <div className="mt-4 grid md:grid-cols-4 gap-3">
+              {[
+                ['Code / Text', 'Program instructions.', 'Conceptual program-instruction area.'],
+                ['Global / Static', 'Data whose lifetime is the whole program.', 'Global and static objects.'],
+                ['Stack', 'Automatic call frames and local data.', 'Function calls and recursion.'],
+                ['Heap / Free Store', 'Runtime-dynamic storage.', 'new/delete in C++; dynamically managed objects.'],
+              ].map(([a,b,d]) => <div key={a} className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><h3 className="text-sm font-bold text-cyan-300">{a}</h3><p className="mt-2 text-xs leading-6 text-slate-400">{b}</p><p className="mt-2 text-[11px] text-slate-500">{d}</p></div>)}
+            </div>
+            <p className="mt-4 text-xs leading-6 text-slate-500">Exact layout differs by operating system, compiler and runtime; this is a conceptual model, not a promise of exact physical addresses.</p>
+          </DetailSection>
+
+          <DetailSection title="Stack vs Heap — Beginner Mental Model" icon={<Layers3 size={16} />} isBright={isBright}>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><h3 className="font-bold text-cyan-300">Stack</h3><ul className="mt-2 space-y-2 text-sm text-slate-400"><li>• Function-call frames and automatic local storage.</li><li>• Lifetime is tied to scope/call in the usual model.</li><li>• Limited resource; deep recursion can overflow it.</li></ul></div>
+              <div className="p-4 rounded-xl bg-purple-500/5 border border-purple-500/10"><h3 className="font-bold text-purple-300">Heap / Free Store</h3><ul className="mt-2 space-y-2 text-sm text-slate-400"><li>• Runtime-dynamic storage.</li><li>• Lifetime can outlive the function that created it.</li><li>• Manual lifetime mistakes can cause leaks or dangling pointers.</li></ul></div>
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Addresses, Variables &amp; Pointers" icon={<Target size={16} />} isBright={isBright}>
+            <p className="text-sm leading-7 text-slate-400">Suppose <span className="font-mono text-cyan-300">int x = 10;</span>. If an example address is 1000, then <span className="font-mono text-cyan-300">&amp;x</span> means “address of x”.</p>
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">Address     Value
+1000        10       ← x</pre>
+            <p className="mt-3 text-sm leading-7 text-slate-400"><span className="font-mono text-cyan-300">int* p = &amp;x;</span> makes p hold x's address. <span className="font-mono text-cyan-300">*p</span> means “the value stored at the address p points to”.</p>
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">x
+┌─────────┐
+│   10    │  address 1000
+└─────────┘
+     ▲
+     │
+p ───┘      p contains 1000</pre>
+          </DetailSection>
+
+          <DetailSection title="Dynamic Memory Allocation — new &amp; delete" icon={<ChevronRight size={16} />} isBright={isBright}>
+            <p className="text-sm leading-7 text-slate-400">In C++, <span className="font-mono text-cyan-300">new</span> creates an object in dynamically managed storage and returns its address. <span className="font-mono text-cyan-300">delete</span> releases a single object created with matching scalar new. For arrays created with <span className="font-mono text-cyan-300">new[]</span>, use matching <span className="font-mono text-cyan-300">delete[]</span>.</p>
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">int* p = new int(10);
+
+Stack                 Dynamic storage
+p ─────────────────► [ 10 ]
+
+delete p;</pre>
+            <p className="mt-3 text-sm leading-7 text-slate-400">In modern C++, prefer RAII and smart pointers such as <span className="font-mono text-cyan-300">std::unique_ptr</span> when ownership should be automatic.</p>
+          </DetailSection>
+
+          <DetailSection title="Linked List — Exactly How Memory Gets Allocated" icon={<BookOpen size={16} />} isBright={isBright}>
+            <p className="text-sm leading-7 text-slate-400">A node normally stores its data plus one or more link/reference fields. Nodes can be allocated separately, so their addresses do not have to be adjacent.</p>
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">Node* first = new Node(10);
+Node* second = new Node(20);
+first-&gt;next = second;
+
+Stack                         Dynamic storage
+first ─────────────────────► [ data=10 | next=addr(second) ]
+second ────────────────────► [ data=20 | next=nullptr ]
+
+first -&gt; second -&gt; nullptr</pre>
+            <ol className="mt-4 space-y-2 list-decimal list-inside text-sm leading-7 text-slate-400">
+              <li><span className="text-cyan-400 font-semibold">new Node(10):</span> allocates one Node and returns its address.</li>
+              <li><span className="text-cyan-400 font-semibold">first:</span> stores that address.</li>
+              <li><span className="text-cyan-400 font-semibold">second:</span> stores the second node's address.</li>
+              <li><span className="text-cyan-400 font-semibold">first-&gt;next = second:</span> copies the second node's address into the first node's link field.</li>
+              <li>Following next pointers lets us travel between separately allocated nodes.</li>
+            </ol>
+          </DetailSection>
+
+          <DetailSection title="Array vs Linked List — Memory Layout" icon={<Layers3 size={16} />} isBright={isBright}>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div><h3 className="text-sm font-bold text-cyan-300">Array — contiguous storage</h3><pre className="mt-2 p-3 rounded-lg bg-black/30 border border-slate-800 text-xs text-cyan-200 font-mono">[10][20][30][40]
+1000 1004 1008 1012</pre><p className="mt-2 text-xs leading-6 text-slate-400">Conceptually adjacent fixed-size elements help O(1) indexing and cache locality.</p></div>
+              <div><h3 className="text-sm font-bold text-purple-300">Linked list — linked storage</h3><pre className="mt-2 p-3 rounded-lg bg-black/30 border border-slate-800 text-xs text-cyan-200 font-mono">[10 | 5000]    [20 | 2300]    [30 | null]
+ 1000            5000            2300</pre><p className="mt-2 text-xs leading-6 text-slate-400">Nodes may be far apart. Each link stores where the next node is.</p></div>
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Vector Memory — Size vs Capacity" icon={<Layers3 size={16} />} isBright={isBright}>
+            <p className="text-sm leading-7 text-slate-400">C++ vector tracks <span className="font-semibold text-cyan-300">size</span> (elements stored) and <span className="font-semibold text-cyan-300">capacity</span> (storage currently available). Capacity can exceed size.</p>
+            <pre className="mt-3 p-4 rounded-xl bg-black/30 border border-slate-800 text-xs leading-7 text-cyan-200 font-mono whitespace-pre-wrap">size = 4
+capacity = 4
+[10][20][30][40]
+
+push_back(50)
+→ allocate larger block
+→ move/copy elements
+→ release old block
+→ size becomes 5</pre>
+            <p className="mt-3 text-sm leading-7 text-slate-400">The occasional O(n) resize is why append is commonly <span className="text-cyan-300 font-semibold">amortized O(1)</span>, not literally O(1) for every call.</p>
+          </DetailSection>
+
+          <DetailSection title="Trees, Graphs &amp; Recursion — Memory Connection" icon={<Brain size={16} />} isBright={isBright}>
+            <div className="space-y-4">
+              <div><h3 className="text-sm font-bold text-cyan-300">Trees</h3><p className="mt-1 text-sm leading-6 text-slate-400">Each node stores its value plus child pointers/references. n nodes therefore require O(n) node storage.</p></div>
+              <div><h3 className="text-sm font-bold text-cyan-300">Graphs</h3><p className="mt-1 text-sm leading-6 text-slate-400">Adjacency list storage is typically O(V+E); an adjacency matrix needs O(V²).</p></div>
+              <div><h3 className="text-sm font-bold text-cyan-300">Recursion</h3><p className="mt-1 text-sm leading-6 text-slate-400">Every active recursive call consumes stack-frame space. A linear chain has O(n) stack space; balanced divide-and-conquer can have O(log n) depth.</p></div>
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Memory Leaks, Dangling Pointers &amp; Ownership" icon={<X size={16} />} isBright={isBright}>
+            <div className="space-y-3">
+              {[
+                ['Memory leak', 'Allocated storage becomes unreachable, so the program cannot release it through the lost pointer.', 'int* p = new int(10); p = nullptr;'],
+                ['Dangling pointer', 'A pointer still contains an old address after the object has been released.', 'delete p; then dereferencing p is invalid.'],
+                ['Double delete', 'The same allocation is released more than once, which is undefined behavior in C++.', 'Never delete the same object twice.'],
+                ['Ownership', 'Ask which part of the program is responsible for keeping an object alive and releasing it.', 'RAII and smart pointers make ownership explicit.'],
+              ].map(([a,b,d]) => <div key={a} className="p-4 rounded-xl bg-rose-500/5 border border-rose-500/10"><h3 className="text-sm font-bold text-rose-300">{a}</h3><p className="mt-1 text-sm leading-6 text-slate-400">{b}</p><p className="mt-2 text-xs font-mono text-slate-500">{d}</p></div>)}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Shallow Copy vs Deep Copy" icon={<Layers3 size={16} />} isBright={isBright}>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-amber-500/5 border border-amber-500/10"><h3 className="font-bold text-amber-300">Shallow copy</h3><p className="mt-2 text-sm leading-6 text-slate-400">Copies pointer values/addresses, so two pointers can refer to the same dynamically allocated resource.</p><pre className="mt-3 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono">Node* a = new Node(10);
+Node* b = a;
+// same node</pre></div>
+              <div className="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/10"><h3 className="font-bold text-emerald-300">Deep copy</h3><p className="mt-2 text-sm leading-6 text-slate-400">Creates independent storage for the copied object/resource. A linked structure may need every node cloned.</p><pre className="mt-3 p-3 rounded-lg bg-black/30 text-xs text-cyan-200 font-mono">Node* b = cloneList(a);
+// separate nodes</pre></div>
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Pass by Value vs Reference vs Pointer" icon={<Target size={16} />} isBright={isBright}>
+            <div className="space-y-3">
+              {[
+                ['Pass by value', 'void f(int x)', 'Function receives a separate value. Changing x does not directly change the caller variable.'],
+                ['Pass by reference', 'void f(int& x)', 'x becomes another name for the caller variable in C++.'],
+                ['Pass by pointer', 'void f(int* p)', 'Function receives an address and can access the pointed-to object through *p.'],
+              ].map(([a,b,d]) => <div key={a} className="p-4 rounded-xl bg-cyan-500/5 border border-cyan-500/10"><h3 className="text-sm font-bold text-cyan-300">{a}</h3><pre className="mt-2 text-xs font-mono text-purple-300">{b}</pre><p className="mt-1 text-sm leading-6 text-slate-400">{d}</p></div>)}
+            </div>
+          </DetailSection>
+
+          <DetailSection title="Guided Memory Practice — Think First" icon={<CheckCircle2 size={16} />} isBright={isBright}>
+            <div className="space-y-4">
+              {memoryExamples.map(([title,code,question,answer]) => <div key={title} className="p-4 rounded-xl border bg-black/20 border-slate-800"><h3 className="text-sm font-bold text-cyan-300">{title}</h3><pre className="mt-3 p-3 rounded-lg bg-black/30 border border-slate-800 text-xs leading-6 text-cyan-200 font-mono whitespace-pre-wrap">{code}</pre><p className="mt-3 text-sm font-semibold text-slate-200">{question}</p><div className="mt-2 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10"><p className="text-sm leading-6 text-slate-400"><span className="text-emerald-300 font-semibold">Answer:</span> {answer}</p></div></div>)}
+            </div>
+          </DetailSection>
+
+          <div className="p-6 rounded-2xl border bg-cyan-950/20 border-cyan-900/50">
+            <div className="flex items-center gap-3"><span className="text-xl">🧠</span><h3 className="font-bold">Mental model to remember</h3></div>
+            <p className="mt-2 text-sm leading-7 text-slate-400">A variable is storage; an address tells you where that storage is; a pointer stores an address; a dynamically allocated object lives in dynamic storage for its lifetime; data structures connect or organize these objects. Once this picture is clear, linked lists, trees, graphs and recursion become much easier to reason about.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (showComplexity) {
     const complexityRows = [
@@ -1144,6 +1336,16 @@ export default function DsaLearningPage() {
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><Clock3 size={23} /></div>
               <div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">02 · LEARN THIS NEXT</span><h2 className="mt-1 text-xl font-extrabold">Time & Space Complexity</h2><p className="mt-1 text-xs text-slate-500">Learn how to find complexity from code, compare algorithms and understand Big-O properly.</p></div>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Start learning <ChevronRight size={17} /></div>
+          </div>
+        </button>
+
+        <button type="button" onClick={openMemory} className={`w-full text-left p-6 rounded-2xl border transition-all hover:-translate-y-1 hover:border-cyan-400/60 hover:shadow-lg cursor-pointer ${isBright ? 'bg-white border-slate-200' : 'bg-gradient-to-r from-slate-900/90 to-cyan-950/20 border-cyan-900/50'}`}>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"><HardDrive size={23} /></div>
+              <div><span className="text-[10px] font-mono font-bold tracking-widest text-cyan-400">03 · UNDERSTAND THIS</span><h2 className="mt-1 text-xl font-extrabold">Memory &amp; Memory Management</h2><p className="mt-1 text-xs text-slate-500">Understand stack, heap, pointers, dynamic allocation and how DSA structures use memory.</p></div>
             </div>
             <div className="flex items-center gap-2 text-xs font-semibold text-cyan-400">Start learning <ChevronRight size={17} /></div>
           </div>
