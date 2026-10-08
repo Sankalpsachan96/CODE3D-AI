@@ -128,13 +128,14 @@ export default function ComingSoonPage() {
           </div>
 
           <div className="cs-copy">
-            <div className="cs-kicker">THE NEXT GENERATION OF DSA LEARNING</div>
-            <h1>Programming is about <em>understanding,</em><br />not memorizing.</h1>
+            <div className="cs-kicker"><span /> THE NEXT GENERATION OF DSA LEARNING</div>
+            <h1><span>See your code.</span><strong>Understand its</strong><em>execution.</em></h1>
             <p>{subtitle}</p>
             <div className="cs-cta">
               <span className="cs-cta-icon">{isMaintenance ? '↻' : '✦'}</span>
               <span>{isMaintenance ? 'Platform Maintenance' : 'Coming Soon'}</span>
             </div>
+            <div className="cs-upcoming-label">WHAT'S COMING</div>
             <div className="cs-flow">
               <span>Code</span><i>→</i><span>Execute</span><i>→</i><span>Visualize</span><i>→</i><span>Understand</span>
             </div>
@@ -156,10 +157,10 @@ export default function ComingSoonPage() {
         </section>
 
         <section className="cs-features">
-          <article><span>⌘</span><h3>Any DSA Code</h3><p>Write and run code in multiple languages.</p></article>
-          <article><span>▤</span><h3>DSA Notes</h3><p>Easy theory connected to examples and 3D.</p></article>
-          <article><span>✦</span><h3>AI Tutor</h3><p>Code explanations, complexity and guidance.</p></article>
-          <article><span>◈</span><h3>Interactive 3D</h3><p>Watch data structures come to life.</p></article>
+          <article><span>⌘</span><h3>Universal Code Editor</h3><p>C, C++, Java, Python & JavaScript — execute and understand DSA code.</p><b>COMING SOON</b></article>
+          <article><span>▤</span><h3>DSA Notes</h3><p>Easy theory, examples, complexity, applications and visual learning.</p><b>COMING SOON</b></article>
+          <article><span>✦</span><h3>AI Tutor 2.0</h3><p>Smarter explanations, errors, complexity analysis and follow-up guidance.</p><b>COMING SOON</b></article>
+          <article><span>◈</span><h3>Interactive 3D</h3><p>Turn algorithms and data structures into step-by-step visual experiences.</p><b>COMING SOON</b></article>
         </section>
       </main>
 
