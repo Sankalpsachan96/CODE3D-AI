@@ -63,6 +63,11 @@ export async function runExecution(req, res) {
           edges: event.edges || [],
           stack: event.stack || [],
           queue: event.queue || [],
+          visited: event.visited || [],
+          vertex: event.vertex ?? null,
+          value: event.value ?? null,
+          root: event.root ?? null,
+          structureName: event.structureName || null,
           output: event.output ? String(event.output).split(/\r?\n/).filter(Boolean) : [],
           dataStructureState: {
             type: event.dataStructure || universalTraceResult.dataStructure || 'universal-execution',
@@ -77,6 +82,13 @@ export async function runExecution(req, res) {
             nodes: event.nodes || event.linkedList || [],
             linkedList: event.linkedList || event.nodes || [],
             edges: event.edges || [],
+            visited: event.visited || [],
+            vertex: event.vertex ?? null,
+            value: event.value ?? null,
+            root: event.root ?? null,
+            nodeCount: (event.nodes || event.linkedList || []).length,
+            edgeCount: (event.edges || []).length,
+            structureName: event.structureName || null,
             matrix: event.matrix || null,
             head: event.head ?? null,
             tail: event.tail ?? null,
@@ -114,11 +126,11 @@ export async function runExecution(req, res) {
           },
         })),
         totalSteps: rawSteps.length,
-        finalVariables: {},
+        finalVariables: universalTraceResult.runtimeInstrumented === true ? (rawSteps.at(-1)?.variables || {}) : {},
         output: rawResult.output ? String(rawResult.output).split(/\r?\n/) : [],
         stderr: rawResult.stderr || rawResult.error || '',
         executionTimeMs: rawResult.executionTime || 0,
-        complexity: null,
+        complexity: universalTrace.estimateComplexity(code, universalTraceResult, rawResult),
       };
     } else {
       execResult = await executeCodeInSandbox({ code, language, input });
@@ -207,26 +219,14 @@ export async function runExecution(req, res) {
 export function analyzeCode(req, res) {
   try {
     const { code = '', language = 'java' } = req.body;
-    let loopNesting = 0;
-    let maxNesting = 0;
-    const lines = code.split('\n');
-    for (const line of lines) {
-      if (/\b(for|while)\b/.test(line)) {
-        loopNesting++;
-        if (loopNesting > maxNesting) maxNesting = loopNesting;
-      }
-      if (line.includes('}')) {
-        loopNesting = Math.max(0, loopNesting - 1);
-      }
-    }
-    const timeComplexity = maxNesting === 0 ? 'O(1)' : maxNesting === 1 ? 'O(n)' : maxNesting === 2 ? 'O(n²)' : `O(n^${maxNesting})`;
-    const spaceComplexity = /\b(new\s+[a-zA-Z0-9_]+\[|vector<|list\(|\[\])/.test(code) ? 'O(n)' : 'O(1)';
+    const trace = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    const complexity = universalTrace.estimateComplexity(code, trace);
 
     return res.json({
       success: true,
-      timeComplexity,
-      spaceComplexity,
-      maxLoopNesting: maxNesting,
+      timeComplexity: complexity.time.average,
+      spaceComplexity: complexity.space,
+      complexity,
       language,
     });
   } catch (err) {
