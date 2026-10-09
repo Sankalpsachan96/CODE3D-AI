@@ -209,6 +209,20 @@ test('captured Python adjacency lists become graph nodes and edges', () => {
   assert.deepEqual(result.events[0].edges.map((edge) => [edge.from, edge.to]), [[0, 1], [0, 2], [1, 2]]);
 });
 
+test('captured Python binary adjacency matrices omit zero-weight edges', () => {
+  const result = universalTrace.generateTrace('adjacency_matrix = [[0, 1], [1, 0]]', 'python', {
+    success: true,
+    output: 'connected\n',
+    runtimeTrace: [{
+      step: 1, line: 1, event: 'runtime_line',
+      variables: { adjacency_matrix: [[0, 1], [1, 0]] },
+    }],
+  });
+
+  assert.equal(result.events[0].dataStructure, 'graph');
+  assert.deepEqual(result.events[0].edges.map((edge) => [edge.from, edge.to]), [[0, 1], [1, 0]]);
+});
+
 
 test('non-instrumented C, C++, Java and JavaScript traces are never labelled as exact runtime snapshots', () => {
   const cases = [
@@ -338,6 +352,22 @@ test('modeled bubble sort preserves empty-array and unsupported-pattern behavior
   assert.match(unknown.reason, /source structure/i);
 });
 
+test('C array trace respects an explicit zero logical length', () => {
+  const result = universalTrace.generateTrace(`#include <stdio.h>
+int main() {
+  int values[1] = {0}; int n = 0;
+  for (int i = 0; i < n - 1; i++) {
+    for (int j = 0; j < n - i - 1; j++) {
+      if (values[j] > values[j + 1]) { int t=values[j]; values[j]=values[j+1]; values[j+1]=t; }
+    }
+  }
+  printf("[]");
+}`, 'c', { success: true, output: '[]' });
+
+  assert.equal(result.algorithm, 'bubble_sort');
+  assert.deepEqual(result.events.at(-1).array, []);
+});
+
 test('every modeled DSA step maps to an executable source line', () => {
   const cases = [
     ['selection sort', 'cpp', `int values[] = {3, 1, 2};
@@ -405,6 +435,45 @@ head->next = new Node(20);`],
       assert.ok(Number.isInteger(event.line), `${name} ${event.type} includes a source line`);
       assert.ok(event.line >= 1 && event.line <= lines.length, `${name} ${event.type} maps inside the source`);
       assert.ok(lines[event.line - 1].trim(), `${name} ${event.type} points to a non-empty statement`);
+    }
+  }
+});
+
+test('Java, Python, and JavaScript collection stacks and queues map operations and preserve LIFO/FIFO order', () => {
+  const cases = [
+    ['Java Stack', 'java', `Stack<Integer> stack = new Stack<>();
+stack.push(10);
+stack.push(20);
+stack.pop();`, 'stack_operations', 'stack', [10]],
+    ['Python list stack', 'python', `stack = []
+stack.append(10)
+stack.append(20)
+stack.pop()`, 'stack_operations', 'stack', [10]],
+    ['JavaScript array stack', 'javascript', `const stack = [];
+stack.push(10);
+stack.push(20);
+stack.pop();`, 'stack_operations', 'stack', [10]],
+    ['Java Queue', 'java', `Queue<Integer> queue = new LinkedList<>();
+queue.offer(10);
+queue.offer(20);
+queue.poll();`, 'queue_operations', 'queue', [20]],
+    ['Python list queue', 'python', `queue = []
+queue.append(10)
+queue.append(20)
+queue.pop(0)`, 'queue_operations', 'queue', [20]],
+    ['JavaScript array queue', 'javascript', `const queue = [];
+queue.push(10);
+queue.push(20);
+queue.shift();`, 'queue_operations', 'queue', [20]],
+  ];
+
+  for (const [name, language, code, algorithm, field, expected] of cases) {
+    const result = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    assert.equal(result.algorithm, algorithm, `${name} should have a specialized model`);
+    assert.deepEqual(result.events.at(-1)[field], expected, `${name} should preserve collection order`);
+    const lines = code.split(/\r?\n/);
+    for (const event of result.events) {
+      assert.ok(Number.isInteger(event.line) && event.line >= 1 && event.line <= lines.length, `${name} ${event.type} should map into the source`);
     }
   }
 });

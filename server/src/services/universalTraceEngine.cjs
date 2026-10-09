@@ -142,7 +142,20 @@ function detectArrayFromCode(code) {
 }
 
 function getPrimaryArray(code) {
-  return detectArrayFromCode(code);
+  const info = detectArrayFromCode(code);
+  if (!info || !info.values.length) return info;
+
+  // C arrays may have a physical capacity larger than their logical length.
+  // Honor an explicit literal length only when the same variable bounds the
+  // loop that indexes this array (for example: values[1]={0}; int n=0; i<n).
+  const lengthDeclaration = String(code).match(/\b(?:int|long|short|size_t|auto)\s+(n|len|length|count)\s*=\s*(\d+)\b/i);
+  if (!lengthDeclaration) return info;
+  const [, lengthName, rawLength] = lengthDeclaration;
+  const boundedLoop = new RegExp(`(?:for\\s*\\([^;]*;[^;]*<\\s*${lengthName}\\b|range\\s*\\(\\s*${lengthName}\\s*\\))`, 'i').test(code);
+  const indexedArray = new RegExp(`\\b${info.name}\\s*\\[`).test(code);
+  const logicalLength = Number(rawLength);
+  if (!boundedLoop || !indexedArray || logicalLength > info.values.length) return info;
+  return { ...info, size: logicalLength, values: info.values.slice(0, logicalLength) };
 }
 
 /* =========================================================
@@ -792,16 +805,16 @@ function generateArrayTraversalTrace(code) {
 ========================================================= */
 
 function detectStack(code) {
-  return (
-    /\b(?:std\s*::\s*)?stack\s*<[^>]+>\s+\w+/i.test(code) &&
-    /\.\s*(push|pop|top|empty|size)\s*\(/i.test(code)
-  );
+  const declaredStack = /\b(?:std\s*::\s*)?stack\s*<[^>]+>\s+\w+/i.test(code)
+    || /\bStack\s*<[^>]+>\s+\w+/i.test(code)
+    || /\b(?:const|let|var)?\s*stack\s*=\s*\[\s*\]/i.test(code);
+  return declaredStack && /\.\s*(?:push|append|pop|top|peek|empty|size)\s*\(/i.test(code);
 }
 
 function generateStackTrace(code) {
-  const match = code.match(
-    /\b(?:std\s*::\s*)?stack\s*<[^>]+>\s+(\w+)/i
-  );
+  const match = code.match(/\b(?:std\s*::\s*)?stack\s*<[^>]+>\s+(\w+)/i)
+    || code.match(/\bStack\s*<[^>]+>\s+(\w+)/i)
+    || code.match(/\b(?:const|let|var)?\s*(stack)\s*=\s*\[\s*\]/i);
 
   const name = match?.[1] || "stack";
   const stack = [];
@@ -826,7 +839,7 @@ function generateStackTrace(code) {
   }));
 
   const regex = new RegExp(
-    `\\b${name}\\s*\\.\\s*(push|pop|top|empty|size)\\s*\\(([^)]*)\\)`,
+    `\\b${name}\\s*\\.\\s*(push|append|pop|top|peek|empty|size)\\s*\\(([^)]*)\\)`,
     "gi"
   );
 
@@ -836,7 +849,7 @@ function generateStackTrace(code) {
     const action = matchOp[1].toLowerCase();
     const raw = matchOp[2].trim();
 
-    if (action === "push") {
+    if (action === "push" || action === "append") {
       const value = literalValue(raw);
       stack.push(value);
 
@@ -861,7 +874,7 @@ function generateStackTrace(code) {
             ? "Pop attempted on an empty stack."
             : `Pop ${value} from the stack.`,
       }));
-    } else if (action === "top") {
+    } else if (action === "top" || action === "peek") {
       const value = stack.length
         ? stack[stack.length - 1]
         : null;
@@ -912,16 +925,16 @@ function generateStackTrace(code) {
 ========================================================= */
 
 function detectQueue(code) {
-  return (
-    /\b(?:std\s*::\s*)?queue\s*<[^>]+>\s+\w+/i.test(code) &&
-    /\.\s*(push|pop|front|back|empty|size)\s*\(/i.test(code)
-  );
+  const declaredQueue = /\b(?:std\s*::\s*)?queue\s*<[^>]+>\s+\w+/i.test(code)
+    || /\b(?:Queue|Deque)\s*<[^>]+>\s+\w+/i.test(code)
+    || /\b(?:const|let|var)?\s*queue\s*=\s*\[\s*\]/i.test(code);
+  return declaredQueue && /\.\s*(?:push|append|offer|add|pop|shift|popleft|poll|remove|front|back|peek|empty|size)\s*\(/i.test(code);
 }
 
 function generateQueueTrace(code) {
-  const match = code.match(
-    /\b(?:std\s*::\s*)?queue\s*<[^>]+>\s+(\w+)/i
-  );
+  const match = code.match(/\b(?:std\s*::\s*)?queue\s*<[^>]+>\s+(\w+)/i)
+    || code.match(/\b(?:Queue|Deque)\s*<[^>]+>\s+(\w+)/i)
+    || code.match(/\b(?:const|let|var)?\s*(queue)\s*=\s*\[\s*\]/i);
 
   const name = match?.[1] || "queue";
   const queue = [];
@@ -949,7 +962,7 @@ function generateQueueTrace(code) {
   }));
 
   const regex = new RegExp(
-    `\\b${name}\\s*\\.\\s*(push|pop|front|back|empty|size)\\s*\\(([^)]*)\\)`,
+    `\\b${name}\\s*\\.\\s*(push|append|offer|add|pop|shift|popleft|poll|remove|front|back|peek|empty|size)\\s*\\(([^)]*)\\)`,
     "gi"
   );
 
@@ -959,7 +972,7 @@ function generateQueueTrace(code) {
     const action = matchOp[1].toLowerCase();
     const raw = matchOp[2].trim();
 
-    if (action === "push") {
+    if (["push", "append", "offer", "add"].includes(action)) {
       const value = literalValue(raw);
       queue.push(value);
 
@@ -970,7 +983,7 @@ function generateQueueTrace(code) {
         message:
           `Enqueue ${value} at the rear.`,
       }));
-    } else if (action === "pop") {
+    } else if (["pop", "shift", "popleft", "poll", "remove"].includes(action)) {
       const value = queue.length
         ? queue.shift()
         : null;
@@ -985,15 +998,12 @@ function generateQueueTrace(code) {
             : `Dequeue ${value} from the front.`,
       }));
     } else if (
-      action === "front" ||
-      action === "back"
+      ["front", "back", "peek"].includes(action)
     ) {
       const value =
-        action === "front"
-          ? (queue.length ? queue[0] : null)
-          : (queue.length
-              ? queue[queue.length - 1]
-              : null);
+        action === "back"
+          ? (queue.length ? queue[queue.length - 1] : null)
+          : (queue.length ? queue[0] : null);
 
       events.push(createEvent(step++, action, {
         ...state(),
@@ -1002,7 +1012,7 @@ function generateQueueTrace(code) {
           value === null
             ? "Queue is empty."
             : `${
-                action === "front"
+                action !== "back"
                   ? "Front"
                   : "Back"
               } element is ${value}.`,
@@ -1160,7 +1170,7 @@ function mapModeledSourceLines(code, trace) {
   const methodLines = new Map();
   const methodName = trace.events.find((event) => event.structureName)?.structureName;
   if (methodName) {
-    const methodPattern = new RegExp(`\\b${identifier(methodName)}\\s*\\.\\s*(push|pop|top|empty|size|front|back)\\s*\\([^)]*\\)`, 'gi');
+    const methodPattern = new RegExp(`\\b${identifier(methodName)}\\s*\\.\\s*(push|append|pop|top|peek|empty|size|offer|add|shift|popleft|poll|remove|front|back)\\s*\\([^)]*\\)`, 'gi');
     for (const match of String(code).matchAll(methodPattern)) {
       const method = match[1].toLowerCase();
       const occurrences = methodLines.get(method) || [];
@@ -1205,10 +1215,10 @@ function mapModeledSourceLines(code, trace) {
         break;
       case 'link': line = lineOf(/(?:->|\.)\s*next\s*=/i) || lineOf(/\bnext\b/i); break;
       case 'push': case 'pop': case 'peek':
-        line = nextMethodLine(event.type === 'push' ? ['push'] : event.type === 'pop' ? ['pop'] : ['top', 'empty', 'size']) || mutationLine;
+        line = nextMethodLine(event.type === 'push' ? ['push', 'append'] : event.type === 'pop' ? ['pop'] : ['top', 'peek', 'empty', 'size']) || mutationLine;
         break;
-      case 'enqueue': case 'dequeue': case 'front': case 'back':
-        line = nextMethodLine(event.type === 'enqueue' ? ['push'] : event.type === 'dequeue' ? ['pop'] : [event.type, 'empty', 'size']) || mutationLine;
+      case 'enqueue': case 'dequeue': case 'front': case 'back': case 'peek':
+        line = nextMethodLine(event.type === 'enqueue' ? ['push', 'append', 'offer', 'add'] : event.type === 'dequeue' ? ['pop', 'shift', 'popleft', 'poll', 'remove'] : [event.type, 'empty', 'size']) || mutationLine;
         break;
       case 'complete': line = outputLine || returnLine || mutationLine || loopLine || declarationLine; break;
       default: line = conditionLine || mutationLine || loopLine || declarationLine;
@@ -2864,22 +2874,32 @@ function generateTrace(
       );
       if (graphEntry) {
         const graph = graphEntry[1];
-        const adjacency = Array.isArray(graph)
-          ? graph.map((neighbors, vertex) => [String(vertex), neighbors])
-          : Object.entries(graph);
-        const vertexIds = new Map(adjacency.map(([vertex], index) => [String(vertex), index]));
-        for (const [vertex] of adjacency) {
-          const id = vertexIds.get(String(vertex));
-          nodes.push({ id, label: String(vertex).slice(0, 80), value: vertex, nodeType: 'vertex' });
-        }
-        for (const [vertex, neighbors] of adjacency) {
-          if (!Array.isArray(neighbors)) continue;
-          const from = vertexIds.get(String(vertex));
-          for (const neighbor of neighbors.slice(0, 100)) {
-            const target = Array.isArray(neighbor) ? neighbor[0] : neighbor;
-            const to = vertexIds.get(String(target));
-            if (to !== undefined) {
-              edges.push({ from, to, ...(Array.isArray(neighbor) && neighbor.length > 1 ? { weight: neighbor[1] } : {}) });
+        const isMatrix = Array.isArray(graph) && graph.length > 0
+          && graph.every((row) => Array.isArray(row) && row.length === graph.length && row.every((value) => typeof value === 'number' || typeof value === 'boolean'))
+          && (/matrix/i.test(graphEntry[0]) || graph.every((row) => row.every((value) => typeof value === 'boolean' || value === 0 || value === 1)));
+        if (isMatrix) {
+          graph.forEach((row, vertex) => nodes.push({ id: vertex, label: String(vertex), value: vertex, nodeType: 'vertex' }));
+          graph.forEach((row, from) => row.forEach((weight, to) => {
+            if (weight !== 0 && weight !== false) edges.push({ from, to, ...(weight === 1 || weight === true ? {} : { weight }) });
+          }));
+        } else {
+          const adjacency = Array.isArray(graph)
+            ? graph.map((neighbors, vertex) => [String(vertex), neighbors])
+            : Object.entries(graph);
+          const vertexIds = new Map(adjacency.map(([vertex], index) => [String(vertex), index]));
+          for (const [vertex] of adjacency) {
+            const id = vertexIds.get(String(vertex));
+            nodes.push({ id, label: String(vertex).slice(0, 80), value: vertex, nodeType: 'vertex' });
+          }
+          for (const [vertex, neighbors] of adjacency) {
+            if (!Array.isArray(neighbors)) continue;
+            const from = vertexIds.get(String(vertex));
+            for (const neighbor of neighbors.slice(0, 100)) {
+              const target = Array.isArray(neighbor) ? neighbor[0] : neighbor;
+              const to = vertexIds.get(String(target));
+              if (to !== undefined) {
+                edges.push({ from, to, ...(Array.isArray(neighbor) && neighbor.length > 1 ? { weight: neighbor[1] } : {}) });
+              }
             }
           }
         }
