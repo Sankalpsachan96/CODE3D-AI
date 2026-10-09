@@ -2733,22 +2733,50 @@ function generateTrace(
     const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index) => {
       const variables = snapshot.variables && typeof snapshot.variables === 'object' ? snapshot.variables : {};
       const arrays = {};
-      for (const [name, value] of Object.entries(variables)) {
-        if (Array.isArray(value)) arrays[name] = value;
-      }
+      for (const [name, value] of Object.entries(variables)) if (Array.isArray(value)) arrays[name] = value;
       const stackEntry = Object.entries(variables).find(([name, value]) => /stack/i.test(name) && Array.isArray(value));
       const queueEntry = Object.entries(variables).find(([name, value]) => /queue/i.test(name) && Array.isArray(value));
       const primaryArray = Object.entries(arrays)[0];
+      const nodes = [];
+      const edges = [];
+      const objectIds = new WeakMap();
+      const relationKeys = new Set(['next', 'left', 'right', 'child', 'children', 'neighbors', 'adjacent']);
+      const addNode = (object, relation = null, depth = 0) => {
+        if (!object || typeof object !== 'object' || Array.isArray(object) || depth > 5) return null;
+        if (objectIds.has(object)) return objectIds.get(object);
+        const id = nodes.length;
+        objectIds.set(object, id);
+        const value = object.value ?? object.val ?? object.data ?? object.label ?? object.key ?? id;
+        nodes.push({ id, label: String(value).slice(0, 80), value, nodeType: object.__type__ || 'object' });
+        if (relation) edges.push({ from: relation.from, to: id, label: relation.key });
+        for (const [key, child] of Object.entries(object)) {
+          if (!relationKeys.has(key.toLowerCase())) continue;
+          if (Array.isArray(child)) {
+            child.slice(0, 30).forEach((item) => {
+              if (item && typeof item === 'object') addNode(item, { from: id, key }, depth + 1);
+              else if (item !== null && item !== undefined) {
+                const childId = nodes.length;
+                nodes.push({ id: childId, label: String(item).slice(0, 80), value: item, nodeType: 'value' });
+                edges.push({ from: id, to: childId, label: key });
+              }
+            });
+          } else if (child && typeof child === 'object') addNode(child, { from: id, key }, depth + 1);
+        }
+        return id;
+      };
+      for (const value of Object.values(variables)) {
+        if (value && typeof value === 'object' && !Array.isArray(value)) addNode(value);
+      }
+      const hasTreeEdges = edges.some((edge) => ['left', 'right', 'child', 'children'].includes(String(edge.label).toLowerCase()));
+      const hasPointerEdges = edges.some((edge) => String(edge.label).toLowerCase() === 'next');
+      const structure = stackEntry ? 'stack' : queueEntry ? 'queue'
+        : nodes.length && edges.length ? (hasTreeEdges ? 'tree' : hasPointerEdges ? 'linked_list' : 'graph')
+        : primaryArray ? 'array' : 'variables';
       return createEvent(index + 1, snapshot.event || 'runtime_line', {
-        line: snapshot.line ?? null,
-        algorithm: 'runtime_execution',
-        dataStructure: stackEntry ? 'stack' : queueEntry ? 'queue' : primaryArray ? 'array' : 'variables',
-        variables,
-        arrays,
-        array: primaryArray ? primaryArray[1] : [],
-        arrayName: primaryArray ? primaryArray[0] : null,
-        stack: stackEntry ? stackEntry[1] : undefined,
-        queue: queueEntry ? queueEntry[1] : undefined,
+        line: snapshot.line ?? null, algorithm: 'runtime_execution', dataStructure: structure,
+        variables, arrays, nodes, edges,
+        array: primaryArray ? primaryArray[1] : [], arrayName: primaryArray ? primaryArray[0] : null,
+        stack: stackEntry ? stackEntry[1] : undefined, queue: queueEntry ? queueEntry[1] : undefined,
         values: stackEntry ? stackEntry[1] : queueEntry ? queueEntry[1] : primaryArray ? primaryArray[1] : [],
         message: snapshot.message || 'Runtime snapshot',
       });
