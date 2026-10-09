@@ -46,6 +46,10 @@ test('Judge0 maps all five editor languages and sends source plus stdin unchange
     if (language === 'python') {
       assert.match(body.source_code, /__CODE3D_RUNTIME_TRACE__/);
       assert.match(body.source_code, /sys\.settrace/);
+    } else if (language === 'javascript') {
+      assert.match(body.source_code, /node:inspector/);
+      assert.match(body.source_code, /Debugger\.setBreakpointByUrl/);
+      assert.ok(body.source_code.includes(Buffer.from('// javascript').toString('base64')), 'source is embedded for the Judge0 wrapper');
     } else {
       assert.equal(body.source_code, `// ${language}`);
     }
