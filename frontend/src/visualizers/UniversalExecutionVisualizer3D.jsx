@@ -227,7 +227,9 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
     .toLowerCase().replace(/_/g, '-');
   const suppliedValues = Array.isArray(dataStructureState.values)
     ? dataStructureState.values
-    : Array.isArray(dataStructureState.array) ? dataStructureState.array : [];
+    : Array.isArray(dataStructureState.array) ? dataStructureState.array
+      : Array.isArray(dataStructureState.stack) ? dataStructureState.stack
+        : Array.isArray(dataStructureState.queue) ? dataStructureState.queue : [];
   const suppliedArrays = Object.entries(dataStructureState.arrays || {})
     .filter(([, value]) => Array.isArray(value));
   const arrayEntries = (suppliedArrays.length
@@ -237,7 +239,8 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
       : [])
     .slice(0, 4)
     .map(([name, values]) => [name, values.slice(0, 16)]);
-  const graphNodes = Array.isArray(dataStructureState.nodes) ? dataStructureState.nodes.slice(0, 24) : [];
+  const graphNodes = Array.isArray(dataStructureState.nodes) ? dataStructureState.nodes.slice(0, 24)
+    : Array.isArray(dataStructureState.linkedList) ? dataStructureState.linkedList.slice(0, 24) : [];
   const graphEdges = Array.isArray(dataStructureState.edges) ? dataStructureState.edges.slice(0, 48) : [];
   const graphNodePositions = graphNodes.map((node, index) => {
     const angle = (index / Math.max(1, graphNodes.length)) * Math.PI * 2;
@@ -293,9 +296,18 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         </Float>
       )}
 
+      <group position={[0, 2.45, 0.1]}>
+        <Text position={[0, 0.3, 0]} fontSize={0.28} color="#67e8f9" anchorX="center" anchorY="middle" fontWeight="bold">
+          {String(dataStructureState.structureType || structureType).toUpperCase()} · LIVE 3D STATE
+        </Text>
+        <Text position={[0, -0.05, 0]} fontSize={0.17} color="#cbd5e1" anchorX="center" anchorY="middle" maxWidth={10}>
+          {String(dataStructureState.label || dataStructureState.event || dataStructureState.operation || 'Execution step').slice(0, 100)}
+        </Text>
+      </group>
+
       {/* Grid Floor Pedestal Stage */}
       <mesh position={[0, -0.15, 0]} receiveShadow>
-        <boxGeometry args={[Math.max(10, count * 2.2), 0.2, 5.0]} />
+        <boxGeometry args={[Math.max(8, Math.min(18, Math.max(count, arrayEntries.reduce((sum, entry) => sum + entry[1].length, 0)) * 1.15), 0.12, 4.4]} />
         <meshStandardMaterial
           color="#0b1120"
           metalness={0.7}
@@ -333,9 +345,10 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         const visibleValues = values;
         const rowWidth = Math.max(0, (visibleValues.length - 1) * cellSpacing);
         const activeIndex = Number.isInteger(dataStructureState.activeIndex) ? dataStructureState.activeIndex : null;
-        const rowZ = 2.4 + arrayIndex * 1.25;
+        const rowZ = 0.45 + arrayIndex * 1.25;
+        const vertical = ['stack', 'linked-list', 'linkedlist', 'linkedlist-visualization'].includes(structureType);
         return (
-          <group key={`memory-array-${arrayName}`} position={[-rowWidth / 2, 0, rowZ]}>
+          <group key={`memory-array-${arrayName}`} position={vertical ? [0, -Math.max(0, visibleValues.length - 1) * 0.45, rowZ] : [-rowWidth / 2, 0, rowZ]}>
             <Text position={[0, 1.15, 0]} fontSize={0.18} color="#67e8f9" anchorX="left" anchorY="middle" fontWeight="bold">
               {`${arrayName} • ${values.length} items • ${structureType.toUpperCase()}`}
             </Text>
@@ -344,7 +357,7 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
               const height = typeof value === 'number' ? Math.max(0.45, Math.min(1.7, Math.abs(value) / 25 + 0.45)) : 0.65;
               const color = active ? '#fbbf24' : '#0891b2';
               return (
-                <group key={`${arrayName}-${index}`} position={(structureType === 'stack' || structureType === 'linked-list' || structureType === 'linkedlist') ? [0, index * 0.9, 0] : [index * cellSpacing, 0, 0]}>
+                <group key={`${arrayName}-${index}`} position={vertical ? [0, index * 0.9, 0] : [index * cellSpacing, 0, 0]}>
                   <mesh position={[0, height / 2, 0]}>
                     <boxGeometry args={[0.88, height, 0.82]} />
                     <meshStandardMaterial color={color} emissive={active ? '#d97706' : '#0e7490'} emissiveIntensity={active ? 1.2 : 0.35} metalness={0.45} roughness={0.25} />

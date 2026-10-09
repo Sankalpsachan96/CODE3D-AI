@@ -276,9 +276,9 @@ function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default', s
 
     const distV = estHeight / (2 * Math.tan(fovRad / 2));
     const distH = (estWidth / 2) / Math.tan((fovRad * aspect) / 2);
-    const targetDist = Math.max(distV, distH, 6.8) * 1.28;
+    const targetDist = Math.max(distV, distH, 6.8) * (isUniversal ? 1.55 : 1.28);
 
-    const targetY = sceneType === 'heap' || sceneType === 'heaps' ? -0.45 : isHierarchy ? -1.15 : 0;
+    const targetY = sceneType === 'heap' || sceneType === 'heaps' ? -0.45 : isHierarchy ? -1.15 : isUniversal ? 0.65 : 0;
     camera.position.set(0, targetY + Math.max(2.8, targetDist * 0.35), Math.max(7.5, targetDist * 0.92));
     camera.lookAt(0, targetY, 0);
 
@@ -342,7 +342,7 @@ export default function SceneContainer({
 
   // Compute data structure scale to dynamically auto-fit camera distance
   const dsState = currentStep?.dataStructureState;
-  const elementCount = dsState?.values?.length ?? dsState?.nodes?.length ?? (dsState?.matrix ? dsState.matrix.length * (dsState.matrix[0]?.length || 1) : 4);
+  const elementCount = Math.max(1, dsState?.values?.length || dsState?.array?.length || dsState?.stack?.length || dsState?.queue?.length || dsState?.nodes?.length || Object.values(dsState?.arrays || {}).reduce((sum, values) => sum + (Array.isArray(values) ? values.length : 0), 0) || (dsState?.matrix ? dsState.matrix.length * (dsState.matrix[0]?.length || 1) : 4));
   const sceneType = String(dsState?.type || '').toLowerCase().replace(/_/g, '-');
   // Tree/heap scenes use a vertical hierarchy. <Center top> pins their root
   // to the viewport center and pushes lower levels out of frame, which can
