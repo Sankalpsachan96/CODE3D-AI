@@ -163,7 +163,7 @@ test('captured Python runtime snapshots take priority over source heuristics', (
     success: true,
     output: '7',
     runtimeTrace: [
-      { step: 1, line: 1, event: 'runtime_line', variables: { value: 7, items: [2, 4, 6] } },
+      { step: 1, line: 1, event: 'runtime_line', variables: { value: 7, items: [2, 4, 6] }, callStack: ['factorial', 'factorial'] },
       { step: 2, line: 2, event: 'runtime_line', variables: { value: 7, items: [2, 4, 6] } },
     ],
   });
@@ -173,6 +173,7 @@ test('captured Python runtime snapshots take priority over source heuristics', (
   assert.deepEqual(result.events[0].variables.items, [2, 4, 6]);
   assert.deepEqual(result.events[0].array, [2, 4, 6]);
   assert.equal(result.events[0].line, 1);
+  assert.deepEqual(result.events[0].callStack, ['factorial', 'factorial']);
 });
 
 
