@@ -138,6 +138,7 @@ export default function CodeEditor({
   onSelectLine = null,
 
   readOnly = false,
+  hideRunButton = false,
 
 }) {
 
@@ -895,7 +896,7 @@ export default function CodeEditor({
 
         </div>
 
-        {!readOnly && (
+        {!readOnly && !hideRunButton && (
         <button
           type="button"
 
