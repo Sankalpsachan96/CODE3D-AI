@@ -307,7 +307,7 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
 
       {/* Grid Floor Pedestal Stage */}
       <mesh position={[0, -0.15, 0]} receiveShadow>
-        <boxGeometry args={[Math.max(8, Math.min(18, Math.max(count, arrayEntries.reduce((sum, entry) => sum + entry[1].length, 0)) * 1.15), 0.12, 4.4]} />
+        <boxGeometry args={[Math.max(8, Math.min(18, Math.max(count, arrayEntries.reduce((sum, entry) => sum + entry[1].length, 0)) * 1.15)), 0.12, 4.4]} />
         <meshStandardMaterial
           color="#0b1120"
           metalness={0.7}
