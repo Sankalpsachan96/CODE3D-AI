@@ -145,7 +145,9 @@ test('JavaScript array literals produce specialized array traversal traces', () 
 });
 
 test('Python list literals produce specialized indexed traversal traces', () => {
-  const code = 'arr = [10, 20, 30]\\nfor i in range(len(arr)):\\n    print(arr[i])';
+  const code = \`arr = [10, 20, 30]
+for i in range(len(arr)):
+    print(arr[i])\`;
   const result = universalTrace.generateTrace(code, 'python', {
     success: true,
     output: '10\n20\n30\n',
