@@ -131,7 +131,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
   const universalStarter = { id: 'universal-editor', title: 'Universal Code Editor', category: 'Universal Engine', description: 'Write and execute your own code; supported patterns can be shown as a modeled 3D visualization.', difficulty: 'Custom', timeComplexity: '—', spaceComplexity: '—', code: LANGUAGE_DEFAULTS.java || DEFAULT_JAVA_CODE, language: 'java' };
   const [selectedSample, setSelectedSample] = useState(initialConcept || (universalOnly ? universalStarter : SAMPLE_PROGRAMS[0]));
   const [code, setCode] = useState(initialConcept?.code || (universalOnly ? universalStarter.code : DEFAULT_JAVA_CODE));
-  const [lastExecutedCode, setLastExecutedCode] = useState(initialConcept?.code || (universalOnly ? universalStarter.code : DEFAULT_JAVA_CODE));
+  const [lastExecutedCode, setLastExecutedCode] = useState(universalOnly ? '' : (initialConcept?.code || DEFAULT_JAVA_CODE));
   const isCodeDirty = code !== lastExecutedCode;
   const [language, setLanguage] = useState(initialConcept?.language || 'java');
   const [trace, setTrace] = useState(() => {
@@ -381,6 +381,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       code: template,
     });
     if (universalOnly) {
+      setLastExecutedCode('');
       setFormInputValues('');
       setTrace([]);
       setRuntimeOutput([]);
@@ -834,6 +835,16 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       play();
     }
   };
+  // Universal editor runs the current source automatically after typing pauses.
+  // This replaces the removed Run button and keeps the 3D scene in sync with edits.
+  useEffect(() => {
+    if (!universalOnly || !code.trim() || code === lastExecutedCode) return undefined;
+    const timer = window.setTimeout(() => {
+      handleRunCode();
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [code, language, universalOnly, lastExecutedCode]);
+
   // Window-level Ctrl+Enter / Cmd+Enter listener to trigger instant 3D execution
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1069,7 +1080,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                     setRuntimeOutput([]);
                     setRuntimeStatus('IDLE');
                     setRuntimeTimeMs(null);
-                    setTraceNotice('Code changed. Run the program to see its actual output and any supported visualization.');
+                    setTraceNotice('Code changed. Executing automatically…');
                   }
                 }}
                 language={language}
@@ -1081,6 +1092,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 isPlaying={isPlaying}
                 onPlay={handleRunCode}
                 onRunCode={handleRunCode}
+                hideRunButton={universalOnly}
                 onCancelExecution={universalOnly ? handleCancelExecution : undefined}
                 onResetCode={handleResetCode}
                 isExecuting={isExecuting}
@@ -1115,40 +1127,6 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         )}
         {/* 3D */}
         <div className={`${mobileTab === '3d' ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden`}>
-          {universalOnly && (
-          <div className={`shrink-0 border-b px-2 py-1.5 flex items-center gap-2 ${
-            isBright ? 'bg-white border-slate-200' : 'bg-[#0b0f19] border-slate-800/80'
-          }`}>
-            <InputGenerator
-              currentValues={[]}
-              currentText={formInputValues}
-              freeform={universalOnly}
-              onApplyText={(text) => {
-                setFormInputValues(text);
-                setTrace([]);
-                setRuntimeOutput([]);
-                setRuntimeStatus('IDLE');
-                setRuntimeTimeMs(null);
-                setTraceNotice('Stdin updated. The program uses it only if its code reads stdin.');
-              }}
-              currentTarget={23}
-              showTarget={selectedSample?.category === 'Searching' || selectedSample?.id?.includes('search')}
-              onGenerate={({ values, target }) => {
-                const inputStr = values.join(', ');
-                setFormInputValues(inputStr);
-                const algo = ALGORITHM_CATALOG.find((a) => a.id === selectedSample.id || `algo-${a.id}` === selectedSample.id);
-                if (algo) {
-                  const res = algo.generator(values, target);
-                  setTrace(res.steps);
-                  reset();
-                  setTimeout(() => play(), 80);
-                  return;
-                }
-                applyNewValuesToCode(values);
-              }}
-            />
-          </div>
-          )}
           {/* 3D canvas + controls live together */}
           <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
             {universalOnly && traceNotice && (
@@ -1172,7 +1150,9 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                   sceneKey={selectedSample?.id || activeStriverProblem?.id || 'custom'}
                 >
                   <DsaSceneDispatcher
-                    dataStructureState={currentStep?.dataStructureState}
+                    dataStructureState={universalOnly && currentStep?.dataStructureState
+                      ? { ...currentStep.dataStructureState, type: 'universal-execution' }
+                      : currentStep?.dataStructureState}
                     showFallback={!universalOnly}
                   />
                 </SceneContainer>
