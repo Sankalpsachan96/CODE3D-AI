@@ -193,6 +193,36 @@ test('captured runtime object pointers become connected 3D nodes', () => {
   assert.deepEqual(result.events[0].edges.map((edge) => [edge.from, edge.to, edge.label]), [[0, 1, 'next']]);
 });
 
+test('captured Python adjacency lists become graph nodes and edges', () => {
+  const result = universalTrace.generateTrace('graph = {0: [1, 2], 1: [2], 2: []}', 'python', {
+    success: true,
+    output: 'visited: 0, 1, 2\n',
+    runtimeTrace: [{
+      step: 1, line: 1, event: 'runtime_line',
+      variables: { graph: { 0: [1, 2], 1: [2], 2: [] } },
+    }],
+  });
+
+  assert.equal(result.runtimeInstrumented, true);
+  assert.equal(result.events[0].dataStructure, 'graph');
+  assert.deepEqual(result.events[0].nodes.map((node) => node.value), ['0', '1', '2']);
+  assert.deepEqual(result.events[0].edges.map((edge) => [edge.from, edge.to]), [[0, 1], [0, 2], [1, 2]]);
+});
+
+test('captured Python binary adjacency matrices omit zero-weight edges', () => {
+  const result = universalTrace.generateTrace('adjacency_matrix = [[0, 1], [1, 0]]', 'python', {
+    success: true,
+    output: 'connected\n',
+    runtimeTrace: [{
+      step: 1, line: 1, event: 'runtime_line',
+      variables: { adjacency_matrix: [[0, 1], [1, 0]] },
+    }],
+  });
+
+  assert.equal(result.events[0].dataStructure, 'graph');
+  assert.deepEqual(result.events[0].edges.map((edge) => [edge.from, edge.to]), [[0, 1], [1, 0]]);
+});
+
 
 test('non-instrumented C, C++, Java and JavaScript traces are never labelled as exact runtime snapshots', () => {
   const cases = [
@@ -227,4 +257,223 @@ test('captured runtime values override source-model estimates', () => {
 
   assert.equal(result.runtimeInstrumented, true);
   assert.deepEqual(result.events.map((event) => event.variables.x), [10, 15]);
+});
+
+test('modeled bubble-sort steps map to matching source lines in all editor languages', () => {
+  const cases = [
+    ['c', `int values[5] = {4, 1, 3, 2, 2};
+for (int i = 0; i < 4; i++) {
+  for (int j = 0; j < 4 - i; j++) {
+    if (values[j] > values[j + 1]) {
+      int temp = values[j];
+      values[j] = values[j + 1];
+      values[j + 1] = temp;
+    }
+  }
+}
+printf("%d", values[0]);`],
+    ['cpp', `int values[] = {4, 1, 3, 2, 2};
+for (int i = 0; i < 4; i++) {
+  for (int j = 0; j < 4 - i; j++) {
+    if (values[j] > values[j + 1]) {
+      int temp = values[j];
+      values[j] = values[j + 1];
+      values[j + 1] = temp;
+    }
+  }
+}
+cout << values[0];`],
+    ['java', `int[] values = {4, 1, 3, 2, 2};
+for (int i = 0; i < 4; i++) {
+  for (int j = 0; j < 4 - i; j++) {
+    if (values[j] > values[j + 1]) {
+      int temp = values[j];
+      values[j] = values[j + 1];
+      values[j + 1] = temp;
+    }
+  }
+}
+System.out.println(values[0]);`],
+    ['javascript', `const values = [4, 1, 3, 2, 2];
+for (let i = 0; i < values.length - 1; i++) {
+  for (let j = 0; j < values.length - i - 1; j++) {
+    if (values[j] > values[j + 1]) {
+      const temp = values[j];
+      values[j] = values[j + 1];
+      values[j + 1] = temp;
+    }
+  }
+}
+console.log(values);`],
+    ['python', `values = [4, 1, 3, 2, 2]
+for i in range(len(values) - 1):
+    for j in range(len(values) - i - 1):
+        if values[j] > values[j + 1]:
+            temp = values[j]
+            values[j] = values[j + 1]
+            values[j + 1] = temp
+print(values)`],
+  ];
+
+  for (const [language, code] of cases) {
+    const result = universalTrace.generateTrace(code, language, { success: true, output: '[1, 2, 2, 3, 4]' });
+    assert.equal(result.algorithm, 'bubble_sort', `${language} should identify bubble sort`);
+    assert.ok(result.events.length > 0, `${language} should produce modeled steps`);
+    const lines = code.split(/\r?\n/);
+    for (const event of result.events) {
+      assert.ok(Number.isInteger(event.line), `${language} ${event.type} has a source line`);
+      assert.ok(event.line >= 1 && event.line <= lines.length, `${language} ${event.type} line is in range`);
+      assert.ok(lines[event.line - 1].trim(), `${language} ${event.type} line points to code`);
+    }
+    assert.equal(result.events[0].line, 1, `${language} initial state maps to array initialization`);
+    assert.equal(result.events.find((event) => event.type === 'compare').line, 4, `${language} comparison maps to condition`);
+    assert.equal(result.events.find((event) => event.type === 'swap').line, 6, `${language} swap maps to mutation`);
+    assert.equal(result.events.at(-1).line, lines.length, `${language} completion maps to output`);
+    assert.deepEqual(result.events.at(-1).array, [1, 2, 2, 3, 4], `${language} model final array is sorted`);
+  }
+});
+
+test('modeled bubble sort preserves empty-array and unsupported-pattern behavior', () => {
+  const empty = universalTrace.generateTrace(
+    'const values = [];\nfor (let i = 0; i < values.length; i++) {\n  for (let j = 0; j < values.length - i; j++) {\n    if (values[j] > values[j + 1]) { values[j] = values[j + 1]; values[j + 1] = values[j]; }\n  }\n}\nconsole.log(values);',
+    'javascript',
+    { success: true, output: '[]' }
+  );
+  assert.equal(empty.supported, true);
+  assert.deepEqual(empty.events[0].array, []);
+  assert.equal(empty.events[0].line, 1);
+
+  const unknown = universalTrace.generateTrace(
+    'function sort(items) { return items; }',
+    'javascript',
+    { success: true, output: '[]' }
+  );
+  assert.equal(unknown.generic, true);
+  assert.match(unknown.reason, /source structure/i);
+});
+
+test('C array trace respects an explicit zero logical length', () => {
+  const result = universalTrace.generateTrace(`#include <stdio.h>
+int main() {
+  int values[1] = {0}; int n = 0;
+  for (int i = 0; i < n - 1; i++) {
+    for (int j = 0; j < n - i - 1; j++) {
+      if (values[j] > values[j + 1]) { int t=values[j]; values[j]=values[j+1]; values[j+1]=t; }
+    }
+  }
+  printf("[]");
+}`, 'c', { success: true, output: '[]' });
+
+  assert.equal(result.algorithm, 'bubble_sort');
+  assert.deepEqual(result.events.at(-1).array, []);
+});
+
+test('every modeled DSA step maps to an executable source line', () => {
+  const cases = [
+    ['selection sort', 'cpp', `int values[] = {3, 1, 2};
+for (int i = 0; i < 2; ++i) {
+  int minIndex = i;
+  for (int j = i + 1; j < 3; ++j) {
+    if (values[j] < values[minIndex]) minIndex = j;
+  }
+  if (minIndex != i) std::swap(values[i], values[minIndex]);
+}
+std::cout << values[0];`],
+    ['insertion sort', 'java', `int[] values = {3, 1, 2};
+for (int i = 1; i < values.length; i++) {
+  int key = values[i];
+  int j = i - 1;
+  while (j >= 0 && values[j] > key) {
+    values[j + 1] = values[j];
+    j--;
+  }
+  values[j + 1] = key;
+}
+System.out.println(values[0]);`],
+    ['linear search', 'javascript', `const values = [10, 20, 30];
+const target = 20;
+for (let i = 0; i < values.length; i++) {
+  if (values[i] === target) break;
+}
+console.log(values);`],
+    ['binary search', 'javascript', `const values = [10, 20, 30, 40];
+const target = 30;
+let low = 0;
+let high = values.length - 1;
+while (low <= high) {
+  const mid = Math.floor((low + high) / 2);
+  if (values[mid] === target) break;
+  if (values[mid] < target) low = mid + 1;
+  else high = mid - 1;
+}
+console.log(values);`],
+    ['array traversal', 'c', `int values[3] = {10, 20, 30};
+for (int i = 0; i < 3; i++) {
+  printf("%d", values[i]);
+}`],
+    ['stack', 'cpp', `std::stack<int> values;
+values.push(10);
+values.push(20);
+values.pop();
+std::cout << values.top();`],
+    ['queue', 'cpp', `std::queue<int> values;
+values.push(10);
+values.push(20);
+values.pop();
+std::cout << values.front();`],
+    ['linked list', 'cpp', `struct Node { int value; Node* next; };
+Node* head = new Node(10);
+head->next = new Node(20);`],
+  ];
+
+  for (const [name, language, code] of cases) {
+    const result = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    assert.equal(result.supported, true, `${name} is recognized`);
+    assert.ok(result.events.length > 0, `${name} has steps`);
+    const lines = code.split(/\r?\n/);
+    for (const event of result.events) {
+      assert.ok(Number.isInteger(event.line), `${name} ${event.type} includes a source line`);
+      assert.ok(event.line >= 1 && event.line <= lines.length, `${name} ${event.type} maps inside the source`);
+      assert.ok(lines[event.line - 1].trim(), `${name} ${event.type} points to a non-empty statement`);
+    }
+  }
+});
+
+test('Java, Python, and JavaScript collection stacks and queues map operations and preserve LIFO/FIFO order', () => {
+  const cases = [
+    ['Java Stack', 'java', `Stack<Integer> stack = new Stack<>();
+stack.push(10);
+stack.push(20);
+stack.pop();`, 'stack_operations', 'stack', [10]],
+    ['Python list stack', 'python', `stack = []
+stack.append(10)
+stack.append(20)
+stack.pop()`, 'stack_operations', 'stack', [10]],
+    ['JavaScript array stack', 'javascript', `const stack = [];
+stack.push(10);
+stack.push(20);
+stack.pop();`, 'stack_operations', 'stack', [10]],
+    ['Java Queue', 'java', `Queue<Integer> queue = new LinkedList<>();
+queue.offer(10);
+queue.offer(20);
+queue.poll();`, 'queue_operations', 'queue', [20]],
+    ['Python list queue', 'python', `queue = []
+queue.append(10)
+queue.append(20)
+queue.pop(0)`, 'queue_operations', 'queue', [20]],
+    ['JavaScript array queue', 'javascript', `const queue = [];
+queue.push(10);
+queue.push(20);
+queue.shift();`, 'queue_operations', 'queue', [20]],
+  ];
+
+  for (const [name, language, code, algorithm, field, expected] of cases) {
+    const result = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    assert.equal(result.algorithm, algorithm, `${name} should have a specialized model`);
+    assert.deepEqual(result.events.at(-1)[field], expected, `${name} should preserve collection order`);
+    const lines = code.split(/\r?\n/);
+    for (const event of result.events) {
+      assert.ok(Number.isInteger(event.line) && event.line >= 1 && event.line <= lines.length, `${name} ${event.type} should map into the source`);
+    }
+  }
 });
