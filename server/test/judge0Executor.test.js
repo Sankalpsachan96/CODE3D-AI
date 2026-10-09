@@ -62,11 +62,11 @@ test('Python Judge0 execution returns real line snapshots without changing stdou
   const snapshots = [{ step: 1, line: 1, event: 'runtime_line', variables: { value: 7 } }];
   const result = await executor.executeWithJudge0('python', 'value = 7\nprint(value)', '', {
     judge0Url: 'https://judge0.example',
-    fetchImpl: judge0Fetch(finalResult(3, { stdout: '7\\n', stderr: marker + JSON.stringify(snapshots) + '\\n', time: '0.01' })),
+    fetchImpl: judge0Fetch(finalResult(3, { stdout: '7\n', stderr: marker + JSON.stringify(snapshots) + '\n', time: '0.01' })),
     pollIntervalMs: 0,
   });
   assert.equal(result.success, true);
-  assert.equal(result.output, '7\\n');
+  assert.equal(result.output, '7\n');
   assert.deepEqual(result.runtimeTrace, snapshots);
   assert.equal(result.stderr, '');
 });
