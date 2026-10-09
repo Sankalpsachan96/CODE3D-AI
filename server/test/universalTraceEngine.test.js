@@ -168,6 +168,35 @@ root->right = right;`;
   assert.ok(result.events.every((event) => Number.isInteger(event.line) && event.line > 0));
 });
 
+test('complexity estimates identify recognized algorithms and include measured run metrics', () => {
+  const trace = universalTrace.generateTrace(
+    'vector<vector<int>> graph = {{1}, {0}}; // bfs\nqueue<int> q; q.push(0);',
+    'cpp',
+    { success: true, output: '0 1' },
+  );
+  const complexity = universalTrace.estimateComplexity(
+    'vector<vector<int>> graph = {{1}, {0}}; // bfs\nqueue<int> q; q.push(0);',
+    trace,
+    { executionTime: 12, output: '0 1\n' },
+  );
+  assert.equal(complexity.algorithm, 'bfs');
+  assert.equal(complexity.time.average, 'O(V + E)');
+  assert.equal(complexity.space, 'O(V)');
+  assert.equal(complexity.confidence, 'recognized-pattern');
+  assert.equal(complexity.observed.traceSteps, trace.events.length);
+  assert.equal(complexity.observed.executionTimeMs, 12);
+  assert.equal(complexity.observed.stdoutLines, 1);
+});
+
+test('complexity estimator counts loop nesting and marks recursive complexity unknown', () => {
+  const nested = universalTrace.estimateComplexity('for(int i=0;i<n;i++){\n for(int j=0;j<n;j++){}\n}', { events: [] });
+  assert.equal(nested.time.average, 'O(n²)');
+  assert.equal(nested.confidence, 'source-estimate');
+  const recursive = universalTrace.estimateComplexity('def solve(n):\n    return solve(n - 1)\nsolve(4)', { events: [] });
+  assert.equal(recursive.time.average, 'Unknown');
+  assert.equal(recursive.confidence, 'unavailable');
+});
+
 
 test('JavaScript array literals produce specialized array traversal traces', () => {
   const code = 'const arr = [10, 20, 30]; for (let i = 0; i < arr.length; i++) { console.log(arr[i]); }';
