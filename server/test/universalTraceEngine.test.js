@@ -38,7 +38,7 @@ test('Java int[] declarations produce a real array traversal trace with active i
 }`;
   const result = universalTrace.generateTrace(code, 'java', {
     success: true,
-    output: '10\\n20\\n30\\n40\\n',
+    output: '10\n20\n30\n40\n',
   });
 
   assert.equal(result.supported, true);
