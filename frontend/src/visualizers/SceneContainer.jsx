@@ -267,8 +267,9 @@ function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default', s
     const n = Math.max(1, count || 4);
     const spacing = n > 25 ? 1.6 : 2.1;
     const isHierarchy = ['tree', 'bst', 'avl', 'avl-tree', 'heap', 'heaps'].includes(sceneType);
-    const estWidth = Math.max(5.5, (n - 1) * spacing + 3.0);
-    const estHeight = isHierarchy ? Math.max(6.0, Math.min(8.5, 3.6 + Math.ceil(Math.log2(n + 1)) * 1.9)) : 3.8;
+    const isUniversal = ['universal-execution', 'universal', 'registers'].includes(sceneType);
+    const estWidth = isUniversal ? Math.max(8.5, Math.min(22, (n - 1) * 1.12 + 4.0)) : Math.max(5.5, (n - 1) * spacing + 3.0);
+    const estHeight = isHierarchy ? Math.max(6.0, Math.min(8.5, 3.6 + Math.ceil(Math.log2(n + 1)) * 1.9)) : isUniversal ? 6.2 : 3.8;
 
     const fovRad = (camera.fov * Math.PI) / 180;
     const aspect = size.width / Math.max(size.height, 1);
@@ -349,6 +350,9 @@ export default function SceneContainer({
   // hierarchy scenes as a complete object while preserving the existing
   // alignment for the other visualizers.
   const centerHierarchyScene = ['tree', 'bst', 'avl', 'avl-tree', 'heap', 'heaps'].includes(sceneType);
+  const isUniversalScene = ['universal-execution', 'universal', 'registers'].includes(sceneType);
+  // Universal memory scenes contain HUDs and elevated labels. Bounding-box
+  // centering moves their actual data off screen, so keep their own origin.
 
   // Extract the exact line of code currently being executed for the 3D dry run
   const codeLines = code ? code.split('\n') : [];
@@ -672,23 +676,36 @@ export default function SceneContainer({
             <DynamicBoundingCamera
               count={elementCount}
               controlsRef={controlsRef}
-              sceneKey={sceneKey}
+              sceneKey={`${sceneKey}:${sceneType}:${elementCount}`}
               sceneType={sceneType}
             />
 
-            <Center
-              {...(centerHierarchyScene ? {} : { top: true })}
-              position={[0, -0.3, 0]}
-            >
-              {React.isValidElement(children)
-                ? React.cloneElement(children, {
-                    isXRayMode,
-                    onSelectElement: (idx, val) => {
-                      if (onSelectElement) onSelectElement(idx, val);
-                    },
-                  })
-                : children}
-            </Center>
+            {isUniversalScene ? (
+              <group position={[0, -0.3, 0]}>
+                {React.isValidElement(children)
+                  ? React.cloneElement(children, {
+                      isXRayMode,
+                      onSelectElement: (idx, val) => {
+                        if (onSelectElement) onSelectElement(idx, val);
+                      },
+                    })
+                  : children}
+              </group>
+            ) : (
+              <Center
+                {...(centerHierarchyScene ? {} : { top: true })}
+                position={[0, -0.3, 0]}
+              >
+                {React.isValidElement(children)
+                  ? React.cloneElement(children, {
+                      isXRayMode,
+                      onSelectElement: (idx, val) => {
+                        if (onSelectElement) onSelectElement(idx, val);
+                      },
+                    })
+                  : children}
+              </Center>
+            )}
 
             {/* 3D Conceptual CPU Core Hologram (Section 34) */}
             <CpuCoreHologram3D
