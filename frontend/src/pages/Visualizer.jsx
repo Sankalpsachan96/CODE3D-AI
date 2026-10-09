@@ -586,9 +586,9 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 values: arrayEntry?.[1] || step.dataStructureState?.values || [],
                 arrayName: arrayEntry?.[0] || step.dataStructureState?.arrayName || null,
                 activeIndex: step.index ?? step.dataStructureState?.activeIndex ?? null,
-                activeVariable: step.resultName || step.changedVariable || null,
-                label: step.message || step.type || 'Source-level step',
-                focusInfo: step.code || step.message || 'Modeled from source structure; not runtime instrumentation.',
+                activeVariable: step.resultName || step.changedVariable || step.dataStructureState?.calculationInfo?.targetVar || null,
+                label: step.message || step.explanation || step.operation || step.event || 'Source-level step',
+                focusInfo: step.code || step.explanation || step.message || 'Modeled from source structure; not runtime instrumentation.',
               }
             : step.dataStructureState;
           return {
@@ -598,7 +598,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             variables,
             explanation: step.explanation || step.message || step.code || 'Source-level execution event.',
             dataStructureState,
-            eventType: step.eventType || step.type || 'CODE_STEP',
+            eventType: step.eventType || step.type || step.event || step.operation || 'CODE_STEP',
             traceKind: isGenericModel ? 'source-model' : 'pattern-model',
           };
         });
