@@ -60,7 +60,7 @@ test('Judge0 maps all five editor languages and sends source plus stdin unchange
 test('Python Judge0 execution returns real line snapshots without changing stdout', async () => {
   const marker = '__CODE3D_RUNTIME_TRACE__';
   const snapshots = [{ step: 1, line: 1, event: 'runtime_line', variables: { value: 7 } }];
-  const result = await executor.executeWithJudge0('python', 'value = 7\\nprint(value)', '', {
+  const result = await executor.executeWithJudge0('python', 'value = 7\nprint(value)', '', {
     judge0Url: 'https://judge0.example',
     fetchImpl: judge0Fetch(finalResult(3, { stdout: '7\\n', stderr: marker + JSON.stringify(snapshots) + '\\n', time: '0.01' })),
     pollIntervalMs: 0,
