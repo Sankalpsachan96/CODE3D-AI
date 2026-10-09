@@ -106,7 +106,7 @@ function detectArrayFromCode(code) {
     let rawValues;
     let declaredSize;
 
-    if (pattern.type === "vector" || pattern.type === "java-array") {
+    if (pattern.type === "vector" || pattern.type === "java-array" || pattern.type === "list") {
       name = match[1];
       rawValues = match[2];
       declaredSize = rawValues
