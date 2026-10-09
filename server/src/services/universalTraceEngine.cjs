@@ -3263,7 +3263,9 @@ function generateTrace(
 
 function estimateComplexity(code, trace = {}, execution = {}) {
   const source = String(code || '');
-  const algorithm = String(trace.algorithm || inferAlgorithm(source) || 'unknown').toLowerCase();
+  const algorithm = String(trace.algorithm === 'runtime_execution'
+    ? (trace.dataStructure === 'graph' ? 'bfs' : trace.dataStructure === 'tree' ? 'tree' : inferAlgorithm(source))
+    : trace.algorithm || inferAlgorithm(source) || 'unknown').toLowerCase();
   const name = algorithm.replace(/_/g, ' ');
   const known = {
     bubble_sort: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
