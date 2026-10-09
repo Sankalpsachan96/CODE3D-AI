@@ -227,7 +227,7 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
     .filter(([, value]) => Array.isArray(value))
     .slice(0, 4)
     .map(([name, values]) => [name, values.slice(0, 16)]);
-  const rawVars = { ...(dataStructureState.arrays || {}), ...(dataStructureState.variables || {}) };
+  const rawVars = dataStructureState.variables || {};
   const varTypes = dataStructureState.variableTypes || {};
   const activeVar = dataStructureState.activeVariable || null;
   const calcInfo = dataStructureState.calculationInfo || null;
