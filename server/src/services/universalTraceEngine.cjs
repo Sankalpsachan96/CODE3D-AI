@@ -73,6 +73,12 @@ function detectArrayFromCode(code) {
 
   const patterns = [
     {
+      // Python lists and JavaScript arrays: arr = [1, 2, 3] / const arr = [1, 2, 3].
+      regex:
+        /(?:^|[;\n])\s*(?:(?:const|let|var)\s+)?(\w+)\s*(?::\s*(?:list|List)\s*\[[^\]]+\])?\s*=\s*\[([^\]]+)\]/im,
+      type: "list",
+    },
+    {
       // Java-style declarations put brackets before the variable name.
       // Example: int[] arr = {1, 2, 3};
       regex:
