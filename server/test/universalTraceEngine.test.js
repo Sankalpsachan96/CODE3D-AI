@@ -129,6 +129,74 @@ test('representative DSA trace coverage: stack, queue, linked list, sorting and 
   }
 });
 
+test('literal BFS graph traces expose topology and visit order for C++ programs', () => {
+  const code = `#include <queue>
+vector<vector<int>> graph = {{1, 2}, {0, 3}, {0, 3}, {1, 2}};
+queue<int> pending;
+pending.push(0);
+while (!pending.empty()) { /* breadth first */ }
+`;
+  const result = universalTrace.generateTrace(code, 'cpp', { success: true, output: '0 1 2 3' });
+  assert.equal(result.algorithm, 'bfs');
+  assert.equal(result.dataStructure, 'graph');
+  assert.ok(result.events.every((event) => Number.isInteger(event.line) && event.line > 0));
+  assert.deepEqual(result.events.find((event) => event.type === 'initial_state').edges.map(({ from, to }) => [from, to]), [[0, 1], [0, 2], [1, 0], [1, 3], [2, 0], [2, 3], [3, 1], [3, 2]]);
+  assert.deepEqual(result.events.filter((event) => event.type === 'visit').map((event) => event.vertex), [0, 1, 2, 3]);
+});
+
+test('literal Python adjacency dictionary graph traces simulate DFS without claiming runtime capture', () => {
+  const code = `graph = {0: [1, 2], 1: [3], 2: [], 3: []}\n# DFS traversal\n`;
+  const result = universalTrace.generateTrace(code, 'python', { success: true, output: '0 1 3 2' });
+  assert.equal(result.algorithm, 'dfs');
+  assert.equal(result.dataStructure, 'graph');
+  assert.notEqual(result.runtimeInstrumented, true);
+  assert.deepEqual(result.events.filter((event) => event.type === 'visit').map((event) => event.vertex), [0, 1, 3, 2]);
+});
+
+test('C++ pointer-based binary trees expose nodes and left/right edges', () => {
+  const code = `struct Node { int value; Node* left; Node* right; };
+Node* root = new Node(8);
+Node* left = new Node(4);
+Node* right = new Node(12);
+root->left = left;
+root->right = right;`;
+  const result = universalTrace.generateTrace(code, 'cpp', { success: true, output: '4 8 12' });
+  assert.equal(result.algorithm, 'tree');
+  assert.equal(result.dataStructure, 'tree');
+  assert.deepEqual(result.events.at(-1).nodes.map((node) => node.value), [8, 4, 12]);
+  assert.deepEqual(result.events.at(-1).edges.map(({ from, to, label }) => [from, to, label]), [[0, 1, 'left'], [0, 2, 'right']]);
+  assert.ok(result.events.every((event) => Number.isInteger(event.line) && event.line > 0));
+});
+
+test('complexity estimates identify recognized algorithms and include measured run metrics', () => {
+  const trace = universalTrace.generateTrace(
+    'vector<vector<int>> graph = {{1}, {0}}; // bfs\nqueue<int> q; q.push(0);',
+    'cpp',
+    { success: true, output: '0 1' },
+  );
+  const complexity = universalTrace.estimateComplexity(
+    'vector<vector<int>> graph = {{1}, {0}}; // bfs\nqueue<int> q; q.push(0);',
+    trace,
+    { executionTime: 12, output: '0 1\n' },
+  );
+  assert.equal(complexity.algorithm, 'bfs');
+  assert.equal(complexity.time.average, 'O(V + E)');
+  assert.equal(complexity.space, 'O(V)');
+  assert.equal(complexity.confidence, 'recognized-pattern');
+  assert.equal(complexity.observed.traceSteps, trace.events.length);
+  assert.equal(complexity.observed.executionTimeMs, 12);
+  assert.equal(complexity.observed.stdoutLines, 1);
+});
+
+test('complexity estimator counts loop nesting and marks recursive complexity unknown', () => {
+  const nested = universalTrace.estimateComplexity('for(int i=0;i<n;i++){\n for(int j=0;j<n;j++){}\n}', { events: [] });
+  assert.equal(nested.time.average, 'O(n²)');
+  assert.equal(nested.confidence, 'source-estimate');
+  const recursive = universalTrace.estimateComplexity('def solve(n):\n    return solve(n - 1)\nsolve(4)', { events: [] });
+  assert.equal(recursive.time.average, 'Unknown');
+  assert.equal(recursive.confidence, 'unavailable');
+});
+
 
 test('JavaScript array literals produce specialized array traversal traces', () => {
   const code = 'const arr = [10, 20, 30]; for (let i = 0; i < arr.length; i++) { console.log(arr[i]); }';

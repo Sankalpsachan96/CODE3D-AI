@@ -16,6 +16,14 @@ export default function ComplexityPanel({ complexity, algorithmName = 'Algorithm
   const space = complexity?.space || 'O(1)';
   const stable = complexity?.stable || 'Yes';
   const inPlace = complexity?.inPlace || 'Yes';
+  const observed = complexity?.observed || null;
+  const confidenceLabel = complexity?.confidence === 'recognized-pattern'
+    ? 'Recognized algorithm estimate'
+    : complexity?.confidence === 'source-estimate'
+      ? 'Source estimate'
+      : complexity?.confidence === 'unavailable'
+        ? 'Big-O unavailable'
+        : null;
 
   return (
     <div className={`border rounded-xl p-3.5 space-y-3 select-none transition-colors ${
@@ -41,6 +49,15 @@ export default function ComplexityPanel({ complexity, algorithmName = 'Algorithm
           {showGraph ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </button>
       </div>
+
+      {confidenceLabel && (
+        <div className={`flex items-start gap-2 rounded-lg border p-2 text-[10px] leading-relaxed ${
+          isBright ? 'border-cyan-200 bg-cyan-50 text-slate-600' : 'border-cyan-900/50 bg-cyan-950/20 text-slate-400'
+        }`}>
+          <span className="shrink-0 rounded border border-cyan-500/30 px-1.5 py-0.5 font-semibold text-cyan-500">{confidenceLabel}</span>
+          <span>{complexity.note || 'Big-O is an estimate; execution timing and trace counts are measured for this run.'}</span>
+        </div>
+      )}
 
       {/* Metric Cards Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-mono">
@@ -86,7 +103,7 @@ export default function ComplexityPanel({ complexity, algorithmName = 'Algorithm
       </div>
 
       {/* Stability & In-Place Badges */}
-      <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-600 dark:text-slate-400">
+      {(complexity?.stable || complexity?.inPlace) && <div className="flex items-center gap-3 pt-1 text-[11px] text-slate-600 dark:text-slate-400">
         <div className="flex items-center gap-1.5">
           <span className="font-semibold">Stable:</span>
           <span className={`px-1.5 py-0.2 rounded font-mono font-bold text-[10px] ${
@@ -112,7 +129,19 @@ export default function ComplexityPanel({ complexity, algorithmName = 'Algorithm
             {inPlace}
           </span>
         </div>
-      </div>
+      </div>}
+
+      {observed && (
+        <div className={`rounded-lg border p-2.5 ${isBright ? 'border-slate-200 bg-white' : 'border-slate-800 bg-slate-950/70'}`}>
+          <div className="mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Measured This Run</div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px]">
+            <div><span className="block text-[9px] font-sans uppercase text-slate-500">Trace steps</span>{observed.traceSteps ?? '—'}</div>
+            <div><span className="block text-[9px] font-sans uppercase text-slate-500">Source lines</span>{observed.mappedSourceLines ?? '—'}</div>
+            <div><span className="block text-[9px] font-sans uppercase text-slate-500">Run time</span>{observed.executionTimeMs == null ? '—' : `${observed.executionTimeMs} ms`}</div>
+            <div><span className="block text-[9px] font-sans uppercase text-slate-500">Stdout lines</span>{observed.stdoutLines ?? '—'}</div>
+          </div>
+        </div>
+      )}
 
       {/* Expandable Comparison Graph */}
       {showGraph && (

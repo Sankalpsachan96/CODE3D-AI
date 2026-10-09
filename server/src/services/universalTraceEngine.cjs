@@ -1050,6 +1050,170 @@ function generateQueueTrace(code) {
   };
 }
 
+/*
+ * Small graph adapter for the common DSA exercise shape: an adjacency list or
+ * matrix literal followed by a BFS/DFS traversal. This is a source model (the
+ * executor still owns stdout); it intentionally declines graph code whose
+ * topology cannot be read from a literal instead of guessing its edges.
+ */
+function parseLiteralGraph(code) {
+  const source = String(code || '');
+  const match = source.match(/\b(?:graph|adj(?:acency)?_?(?:list|matrix)?)\b\s*=\s*/i);
+  if (!match) return null;
+  const start = match.index + match[0].length;
+  const opener = source[start];
+  if (opener !== '[' && opener !== '{') return null;
+  const closer = opener === '[' ? ']' : '}';
+  let depth = 0;
+  let end = -1;
+  for (let index = start; index < source.length; index += 1) {
+    if (source[index] === opener) depth += 1;
+    else if (source[index] === closer && --depth === 0) { end = index; break; }
+  }
+  if (end < 0) return null;
+  const literal = source.slice(start, end + 1);
+  const pythonEntries = [...literal.matchAll(/(?:^|[,{]\s*)(['"]?)(-?\d+)\1\s*:\s*\[([^\]]*)\]/g)];
+  let adjacency;
+  if (pythonEntries.length) {
+    adjacency = pythonEntries.map((entry) => [Number(entry[2]), [...entry[3].matchAll(/-?\d+/g)].map((value) => Number(value[0]))]);
+  } else {
+    const rowOpener = literal.includes('[') ? '[' : '{';
+    const rowCloser = rowOpener === '[' ? ']' : '}';
+    const rows = [];
+    let rowDepth = 0;
+    let rowStart = -1;
+    for (let index = 1; index < literal.length - 1; index += 1) {
+      const char = literal[index];
+      if (char === rowOpener) {
+        rowDepth += 1;
+        if (rowDepth === 1) rowStart = index + 1;
+      } else if (char === rowCloser && rowDepth > 0) {
+        rowDepth -= 1;
+        if (rowDepth === 0) rows.push(literal.slice(rowStart, index));
+      }
+    }
+    if (rows.length) {
+      const parsedRows = rows.map((row) => [...row.matchAll(/-?\d+/g)].map((value) => Number(value[0])));
+      const explicitlyMatrix = /matrix/i.test(match[0]);
+      const isMatrix = explicitlyMatrix && parsedRows.length > 0
+        && parsedRows.every((row) => row.length === parsedRows.length && row.every((value) => value === 0 || value === 1));
+      adjacency = rows.map((row, vertex) => {
+        const values = [...row.matchAll(/-?\d+/g)].map((value) => Number(value[0]));
+        const neighbors = isMatrix
+          ? values.flatMap((weight, target) => weight === 0 ? [] : [target])
+          : values;
+        return [vertex, neighbors];
+      });
+    }
+  }
+  if (!adjacency?.length) return null;
+  const vertices = new Set(adjacency.map(([vertex]) => Number(vertex)));
+  for (const [, neighbors] of adjacency) for (const neighbor of neighbors) vertices.add(Number(neighbor));
+  const ordered = [...vertices].sort((left, right) => left - right);
+  return {
+    vertices: ordered,
+    adjacency: new Map(adjacency.map(([vertex, neighbors]) => [Number(vertex), neighbors.map(Number)])),
+  };
+}
+
+function detectGraphTraversal(code) {
+  const lower = String(code || '').toLowerCase();
+  return /\b(?:graph|adj(?:acency)?_?(?:list|matrix)?)\b/.test(lower)
+    && /\b(?:bfs|dfs|breadth\s*[- ]?first|depth\s*[- ]?first|visited)\b/.test(lower);
+}
+
+function generateGraphTraversalTrace(code) {
+  const graph = parseLiteralGraph(code);
+  if (!graph) return unsupported('graph_traversal', 'graph');
+  const lower = String(code || '').toLowerCase();
+  const depthFirst = /\b(?:dfs|depth\s*[- ]?first)\b/.test(lower);
+  const startMatch = String(code || '').match(/(?:start|source|root|vertex|node)\s*=\s*(-?\d+)/i)
+    || String(code || '').match(/(?:push|append|offer)\s*\(\s*(-?\d+)\s*\)/i);
+  const start = startMatch ? Number(startMatch[1]) : graph.vertices[0];
+  const queueName = String(code || '').match(/\b(\w+)\s*\.\s*(?:push|append|offer|add)\s*\(/i)?.[1] || null;
+  const visited = [];
+  const seen = new Set([start]);
+  const events = [];
+  let step = 1;
+  const nodes = graph.vertices.map((vertex) => ({ id: vertex, label: String(vertex), value: vertex, nodeType: 'vertex' }));
+  const edges = [];
+  for (const [from, neighbors] of graph.adjacency) for (const to of neighbors) {
+    if (graph.adjacency.has(to)) edges.push({ from, to });
+  }
+  const pending = [start];
+  const state = (queue = pending) => ({
+    algorithm: depthFirst ? 'dfs' : 'bfs', dataStructure: 'graph', nodes, edges,
+    visited: [...visited], queue: [...queue], values: [...visited],
+    message: `${depthFirst ? 'DFS' : 'BFS'} graph traversal state.`,
+  });
+  events.push(createEvent(step++, 'initial_state', { ...state(), message: 'Graph initialized from adjacency literal.' }));
+  while (pending.length && visited.length < 100) {
+    const vertex = depthFirst ? pending.pop() : pending.shift();
+    events.push(createEvent(step++, depthFirst ? 'pop' : 'dequeue', {
+      ...state(), vertex, value: vertex, structureName: queueName,
+      message: `${depthFirst ? 'Pop' : 'Dequeue'} vertex ${vertex}.`,
+    }));
+    visited.push(vertex);
+    events.push(createEvent(step++, 'visit', { ...state(), vertex, value: vertex, message: `Visit vertex ${vertex}.` }));
+    const neighbors = graph.adjacency.get(vertex) || [];
+    const ordered = depthFirst ? [...neighbors].reverse() : neighbors;
+    for (const neighbor of ordered) {
+      if (!seen.has(neighbor)) {
+        seen.add(neighbor);
+        pending.push(neighbor);
+        events.push(createEvent(step++, depthFirst ? 'push' : 'enqueue', { ...state(), vertex: neighbor, value: neighbor, structureName: queueName, message: `${depthFirst ? 'Push' : 'Enqueue'} vertex ${neighbor}.` }));
+      }
+    }
+  }
+  events.push(createEvent(step++, 'complete', { ...state(), message: `${depthFirst ? 'DFS' : 'BFS'} traversal completed.` }));
+  return { supported: true, algorithm: depthFirst ? 'dfs' : 'bfs', dataStructure: 'graph', stoppedAtError: false, events };
+}
+
+function detectBinaryTree(code) {
+  const source = String(code || '');
+  return /\b(?:struct|class)\s+Node\b/i.test(source)
+    && /(?:->|\.)\s*(?:left|right)\b/i.test(source)
+    && /new\s+Node\s*\(/i.test(source);
+}
+
+function generateBinaryTreeTrace(code) {
+  const source = String(code || '');
+  const allocations = [...source.matchAll(/\b(\w+)\s*=\s*new\s+Node\s*\(\s*([^,)]+)[^)]*\)/gi)];
+  if (!allocations.length) return unsupported('tree', 'tree');
+  const nodes = [];
+  const names = new Map();
+  const edges = [];
+  const events = [];
+  let step = 1;
+  for (const match of allocations) {
+    const value = literalValue(match[2].trim());
+    const id = nodes.length;
+    names.set(match[1], id);
+    nodes.push({ id, label: String(value), value, nodeType: 'tree_node', name: match[1] });
+  }
+  const rootMatch = source.match(/\b(?:Node\s*\*?\s*)?(\w+)\s*=\s*new\s+Node\s*\(/i);
+  const root = rootMatch ? names.get(rootMatch[1]) : nodes[0].id;
+  events.push(createEvent(step++, 'initial_state', {
+    algorithm: 'tree', dataStructure: 'tree', nodes: nodes.map((node) => ({ ...node })), edges: [],
+    values: nodes.map((node) => node.value), root, message: 'Binary tree nodes initialized.',
+  }));
+  for (const match of source.matchAll(/\b(\w+)\s*(?:->|\.)\s*(left|right)\s*=\s*(\w+)\s*;/gi)) {
+    const from = names.get(match[1]);
+    const to = names.get(match[3]);
+    if (from === undefined || to === undefined) continue;
+    edges.push({ from, to, label: match[2].toLowerCase() });
+    events.push(createEvent(step++, 'link', {
+      algorithm: 'tree', dataStructure: 'tree', nodes: nodes.map((node) => ({ ...node })), edges: edges.map((edge) => ({ ...edge })),
+      values: nodes.map((node) => node.value), root, message: `Connect ${match[2]} child node.`,
+    }));
+  }
+  events.push(createEvent(step++, 'complete', {
+    algorithm: 'tree', dataStructure: 'tree', nodes, edges, values: nodes.map((node) => node.value), root,
+    message: 'Binary tree structure completed.',
+  }));
+  return { supported: true, algorithm: 'tree', dataStructure: 'tree', stoppedAtError: false, events };
+}
+
 /* =========================================================
    LINKED LIST
 ========================================================= */
@@ -1160,6 +1324,8 @@ function mapModeledSourceLines(code, trace) {
   const arrayName = identifier(array?.name);
   const declarationLine = lineOf(new RegExp(`\\b${arrayName}\\b.*(?:=|\\{)`)) || lineOf(/\b(?:stack|queue)\s*</i) || lineOf(/\bnew\s+Node\s*\(/i);
   const outputLine = lineOf(/\b(?:print|println|printf|cout|console\.log)\b/);
+  const graphDeclarationLine = lineOf(/\b(?:graph|adj(?:acency)?_?(?:list|matrix)?)\b\s*=/i);
+  const graphVisitLine = lineOf(/\b(?:visited|seen)\b.*(?:add|insert|push|=)|(?:add|insert)\s*\(.*\b(?:visited|seen)\b/i) || outputLine;
   const returnLine = lineOf(/\breturn\b/);
   const loopLine = lineOf(/\b(?:for|while)\b/);
   const conditionLine = lineOf(/\b(?:if|while)\b.*(?:==|!=|<=|>=|<|>|\[)/);
@@ -1195,11 +1361,11 @@ function mapModeledSourceLines(code, trace) {
     if (Number.isInteger(event.line) && event.line >= 1 && event.line <= lines.length) continue;
     let line = null;
     switch (event.type) {
-      case 'initial_state': line = declarationLine; break;
+      case 'initial_state': line = trace.dataStructure === 'graph' ? graphDeclarationLine || declarationLine : declarationLine; break;
       case 'compare':
         line = trace.algorithm === 'array_traversal' ? loopLine : conditionLine || loopLine;
         break;
-      case 'visit': line = lineOf(new RegExp(`\\b${arrayName}\\s*\\[`)) || loopLine || outputLine; break;
+      case 'visit': line = trace.dataStructure === 'graph' ? graphVisitLine || loopLine : lineOf(new RegExp(`\\b${arrayName}\\s*\\[`)) || loopLine || outputLine; break;
       case 'range': case 'move_left': case 'move_right': line = conditionLine || loopLine; break;
       case 'found': line = conditionLine || outputLine || returnLine; break;
       case 'not_found': line = returnLine || outputLine || conditionLine || loopLine; break;
@@ -1213,12 +1379,16 @@ function mapModeledSourceLines(code, trace) {
           line = mutationLine || conditionLine || loopLine;
         }
         break;
-      case 'link': line = lineOf(/(?:->|\.)\s*next\s*=/i) || lineOf(/\bnext\b/i); break;
+      case 'link': line = trace.dataStructure === 'tree'
+        ? lineOf(/(?:->|\.)\s*(?:left|right)\s*=/i) || lineOf(/\b(?:left|right)\b/i)
+        : lineOf(/(?:->|\.)\s*next\s*=/i) || lineOf(/\bnext\b/i); break;
       case 'push': case 'pop': case 'peek':
         line = nextMethodLine(event.type === 'push' ? ['push', 'append'] : event.type === 'pop' ? ['pop'] : ['top', 'peek', 'empty', 'size']) || mutationLine;
         break;
       case 'enqueue': case 'dequeue': case 'front': case 'back': case 'peek':
-        line = nextMethodLine(event.type === 'enqueue' ? ['push', 'append', 'offer', 'add'] : event.type === 'dequeue' ? ['pop', 'shift', 'popleft', 'poll', 'remove'] : [event.type, 'empty', 'size']) || mutationLine;
+        line = trace.dataStructure === 'graph' && event.type === 'enqueue'
+          ? nextMethodLine(['push', 'append', 'offer', 'add']) || loopLine
+          : nextMethodLine(event.type === 'enqueue' ? ['push', 'append', 'offer', 'add'] : event.type === 'dequeue' ? ['pop', 'shift', 'popleft', 'poll', 'remove'] : [event.type, 'empty', 'size']) || mutationLine;
         break;
       case 'complete': line = outputLine || returnLine || mutationLine || loopLine || declarationLine; break;
       default: line = conditionLine || mutationLine || loopLine || declarationLine;
@@ -3017,6 +3187,18 @@ function generateTrace(
     };
   }
 
+  // Graph recognition precedes the queue/stack adapters so a BFS/DFS program
+  // is represented by its graph topology and visits, not only its worklist.
+  if (detectGraphTraversal(code)) {
+    const graphTrace = generateGraphTraversalTrace(code);
+    if (graphTrace.supported) return mapModeledSourceLines(code, graphTrace);
+  }
+
+  if (detectBinaryTree(code)) {
+    const treeTrace = generateBinaryTreeTrace(code);
+    if (treeTrace.supported) return mapModeledSourceLines(code, treeTrace);
+  }
+
   /*
     Specialized DSA adapters.
     They are used only after the real
@@ -3079,10 +3261,98 @@ function generateTrace(
   };
 }
 
+function estimateComplexity(code, trace = {}, execution = {}) {
+  const source = String(code || '');
+  const algorithm = String(trace.algorithm === 'runtime_execution'
+    ? (trace.dataStructure === 'graph' ? 'bfs' : trace.dataStructure === 'tree' ? 'tree' : inferAlgorithm(source))
+    : trace.algorithm || inferAlgorithm(source) || 'unknown').toLowerCase();
+  const name = algorithm.replace(/_/g, ' ');
+  const known = {
+    bubble_sort: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    selection_sort: { best: 'O(n²)', average: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    insertion_sort: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    linear_search: { best: 'O(1)', average: 'O(n)', worst: 'O(n)', space: 'O(1)' },
+    binary_search: { best: 'O(1)', average: 'O(log n)', worst: 'O(log n)', space: 'O(1)' },
+    bfs: { best: 'O(V + E)', average: 'O(V + E)', worst: 'O(V + E)', space: 'O(V)' },
+    dfs: { best: 'O(V + E)', average: 'O(V + E)', worst: 'O(V + E)', space: 'O(V)' },
+    array_traversal: { best: 'O(n)', average: 'O(n)', worst: 'O(n)', space: 'O(1)' },
+    stack_operations: { best: 'O(1) per operation', average: 'O(1) per operation', worst: 'O(1) per operation', space: 'O(n)' },
+    queue_operations: { best: 'O(1) per operation', average: 'O(1) per operation', worst: 'O(1) per operation', space: 'O(n)' },
+    linked_list: { best: 'O(n)', average: 'O(n)', worst: 'O(n)', space: 'O(n)' },
+  };
+  if (/\b(?:quick\s*sort|quicksort)\b/i.test(source)) known.quick_sort = { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n²)', space: 'O(log n)' };
+  if (/\b(?:merge\s*sort|mergesort)\b/i.test(source)) known.merge_sort = { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n log n)', space: 'O(n)' };
+  if (/\b(?:heap\s*sort|heapsort)\b/i.test(source)) known.heap_sort = { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n log n)', space: 'O(1)' };
+
+  let metrics = known[algorithm] || null;
+  let confidence = metrics ? 'recognized-pattern' : 'source-estimate';
+  if (algorithm === 'tree' || /\b(?:tree|root)\b/.test(source)) {
+    if (/\b(?:bfs|dfs|traversal|inorder|preorder|postorder)\b/i.test(source)) {
+      metrics = { best: 'O(n)', average: 'O(n)', worst: 'O(n)', space: /\b(?:recursive|recursion|inorder|preorder|postorder)\b/i.test(source) ? 'O(h)' : 'O(n)' };
+      confidence = 'recognized-pattern';
+    }
+  }
+  if (!metrics) {
+    const codeWithoutComments = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\/\/[^\r\n]*/g, ' ')
+      .replace(/^\s*#.*$/gm, ' ');
+    let depth = 0;
+    let maxDepth = 0;
+    for (const line of codeWithoutComments.split(/\r?\n/)) {
+      const open = (line.match(/\{/g) || []).length;
+      const close = (line.match(/\}/g) || []).length;
+      const loops = (line.match(/\b(?:for|while)\b/g) || []).length;
+      depth = Math.max(0, depth - close);
+      if (loops) maxDepth = Math.max(maxDepth, depth + loops);
+      depth += open;
+    }
+    const pythonLoops = [...codeWithoutComments.matchAll(/^(\s*)\b(?:for|while)\b/gm)].map((match) => match[1].length);
+    if (pythonLoops.length) {
+      const nestedPython = Math.max(...pythonLoops.map((indent) => 1 + pythonLoops.filter((other) => other > indent).length));
+      maxDepth = Math.max(maxDepth, nestedPython);
+    }
+    const declaredFunctions = [...codeWithoutComments.matchAll(/\b(?:def\s+|(?:void|bool|char|short|int|long|float|double|auto|[A-Z]\w*(?:\s*<[^>]+>)?)\s+)(\w+)\s*\(/g)].map((match) => match[1]);
+    const recursive = declaredFunctions.some((functionName) => {
+      const escaped = functionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return [...codeWithoutComments.matchAll(new RegExp(`\\b${escaped}\\s*\\(`, 'g'))].length > 1;
+    });
+    if (maxDepth > 0) {
+      const order = maxDepth === 1 ? 'O(n)' : maxDepth === 2 ? 'O(n²)' : `O(n^${maxDepth})`;
+      metrics = { best: order, average: order, worst: order, space: /\b(?:new\s+\w+\s*\[|vector\s*<|\[\s*\]|\.push\s*\(|\.append\s*\()/i.test(codeWithoutComments) ? 'O(n)' : 'O(1)' };
+    } else if (recursive) {
+      metrics = { best: 'Unknown', average: 'Unknown', worst: 'Unknown', space: 'Unknown' };
+      confidence = 'unavailable';
+    } else {
+      metrics = { best: 'O(1)', average: 'O(1)', worst: 'O(1)', space: 'O(1)' };
+    }
+  }
+  const events = Array.isArray(trace.events) ? trace.events : [];
+  const sourceLines = [...new Set(events.map((event) => event.line).filter(Number.isInteger))];
+  return {
+    algorithm,
+    time: { best: metrics.best, average: metrics.average, worst: metrics.worst },
+    space: metrics.space,
+    confidence,
+    note: confidence === 'recognized-pattern'
+      ? 'Asymptotic estimate for the recognized algorithm; runtime and step counts below are measured for this run.'
+      : confidence === 'source-estimate'
+        ? 'Estimated from visible loop structure; calls and input-dependent recursion may not be represented.'
+        : 'Could not infer Big-O safely from this source. Run measurements are still available below.',
+    observed: {
+      traceSteps: events.length,
+      mappedSourceLines: sourceLines.length,
+      executionTimeMs: Number.isFinite(Number(execution.executionTime)) ? Number(execution.executionTime) : null,
+      stdoutLines: String(execution.output || '').split(/\r?\n/).filter((line) => line !== '').length,
+    },
+  };
+}
+
 /* =========================================================
    EXPORT
 ========================================================= */
 
 module.exports = {
   generateTrace,
+  estimateComplexity,
 };

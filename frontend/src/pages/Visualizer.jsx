@@ -156,6 +156,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
   const [runtimeOutput, setRuntimeOutput] = useState([]);
   const [runtimeStatus, setRuntimeStatus] = useState('IDLE');
   const [runtimeTimeMs, setRuntimeTimeMs] = useState(null);
+  const [runtimeComplexity, setRuntimeComplexity] = useState(null);
   const [traceNotice, setTraceNotice] = useState('');
   const executionAbortRef = useRef(null);
   const [syntaxErrorLine, setSyntaxErrorLine] = useState(null);
@@ -382,6 +383,11 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     });
     if (universalOnly) {
       setLastExecutedCode('');
+      setTrace([]);
+      setRuntimeOutput([]);
+      setRuntimeStatus('IDLE');
+      setRuntimeTimeMs(null);
+      setRuntimeComplexity(null);
       setFormInputValues('');
       setTrace([]);
       setRuntimeOutput([]);
@@ -533,6 +539,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     setRuntimeOutput([]);
     setRuntimeStatus('RUNNING');
     setRuntimeTimeMs(null);
+    setRuntimeComplexity(null);
     setTrace([]);
     setTraceNotice('Program is running in the isolated backend.');
 
@@ -562,6 +569,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       setRuntimeOutput(actualOutput);
       setRuntimeStatus(execution.status);
       setRuntimeTimeMs(execution.executionTimeMs);
+      setRuntimeComplexity(execution.complexity);
 
       let visualTrace;
       if (universalOnly) {
@@ -1079,6 +1087,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                     setRuntimeOutput([]);
                     setRuntimeStatus('IDLE');
                     setRuntimeTimeMs(null);
+                    setRuntimeComplexity(null);
                     setTraceNotice('Code changed. Press Run & Visualize to execute and update the 3D scene.');
                   }
                 }}
@@ -1261,7 +1270,8 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 totalSteps={totalSteps}
                 correctOutput={null}
                 isAtEnd={isAtEnd}
-                complexity={universalOnly ? null : selectedSample?.complexity}
+                complexity={universalOnly ? runtimeComplexity : selectedSample?.complexity}
+                algorithmName={universalOnly ? (runtimeComplexity?.algorithm || 'Your program') : (selectedSample?.title || 'Algorithm')}
                 executionStatus={runtimeStatus}
                 isUniversal={universalOnly}
               />

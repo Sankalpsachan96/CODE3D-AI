@@ -17,6 +17,22 @@ test('editor uses actual stdout when the output array is empty', () => {
   assert.equal(execution.executionTimeMs, 42);
 });
 
+test('universal editor preserves estimated complexity and measured execution metrics', () => {
+  const complexity = {
+    algorithm: 'bfs',
+    time: { best: 'O(V + E)', average: 'O(V + E)', worst: 'O(V + E)' },
+    space: 'O(V)',
+    confidence: 'recognized-pattern',
+    observed: { traceSteps: 8, mappedSourceLines: 4, executionTimeMs: 12, stdoutLines: 1 },
+  };
+  const execution = normalizeUniversalExecutionResult({
+    success: true,
+    status: 'COMPLETED',
+    complexity,
+  });
+  assert.deepEqual(execution.complexity, complexity);
+});
+
 test('editor removes the split artifact after a final stdout newline', () => {
   const execution = normalizeUniversalExecutionResult({
     success: true,
