@@ -268,15 +268,15 @@ function DynamicBoundingCamera({ count = 4, controlsRef, sceneKey = 'default', s
     const spacing = n > 25 ? 1.6 : 2.1;
     const isHierarchy = ['tree', 'bst', 'avl', 'avl-tree', 'heap', 'heaps'].includes(sceneType);
     const isUniversal = ['universal-execution', 'universal', 'registers'].includes(sceneType);
-    const estWidth = isUniversal ? Math.max(8.5, Math.min(22, (n - 1) * 1.12 + 4.0)) : Math.max(5.5, (n - 1) * spacing + 3.0);
-    const estHeight = isHierarchy ? Math.max(6.0, Math.min(8.5, 3.6 + Math.ceil(Math.log2(n + 1)) * 1.9)) : isUniversal ? 6.2 : 3.8;
+    const estWidth = isUniversal ? Math.max(5.5, Math.min(22, (n - 1) * 1.12 + 2.5)) : Math.max(5.5, (n - 1) * spacing + 3.0);
+    const estHeight = isHierarchy ? Math.max(6.0, Math.min(8.5, 3.6 + Math.ceil(Math.log2(n + 1)) * 1.9)) : isUniversal ? 4.8 : 3.8;
 
     const fovRad = (camera.fov * Math.PI) / 180;
     const aspect = size.width / Math.max(size.height, 1);
 
     const distV = estHeight / (2 * Math.tan(fovRad / 2));
     const distH = (estWidth / 2) / Math.tan((fovRad * aspect) / 2);
-    const targetDist = Math.max(distV, distH, 6.8) * (isUniversal ? 1.55 : 1.28);
+    const targetDist = Math.max(distV, distH, isUniversal ? 6.2 : 6.8) * (isUniversal ? 1.08 : 1.28);
 
     const targetY = sceneType === 'heap' || sceneType === 'heaps' ? -0.45 : isHierarchy ? -1.15 : isUniversal ? 0.65 : 0;
     camera.position.set(0, targetY + Math.max(2.8, targetDist * 0.35), Math.max(7.5, targetDist * 0.92));
