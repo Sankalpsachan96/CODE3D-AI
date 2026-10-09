@@ -524,7 +524,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
   // status and stdout/stderr. Any supported visualization remains a model.
   const handleRunCode = async () => {
     if (isExecuting) return false;
-    if (isPlaying) { pause(); return false; }
+    if (!universalOnly && isPlaying) { pause(); return false; }
 
     const abortController = new AbortController();
     if (universalOnly) executionAbortRef.current = abortController;
