@@ -174,3 +174,20 @@ test('captured Python runtime snapshots take priority over source heuristics', (
   assert.deepEqual(result.events[0].array, [2, 4, 6]);
   assert.equal(result.events[0].line, 1);
 });
+
+
+test('captured runtime object pointers become connected 3D nodes', () => {
+  const result = universalTrace.generateTrace('class Node: pass', 'python', {
+    success: true,
+    runtimeTrace: [{
+      step: 1, line: 1, event: 'runtime_line',
+      variables: {
+        head: { __type__: 'Node', value: 10, next: { __type__: 'Node', value: 20, next: '<cycle>' } }
+      }
+    }]
+  });
+  assert.equal(result.runtimeInstrumented, true);
+  assert.equal(result.events[0].dataStructure, 'linked_list');
+  assert.deepEqual(result.events[0].nodes.map((node) => node.value), [10, 20]);
+  assert.deepEqual(result.events[0].edges.map((edge) => [edge.from, edge.to, edge.label]), [[0, 1, 'next']]);
+});
