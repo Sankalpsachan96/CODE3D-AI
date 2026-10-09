@@ -157,3 +157,20 @@ test('Python list literals produce specialized indexed traversal traces', () => 
   assert.deepEqual(result.events[0].array, [10, 20, 30]);
   assert.deepEqual(result.events.filter((event) => event.type === 'visit').map((event) => event.value), [10, 20, 30]);
 });
+
+test('captured Python runtime snapshots take priority over source heuristics', () => {
+  const result = universalTrace.generateTrace('value = 7\\nprint(value)', 'python', {
+    success: true,
+    output: '7',
+    runtimeTrace: [
+      { step: 1, line: 1, event: 'runtime_line', variables: { value: 7, items: [2, 4, 6] } },
+      { step: 2, line: 2, event: 'runtime_line', variables: { value: 7, items: [2, 4, 6] } },
+    ],
+  });
+  assert.equal(result.runtimeInstrumented, true);
+  assert.equal(result.algorithm, 'runtime_execution');
+  assert.equal(result.events.length, 2);
+  assert.deepEqual(result.events[0].variables.items, [2, 4, 6]);
+  assert.deepEqual(result.events[0].array, [2, 4, 6]);
+  assert.equal(result.events[0].line, 1);
+});
