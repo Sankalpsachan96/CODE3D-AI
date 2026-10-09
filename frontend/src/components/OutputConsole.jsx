@@ -113,7 +113,7 @@ export default function OutputConsole({
 
         {/* Runtime context: shows the exact input used even when the program
             intentionally prints nothing (e.g. search/insert/return-only code). */}
-        <div className={`grid grid-cols-1 ${isExpanded ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-2 mb-2`}>
+        <div className={`grid grid-cols-1 ${hideInput ? 'md:grid-cols-1' : isExpanded ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-2 mb-2`}>
           {!hideInput && (<div className={`rounded-lg border p-2 ${isBright ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'}`}>
             <div className={`text-[9px] uppercase font-bold tracking-wider mb-1 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{inputLabel}</div>
             <div className={`font-mono text-[11px] break-all ${isBright ? 'text-slate-800' : 'text-slate-200'}`}>
