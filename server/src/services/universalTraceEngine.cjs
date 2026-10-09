@@ -73,6 +73,14 @@ function detectArrayFromCode(code) {
 
   const patterns = [
     {
+      // Java-style declarations put brackets before the variable name.
+      // Example: int[] arr = {1, 2, 3};
+      regex:
+        /(?:int|float|double|char|long|short)\s*(?:\[\s*\]\s*)+(\w+)\s*=\s*\{([^}]+)\}/i,
+      type: "java-array",
+    },
+    {
+      // C-style declarations: int arr[] = {1, 2, 3};
       regex:
         /(?:int|float|double|char|long|short)\s+(\w+)\s*\[\s*(\d*)\s*\]\s*=\s*\{([^}]+)\}/i,
       type: "array",
@@ -92,7 +100,7 @@ function detectArrayFromCode(code) {
     let rawValues;
     let declaredSize;
 
-    if (pattern.type === "vector") {
+    if (pattern.type === "vector" || pattern.type === "java-array") {
       name = match[1];
       rawValues = match[2];
       declaredSize = rawValues
