@@ -105,6 +105,46 @@ function getRuntimeAvailability() {
   };
 }
 
+const RUNTIME_TRACE_MARKER = "__CODE3D_RUNTIME_TRACE__";
+function buildPythonInstrumentedSource(source) {
+  const encoded = Buffer.from(source, "utf8").toString("base64");
+  return [
+    "import sys, json, base64"
+    ,"__code3d_source = base64.b64decode(\"" + encoded + "\").decode(\"utf-8\")"
+    ,"__code3d_events = []"
+    ,"__code3d_steps = 0"
+    ,"def __code3d_safe(value, depth=0):"
+    ," if depth > 3: return '<max-depth>'"
+    ," if value is None or isinstance(value, (bool, int, float, str)): return value if not isinstance(value, str) or len(value) <= 200 else value[:200] + \"…\""
+    ," if isinstance(value, (list, tuple)): return [__code3d_safe(v, depth + 1) for v in value[:100]]"
+    ," if isinstance(value, dict): return {str(k)[:80]: __code3d_safe(v, depth + 1) for k, v in list(value.items())[:100] if not str(k).startswith(\"__code3d_\")}"
+    ," return '<' + type(value).__name__ + '>'"
+    ,"def __code3d_trace(frame, event, arg):"
+    ," global __code3d_steps"
+    ," if event == \"line\" and frame.f_code.co_filename == \"<user_code>\":"
+    ,"  __code3d_steps += 1"
+    ,"  if __code3d_steps <= 500: __code3d_events.append({\"step\": __code3d_steps, \"line\": frame.f_lineno, \"event\": \"runtime_line\", \"variables\": {k: __code3d_safe(v) for k, v in frame.f_locals.items() if not k.startswith(\"__code3d_\") and not k.startswith(\"__\")}, \"message\": \"Runtime snapshot captured at this executed line.\"})"
+    ,"  elif __code3d_steps == 501: __code3d_events.append({\"step\": 501, \"event\": \"trace_limit\", \"message\": \"Runtime trace capped at 500 line events.\"})"
+    ," return __code3d_trace"
+    ,"try:"
+    ," sys.settrace(__code3d_trace)"
+    ," exec(compile(__code3d_source, \"<user_code>\", \"exec\"), {\"__name__\": \"__main__\"})"
+    ,"except SystemExit:"
+    ," pass"
+    ,"finally:"
+    ," sys.settrace(None)"
+    ," print(\"" + RUNTIME_TRACE_MARKER + "\" + json.dumps(__code3d_events, separators=(\",\", \":\")), file=sys.stderr)"
+  ].join("\\n");
+}
+function extractPythonRuntimeTrace(stderr) {
+  const text = String(stderr || "");
+  const i = text.lastIndexOf(RUNTIME_TRACE_MARKER);
+  if (i < 0) return { stderr: text, runtimeTrace: null };
+  const before = text.slice(0, i).trimEnd();
+  const payload = text.slice(i + RUNTIME_TRACE_MARKER.length).split(/\\r?\\n/, 1)[0];
+  try { const events = JSON.parse(payload); return { stderr: before, runtimeTrace: Array.isArray(events) ? events : null }; }
+  catch { return { stderr: text, runtimeTrace: null }; }
+}
 async function executeWithJudge0(language, code, input = "", options = {}) {
   const { signal, fetchImpl = fetch } = options;
   const { url: judge0Url, apiKey } = getJudge0Config(options);
@@ -174,7 +214,7 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
       headers,
       body: JSON.stringify({
         language_id: languageId,
-        source_code: code,
+        source_code: languageKey === "python" ? buildPythonInstrumentedSource(code) : code,
         stdin: input,
         cpu_time_limit: 3,
         cpu_extra_time: 1,
@@ -224,7 +264,9 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
     }
 
     const output = String(result.stdout || "");
-    const error = String(result.compile_output || result.stderr || result.message || "");
+    const rawError = String(result.compile_output || result.stderr || result.message || "");
+    const traced = languageKey === "python" ? extractPythonRuntimeTrace(result.stderr || "") : { stderr: String(result.stderr || ""), runtimeTrace: null };
+    const error = String(result.compile_output || traced.stderr || result.message || "");
     const judge0Seconds = Number.parseFloat(result.time);
     const executionTime = Number.isFinite(judge0Seconds)
       ? Math.max(0, Math.round(judge0Seconds * 1000))
@@ -242,6 +284,8 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
       success: accepted,
       stage: accepted ? "complete" : stage,
       output,
+      stderr: traced.stderr,
+      runtimeTrace: traced.runtimeTrace,
       error: accepted ? "" : (error || `Judge0 execution failed: ${result.status?.description || "unknown status"}`),
       executionTime,
     };
