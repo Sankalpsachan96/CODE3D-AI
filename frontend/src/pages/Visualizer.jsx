@@ -1262,7 +1262,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       </div>
       {/* Program State + Output: fixed workspace with independent scrolling */}
       {!isFull3DView && (
-        <div className={`shrink-0 h-[180px] min-h-[160px] max-h-[26vh] border-t overflow-hidden ${
+        <div className={`shrink-0 h-[220px] min-h-[190px] max-h-[32vh] border-t overflow-hidden ${
           isBright ? 'bg-slate-50 border-slate-200' : 'bg-[#090d16] border-slate-800/80'
         }`}>
           <div className="h-full grid grid-cols-1 lg:grid-cols-2 gap-2 p-2 overflow-hidden">
@@ -1275,6 +1275,8 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 correctOutput={null}
                 isAtEnd={isAtEnd}
                 complexity={universalOnly ? null : selectedSample?.complexity}
+                executionStatus={runtimeStatus}
+                isUniversal={universalOnly}
               />
             </div>
             <div className={`min-h-0 h-full overflow-y-auto overscroll-contain rounded-xl border custom-scrollbar ${
