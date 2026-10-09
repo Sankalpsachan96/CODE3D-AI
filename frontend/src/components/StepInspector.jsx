@@ -23,6 +23,15 @@ export default function StepInspector({ currentStep, totalSteps }) {
   const swappedIndices = metadata?.swappedIndices || dataStructure?.swappedIndices || [];
   const activeIndex = metadata?.activeIndex ?? dataStructure?.activeIndex ?? null;
   const values = Array.isArray(dataStructure?.values) ? dataStructure.values : [];
+  const structureKind = String(dataStructure?.structureType || dataStructure?.type || '').toLowerCase().replace(/_/g, '-');
+  const valuesHeading = structureKind === 'stack' ? 'Stack State (LIFO)'
+    : structureKind === 'queue' ? 'Queue State (FIFO)'
+      : structureKind === 'graph' ? 'Visited Vertices'
+        : structureKind === 'tree' ? 'Tree Node Values'
+          : structureKind === 'linked-list' ? 'Linked List Values'
+            : 'Array State';
+  const nodes = Array.isArray(dataStructure?.nodes) ? dataStructure.nodes : [];
+  const edges = Array.isArray(dataStructure?.edges) ? dataStructure.edges : [];
 
   const getOperationBadgeColor = (op) => {
     switch (op) {
@@ -147,7 +156,7 @@ export default function StepInspector({ currentStep, totalSteps }) {
       {values.length > 0 && (
         <div className="space-y-1">
           <div className="text-[10px] text-slate-500 uppercase font-sans font-semibold flex items-center gap-1">
-            <Layers size={11} /> Array State ({values.length} items)
+            <Layers size={11} /> {valuesHeading} ({values.length} items)
           </div>
           <div className="flex flex-wrap gap-1 font-mono text-[10px]">
             {values.map((val, idx) => {
@@ -171,6 +180,28 @@ export default function StepInspector({ currentStep, totalSteps }) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {(structureKind === 'graph' || structureKind === 'tree' || structureKind === 'linked-list') && (nodes.length > 0 || edges.length > 0) && (
+        <div className="space-y-2 rounded-lg border border-cyan-900/40 bg-cyan-950/10 p-2.5 font-mono text-[10px]">
+          <div className="font-sans font-semibold uppercase tracking-wider text-cyan-500">
+            {structureKind === 'graph' ? 'Graph State' : structureKind === 'tree' ? 'Tree State' : 'Linked List State'}
+            <span className="ml-2 font-mono font-normal text-slate-500">{nodes.length} vertices/nodes · {edges.length} links</span>
+          </div>
+          {dataStructure?.root !== null && dataStructure?.root !== undefined && <div className="text-slate-400">Root: {String(dataStructure.root)}</div>}
+          {Array.isArray(dataStructure?.visited) && dataStructure.visited.length > 0 && <div className="text-slate-400">Visited: [{dataStructure.visited.join(', ')}]</div>}
+          {nodes.length > 0 && <div className="break-words text-slate-400">Nodes: {nodes.slice(0, 40).map((node) => typeof node === 'object' ? (node.label ?? node.value ?? node.id) : node).join(', ')}{nodes.length > 40 ? ', …' : ''}</div>}
+          {edges.length > 0 && <div className="space-y-0.5 text-slate-500">
+            <div>Links:</div>
+            {edges.slice(0, 30).map((edge, index) => {
+              const from = Array.isArray(edge) ? edge[0] : edge.from;
+              const to = Array.isArray(edge) ? edge[1] : edge.to;
+              const label = Array.isArray(edge) ? edge[2] : edge.label;
+              return <div key={index}>{String(from)}{label ? ` —${label}→ ` : ' → '}{String(to)}</div>;
+            })}
+            {edges.length > 30 && <div>… {edges.length - 30} more</div>}
+          </div>}
         </div>
       )}
 
