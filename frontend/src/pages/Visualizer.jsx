@@ -585,7 +585,13 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 outputStream: actualOutput,
                 values: arrayEntry?.[1] || step.dataStructureState?.values || [],
                 arrayName: arrayEntry?.[0] || step.dataStructureState?.arrayName || null,
-                activeIndex: step.index ?? step.dataStructureState?.activeIndex ?? null,
+                activeIndex: step.index ?? step.dataStructureState?.activeIndex ?? (
+                  Number.isInteger(variables.i) ? variables.i
+                    : Number.isInteger(variables.index) ? variables.index
+                      : Number.isInteger(variables.idx) ? variables.idx
+                        : Number.isInteger(variables.j) ? variables.j
+                          : null
+                ),
                 activeVariable: step.resultName || step.changedVariable || step.dataStructureState?.calculationInfo?.targetVar || null,
                 label: step.message || step.explanation || step.operation || step.event || 'Source-level step',
                 focusInfo: step.code || step.explanation || step.message || 'Modeled from source structure; not runtime instrumentation.',
