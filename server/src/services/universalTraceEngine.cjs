@@ -2774,6 +2774,7 @@ function generateTrace(
         : primaryArray ? 'array' : 'variables';
       return createEvent(index + 1, snapshot.event || 'runtime_line', {
         line: snapshot.line ?? null, algorithm: 'runtime_execution', dataStructure: structure,
+        callStack: Array.isArray(snapshot.callStack) ? snapshot.callStack.slice(-24) : [],
         variables, arrays, nodes, edges,
         array: primaryArray ? primaryArray[1] : [], arrayName: primaryArray ? primaryArray[0] : null,
         stack: stackEntry ? stackEntry[1] : undefined, queue: queueEntry ? queueEntry[1] : undefined,
