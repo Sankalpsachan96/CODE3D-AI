@@ -22,6 +22,7 @@ export function normalizeUniversalExecutionResult(result = {}) {
     traceReason: result.traceGeneric === true
       ? 'Only generic source-level events were detected; no reliable data-structure trace is available.'
       : result.traceReason || null,
-    steps: traceSupported && Array.isArray(result.steps) ? result.steps : [],
+    // Generic events are source-level models, not runtime instrumentation.
+    steps: !failed && Array.isArray(result.steps) ? result.steps : [],
   };
 }
