@@ -222,7 +222,8 @@ function HologramTerminalBoard({ outputStream = [] }) {
 export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
   if (!dataStructureState) return null;
 
-  const rawVars = dataStructureState.variables || {};
+  // Include parsed arrays alongside scalar variables so generic source models still have visible memory state.
+  const rawVars = { ...(dataStructureState.arrays || {}), ...(dataStructureState.variables || {}) };
   const varTypes = dataStructureState.variableTypes || {};
   const activeVar = dataStructureState.activeVariable || null;
   const calcInfo = dataStructureState.calculationInfo || null;
