@@ -19,6 +19,7 @@ export function normalizeUniversalExecutionResult(result = {}) {
     error: failed ? (errorDetails.join('\n') || `Execution ${String(status).toLowerCase()}.`) : null,
     executionTimeMs: Number.isFinite(executionTimeMs) && executionTimeMs >= 0 ? executionTimeMs : null,
     traceSupported,
+    traceMode: result.traceMode || (result.traceGeneric === true ? 'source-model' : (traceSupported ? 'pattern-model' : 'output-only')),
     traceReason: result.traceGeneric === true
       ? 'Only generic source-level events were detected; no reliable data-structure trace is available.'
       : result.traceReason || null,
