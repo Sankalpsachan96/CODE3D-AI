@@ -2725,6 +2725,33 @@ function generateTrace(
     };
   }
 
+  // Prefer captured runtime snapshots over source-derived guesses when available.
+  if (Array.isArray(executionResult.runtimeTrace) && executionResult.runtimeTrace.length) {
+    const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index) => {
+      const variables = snapshot.variables && typeof snapshot.variables === 'object' ? snapshot.variables : {};
+      const arrays = {};
+      for (const [name, value] of Object.entries(variables)) {
+        if (Array.isArray(value)) arrays[name] = value;
+      }
+      const stackEntry = Object.entries(variables).find(([name, value]) => /stack/i.test(name) && Array.isArray(value));
+      const queueEntry = Object.entries(variables).find(([name, value]) => /queue/i.test(name) && Array.isArray(value));
+      const primaryArray = Object.entries(arrays)[0];
+      return createEvent(index + 1, snapshot.event || 'runtime_line', {
+        line: snapshot.line ?? null,
+        algorithm: 'runtime_execution',
+        dataStructure: stackEntry ? 'stack' : queueEntry ? 'queue' : primaryArray ? 'array' : 'variables',
+        variables,
+        arrays,
+        array: primaryArray ? primaryArray[1] : [],
+        arrayName: primaryArray ? primaryArray[0] : null,
+        stack: stackEntry ? stackEntry[1] : undefined,
+        queue: queueEntry ? queueEntry[1] : undefined,
+        values: stackEntry ? stackEntry[1] : queueEntry ? queueEntry[1] : primaryArray ? primaryArray[1] : [],
+        message: snapshot.message || 'Runtime snapshot',
+      });
+    });
+    return { supported: true, generic: false, runtimeInstrumented: true, algorithm: 'runtime_execution', dataStructure: events[0]?.dataStructure || 'variables', stoppedAtError: false, events };
+  }
   /*
     Existing source-level
     out-of-bounds explanation.
