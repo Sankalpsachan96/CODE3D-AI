@@ -616,11 +616,13 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             traceKind: isGenericModel ? 'source-model' : 'pattern-model',
           };
         });
-        setTraceNotice(execution.traceSupported
-          ? 'Pattern-based 3D model • Output and status are from the real isolated runtime.'
-          : visualTrace.length
-            ? 'Universal source view • The 3D scene and Program State follow source-level events, not exact runtime instrumentation. Output remains real.'
-            : `Program ran successfully. ${execution.traceReason || 'No source-level events were available to visualize.'}`);
+        setTraceNotice(execution.traceMode === 'runtime-instrumented'
+          ? 'Runtime-instrumented trace • Captured program state and stdout come from the actual execution.'
+          : execution.traceSupported
+            ? 'Pattern-based 3D model • Program output/status are real; intermediate visualization is a supported pattern model.'
+            : visualTrace.length
+              ? 'Source-model 3D view • Program output/status are real; intermediate states are inferred from source and are not exact runtime snapshots.'
+              : `Program ran successfully. ${execution.traceReason || 'No source-level events were available to visualize.'}`);
       } else {
         const visualProblem = activeStriverProblem || selectedSample;
         visualTrace = attachRuntimeOutput(
