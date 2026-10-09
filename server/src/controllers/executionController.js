@@ -188,6 +188,7 @@ export async function runExecution(req, res) {
       executionTimeMs: execResult.executionTimeMs,
       complexity: execResult.complexity,
       traceSupported: universalTraceResult?.supported === true && universalTraceResult?.generic !== true && execResult.status === 'COMPLETED',
+      traceMode: universalTraceResult?.runtimeInstrumented === true ? 'runtime-instrumented' : (universalTraceResult?.generic === true ? 'source-model' : (universalTraceResult?.supported === true ? 'pattern-model' : 'output-only')),
       traceReason: universalTraceResult?.reason || (universalTraceResult?.generic ? 'No matching supported algorithm trace was found.' : null),
       traceGeneric: universalTraceResult?.generic === true,
       stderr: rawStderr || execResult.stderr || '',
