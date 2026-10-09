@@ -67,3 +67,36 @@ test('Universal Editor suppresses the DSA scene sample fallback when no trace ex
   assert.equal(resolveSceneState(null), FALLBACK_SCENE_STATE);
   assert.deepEqual(resolveSceneState({ type: 'array', values: [10, 20, 30, 40] }, { showFallback: false }).values, [10, 20, 30, 40]);
 });
+
+
+test('universal editor preserves successful generic source-model events for the state timeline', () => {
+  const steps = [
+    { step: 1, type: 'program_start', line: 1, variables: { total: 0 }, arrays: { nums: [2, 4, 6] }, message: 'Program started.' },
+    { step: 2, type: 'calculation', line: 2, variables: { total: 12 }, arrays: { nums: [2, 4, 6] }, message: 'Calculate total.' },
+  ];
+  const execution = normalizeUniversalExecutionResult({
+    success: true,
+    status: 'COMPLETED',
+    output: ['12'],
+    traceSupported: false,
+    traceGeneric: true,
+    steps,
+  });
+
+  assert.equal(execution.traceSupported, false);
+  assert.deepEqual(execution.steps, steps);
+  assert.equal(execution.steps[1].variables.total, 12);
+});
+
+test('failed universal execution never exposes generic trace events', () => {
+  const execution = normalizeUniversalExecutionResult({
+    success: false,
+    status: 'ERROR',
+    traceSupported: false,
+    steps: [{ step: 1, type: 'program_start' }],
+    stderr: 'compile error',
+  });
+
+  assert.deepEqual(execution.steps, []);
+  assert.equal(execution.error, 'compile error');
+});
