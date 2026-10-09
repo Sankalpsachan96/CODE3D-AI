@@ -5,13 +5,12 @@ import StepInspector from './StepInspector';
 import ComplexityPanel from './ComplexityPanel';
 import VariableInspector from './VariableInspector';
 
-export default function StatePanel({ currentStep, totalSteps, correctOutput = null, isAtEnd = false, complexity = null, algorithmName = 'Algorithm' }) {
+export default function StatePanel({ currentStep, totalSteps = 0, correctOutput = null, isAtEnd = false, complexity = null, algorithmName = 'Algorithm', executionStatus = 'IDLE', isUniversal = false }) {
   const { isBright } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragRef = useRef({ active: false, startX: 0, startY: 0, originX: 0, originY: 0 });
 
-  if (!currentStep) return null;
 
   const handlePointerDown = (event) => {
     if (!isExpanded || event.button !== 0) return;
@@ -47,7 +46,7 @@ export default function StatePanel({ currentStep, totalSteps, correctOutput = nu
     condition,
     explanation,
     aiHint,
-  } = currentStep;
+  } = currentStep || {};
 
   return (
     <div
@@ -84,7 +83,7 @@ export default function StatePanel({ currentStep, totalSteps, correctOutput = nu
           {isExpanded && <span className={`hidden sm:inline text-[9px] font-medium ${isBright ? 'text-slate-400' : 'text-slate-500'}`}>Drag header to move</span>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className={`text-[11px] font-mono ${isBright ? 'text-slate-500' : 'text-slate-400'}`}>Step <strong className={`font-bold ${isBright ? 'text-cyan-700' : 'text-cyan-400'}`}>{stepNumber}</strong> of {totalSteps}</span>
+          <span className={`text-[11px] font-mono ${isBright ? 'text-slate-500' : 'text-slate-400'}`}>{currentStep ? <>Step <strong className={`font-bold ${isBright ? 'text-cyan-700' : 'text-cyan-400'}`}>{stepNumber || 1}</strong> of {totalSteps}</> : <span className={`uppercase tracking-wide ${executionStatus === 'COMPLETED' ? 'text-emerald-500' : executionStatus === 'RUNNING' ? 'text-amber-500' : 'text-slate-500'}`}>{executionStatus}</span>}</span>
           <button type="button" onPointerDown={(event) => event.stopPropagation()} onClick={toggleExpanded} title={isExpanded ? 'Restore Program State' : 'Expand Program State'} aria-label={isExpanded ? 'Restore Program State' : 'Expand Program State'} className={`w-7 h-7 rounded-md flex items-center justify-center border transition ${isBright ? 'border-slate-300 text-slate-600 hover:bg-white hover:text-slate-900' : 'border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
             {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>
@@ -94,7 +93,30 @@ export default function StatePanel({ currentStep, totalSteps, correctOutput = nu
 
       <div className="p-3.5 space-y-3.5 flex-1 text-xs">
         {/* Step Inspector Component */}
-        <StepInspector currentStep={currentStep} totalSteps={totalSteps} />
+        {currentStep ? (
+          <StepInspector currentStep={currentStep} totalSteps={totalSteps} />
+        ) : (
+          <div className={`rounded-xl border p-3 ${isBright ? 'border-slate-200 bg-slate-50' : 'border-slate-800 bg-slate-950/60'}`}>
+            <div className={`text-xs font-semibold ${isBright ? 'text-slate-800' : 'text-slate-200'}`}>
+              {executionStatus === 'RUNNING' ? 'Program is running…' : executionStatus === 'COMPLETED' ? 'Execution completed' : 'Ready to inspect your program'}
+            </div>
+            <p className={`mt-1 text-[11px] leading-relaxed ${isBright ? 'text-slate-500' : 'text-slate-400'}`}>
+              {isUniversal
+                ? 'Run code to populate live output and available source-level or algorithm state. Unknown code will not be replaced with sample data.'
+                : 'Choose a program or run the current code to populate execution state.'}
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className={`rounded-lg border p-2 ${isBright ? 'border-slate-200 bg-white' : 'border-slate-800 bg-slate-900/70'}`}>
+                <div className="text-[9px] uppercase tracking-wider text-slate-500">Timeline</div>
+                <div className={`mt-1 font-mono text-sm font-semibold ${isBright ? 'text-slate-700' : 'text-slate-200'}`}>0 steps</div>
+              </div>
+              <div className={`rounded-lg border p-2 ${isBright ? 'border-slate-200 bg-white' : 'border-slate-800 bg-slate-900/70'}`}>
+                <div className="text-[9px] uppercase tracking-wider text-slate-500">State source</div>
+                <div className={`mt-1 text-xs font-semibold ${isBright ? 'text-cyan-700' : 'text-cyan-300'}`}>{isUniversal ? 'Your code' : 'Program trace'}</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Complexity & Big-O Curves Panel */}
         {complexity && (
