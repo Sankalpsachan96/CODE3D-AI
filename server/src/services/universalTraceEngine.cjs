@@ -3261,10 +3261,96 @@ function generateTrace(
   };
 }
 
+function estimateComplexity(code, trace = {}, execution = {}) {
+  const source = String(code || '');
+  const algorithm = String(trace.algorithm || inferAlgorithm(source) || 'unknown').toLowerCase();
+  const name = algorithm.replace(/_/g, ' ');
+  const known = {
+    bubble_sort: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    selection_sort: { best: 'O(n²)', average: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    insertion_sort: { best: 'O(n)', average: 'O(n²)', worst: 'O(n²)', space: 'O(1)' },
+    linear_search: { best: 'O(1)', average: 'O(n)', worst: 'O(n)', space: 'O(1)' },
+    binary_search: { best: 'O(1)', average: 'O(log n)', worst: 'O(log n)', space: 'O(1)' },
+    bfs: { best: 'O(V + E)', average: 'O(V + E)', worst: 'O(V + E)', space: 'O(V)' },
+    dfs: { best: 'O(V + E)', average: 'O(V + E)', worst: 'O(V + E)', space: 'O(V)' },
+    array_traversal: { best: 'O(n)', average: 'O(n)', worst: 'O(n)', space: 'O(1)' },
+    stack_operations: { best: 'O(1) per operation', average: 'O(1) per operation', worst: 'O(1) per operation', space: 'O(n)' },
+    queue_operations: { best: 'O(1) per operation', average: 'O(1) per operation', worst: 'O(1) per operation', space: 'O(n)' },
+    linked_list: { best: 'O(n)', average: 'O(n)', worst: 'O(n)', space: 'O(n)' },
+  };
+  if (/\b(?:quick\s*sort|quicksort)\b/i.test(source)) known.quick_sort = { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n²)', space: 'O(log n)' };
+  if (/\b(?:merge\s*sort|mergesort)\b/i.test(source)) known.merge_sort = { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n log n)', space: 'O(n)' };
+  if (/\b(?:heap\s*sort|heapsort)\b/i.test(source)) known.heap_sort = { best: 'O(n log n)', average: 'O(n log n)', worst: 'O(n log n)', space: 'O(1)' };
+
+  let metrics = known[algorithm] || null;
+  let confidence = metrics ? 'recognized-pattern' : 'source-estimate';
+  if (algorithm === 'tree' || /\b(?:tree|root)\b/.test(source)) {
+    if (/\b(?:bfs|dfs|traversal|inorder|preorder|postorder)\b/i.test(source)) {
+      metrics = { best: 'O(n)', average: 'O(n)', worst: 'O(n)', space: /\b(?:recursive|recursion|inorder|preorder|postorder)\b/i.test(source) ? 'O(h)' : 'O(n)' };
+      confidence = 'recognized-pattern';
+    }
+  }
+  if (!metrics) {
+    const codeWithoutComments = source
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\/\/[^\r\n]*/g, ' ')
+      .replace(/^\s*#.*$/gm, ' ');
+    let depth = 0;
+    let maxDepth = 0;
+    for (const line of codeWithoutComments.split(/\r?\n/)) {
+      const open = (line.match(/\{/g) || []).length;
+      const close = (line.match(/\}/g) || []).length;
+      const loops = (line.match(/\b(?:for|while)\b/g) || []).length;
+      depth = Math.max(0, depth - close);
+      if (loops) maxDepth = Math.max(maxDepth, depth + loops);
+      depth += open;
+    }
+    const pythonLoops = [...codeWithoutComments.matchAll(/^(\s*)\b(?:for|while)\b/gm)].map((match) => match[1].length);
+    if (pythonLoops.length) {
+      const nestedPython = Math.max(...pythonLoops.map((indent) => 1 + pythonLoops.filter((other) => other > indent).length));
+      maxDepth = Math.max(maxDepth, nestedPython);
+    }
+    const declaredFunctions = [...codeWithoutComments.matchAll(/\b(?:def\s+|(?:void|bool|char|short|int|long|float|double|auto|[A-Z]\w*(?:\s*<[^>]+>)?)\s+)(\w+)\s*\(/g)].map((match) => match[1]);
+    const recursive = declaredFunctions.some((functionName) => {
+      const escaped = functionName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return [...codeWithoutComments.matchAll(new RegExp(`\\b${escaped}\\s*\\(`, 'g'))].length > 1;
+    });
+    if (maxDepth > 0) {
+      const order = maxDepth === 1 ? 'O(n)' : maxDepth === 2 ? 'O(n²)' : `O(n^${maxDepth})`;
+      metrics = { best: order, average: order, worst: order, space: /\b(?:new\s+\w+\s*\[|vector\s*<|\[\s*\]|\.push\s*\(|\.append\s*\()/i.test(codeWithoutComments) ? 'O(n)' : 'O(1)' };
+    } else if (recursive) {
+      metrics = { best: 'Unknown', average: 'Unknown', worst: 'Unknown', space: 'Unknown' };
+      confidence = 'unavailable';
+    } else {
+      metrics = { best: 'O(1)', average: 'O(1)', worst: 'O(1)', space: 'O(1)' };
+    }
+  }
+  const events = Array.isArray(trace.events) ? trace.events : [];
+  const sourceLines = [...new Set(events.map((event) => event.line).filter(Number.isInteger))];
+  return {
+    algorithm,
+    time: { best: metrics.best, average: metrics.average, worst: metrics.worst },
+    space: metrics.space,
+    confidence,
+    note: confidence === 'recognized-pattern'
+      ? 'Asymptotic estimate for the recognized algorithm; runtime and step counts below are measured for this run.'
+      : confidence === 'source-estimate'
+        ? 'Estimated from visible loop structure; calls and input-dependent recursion may not be represented.'
+        : 'Could not infer Big-O safely from this source. Run measurements are still available below.',
+    observed: {
+      traceSteps: events.length,
+      mappedSourceLines: sourceLines.length,
+      executionTimeMs: Number.isFinite(Number(execution.executionTime)) ? Number(execution.executionTime) : null,
+      stdoutLines: String(execution.output || '').split(/\r?\n/).filter((line) => line !== '').length,
+    },
+  };
+}
+
 /* =========================================================
    EXPORT
 ========================================================= */
 
 module.exports = {
   generateTrace,
+  estimateComplexity,
 };
