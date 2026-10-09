@@ -566,16 +566,42 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       if (universalOnly) {
         // Only expose a modeled DSA trace when the backend reports an explicit
         // supported pattern. Generic source-derived steps are not runtime traces.
-        visualTrace = execution.traceSupported
-          ? execution.steps.map((step, index) => ({
-              ...step,
-              stepNumber: step.stepNumber || step.step || index + 1,
-              lineNumber: step.lineNumber || step.line || null,
-            }))
-          : [];
+        visualTrace = execution.steps.map((step, index) => {
+          const lineNumber = step.lineNumber || step.line || null;
+          const variables = step.variables || step.dataStructureState?.variables || {};
+          const arrays = step.arrays || step.dataStructureState?.arrays || {};
+          const isGenericModel = !execution.traceSupported;
+          const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value));
+          const dataStructureState = isGenericModel
+            ? {
+                ...(step.dataStructureState || {}),
+                type: 'universal-execution',
+                variables,
+                arrays,
+                values: arrayEntry?.[1] || step.dataStructureState?.values || [],
+                arrayName: arrayEntry?.[0] || step.dataStructureState?.arrayName || null,
+                activeIndex: step.index ?? step.dataStructureState?.activeIndex ?? null,
+                activeVariable: step.resultName || step.changedVariable || null,
+                label: step.message || step.type || 'Source-level step',
+                focusInfo: step.code || step.message || 'Modeled from source structure; not runtime instrumentation.',
+              }
+            : step.dataStructureState;
+          return {
+            ...step,
+            stepNumber: step.stepNumber || step.step || index + 1,
+            lineNumber,
+            variables,
+            explanation: step.explanation || step.message || step.code || 'Source-level execution event.',
+            dataStructureState,
+            eventType: step.eventType || step.type || 'CODE_STEP',
+            traceKind: isGenericModel ? 'source-model' : 'pattern-model',
+          };
+        });
         setTraceNotice(execution.traceSupported
-          ? 'Algorithm visualization is a pattern-based model; program output and status come from the isolated runtime. Complexity is not inferred for arbitrary editor code.'
-          : `3D execution tracing is not supported for this code. ${execution.traceReason || 'The program still ran normally.'} Complexity is not inferred for arbitrary editor code.`);
+          ? 'Pattern-based 3D model • Output and status are from the real isolated runtime.'
+          : visualTrace.length
+            ? 'Universal source view • The 3D scene and Program State follow source-level events, not exact runtime instrumentation. Output remains real.'
+            : `Program ran successfully. ${execution.traceReason || 'No source-level events were available to visualize.'}`);
       } else {
         const visualProblem = activeStriverProblem || selectedSample;
         visualTrace = attachRuntimeOutput(
