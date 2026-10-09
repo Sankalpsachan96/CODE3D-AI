@@ -128,3 +128,32 @@ test('representative DSA trace coverage: stack, queue, linked list, sorting and 
     assert.deepEqual(final[item.stateField], item.expected, item.name + ': expected final state');
   }
 });
+
+
+test('JavaScript array literals produce specialized array traversal traces', () => {
+  const code = 'const arr = [10, 20, 30]; for (let i = 0; i < arr.length; i++) { console.log(arr[i]); }';
+  const result = universalTrace.generateTrace(code, 'javascript', {
+    success: true,
+    output: '10\n20\n30\n',
+  });
+
+  assert.equal(result.supported, true);
+  assert.notEqual(result.generic, true);
+  assert.equal(result.algorithm, 'array_traversal');
+  assert.deepEqual(result.events[0].array, [10, 20, 30]);
+  assert.deepEqual(result.events.filter((event) => event.type === 'visit').map((event) => event.value), [10, 20, 30]);
+});
+
+test('Python list literals produce specialized indexed traversal traces', () => {
+  const code = 'arr = [10, 20, 30]\\nfor i in range(len(arr)):\\n    print(arr[i])';
+  const result = universalTrace.generateTrace(code, 'python', {
+    success: true,
+    output: '10\n20\n30\n',
+  });
+
+  assert.equal(result.supported, true);
+  assert.notEqual(result.generic, true);
+  assert.equal(result.algorithm, 'array_traversal');
+  assert.deepEqual(result.events[0].array, [10, 20, 30]);
+  assert.deepEqual(result.events.filter((event) => event.type === 'visit').map((event) => event.value), [10, 20, 30]);
+});
