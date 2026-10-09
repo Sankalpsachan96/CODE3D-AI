@@ -75,20 +75,20 @@ function detectArrayFromCode(code) {
     {
       // Python lists and JavaScript arrays: arr = [1, 2, 3] / const arr = [1, 2, 3].
       regex:
-        /(?:^|[;\n])\s*(?:(?:const|let|var)\s+)?(\w+)\s*(?::\s*(?:list|List)\s*\[[^\]]+\])?\s*=\s*\[([^\]]+)\]/im,
+        /(?:^|[;\n])\s*(?:(?:const|let|var)\s+)?(\w+)\s*(?::\s*(?:list|List)\s*\[[^\]]+\])?\s*=\s*\[([^\]]*)\]/im,
       type: "list",
     },
     {
       // Java-style declarations put brackets before the variable name.
       // Example: int[] arr = {1, 2, 3};
       regex:
-        /(?:int|float|double|char|long|short)\s*(?:\[\s*\]\s*)+(\w+)\s*=\s*\{([^}]+)\}/i,
+        /(?:int|float|double|char|long|short)\s*(?:\[\s*\]\s*)+(\w+)\s*=\s*\{([^}]*)\}/i,
       type: "java-array",
     },
     {
       // C-style declarations: int arr[] = {1, 2, 3};
       regex:
-        /(?:int|float|double|char|long|short)\s+(\w+)\s*\[\s*(\d*)\s*\]\s*=\s*\{([^}]+)\}/i,
+        /(?:int|float|double|char|long|short)\s+(\w+)\s*\[\s*(\d*)\s*\]\s*=\s*\{([^}]*)\}/i,
       type: "array",
     },
     {
@@ -159,8 +159,8 @@ function detectBubbleSort(code) {
   }
 
   const nested =
-    /for\s*\([^)]*i[^)]*\)/i.test(code) &&
-    /for\s*\([^)]*j[^)]*\)/i.test(code);
+    ((/for\s*\([^)]*i[^)]*\)/i.test(code) && /for\s*\([^)]*j[^)]*\)/i.test(code)) ||
+      (/\bfor\s+(?:int\s+)?i\s+(?:in|=)/i.test(code) && /\bfor\s+(?:int\s+)?j\s+(?:in|=)/i.test(code)));
 
   const comparison =
     /\[\s*j\s*\]\s*>\s*\w+\s*\[\s*j\s*\+\s*1\s*\]/i.test(code) ||
@@ -231,6 +231,36 @@ function generateBubbleSortTrace(code) {
     arrayName: info.name,
     message: "Bubble sort completed.",
   }));
+
+  const sourceLines = code.split(/\r?\n/);
+  const findSourceLine = (predicate) => {
+    const index = sourceLines.findIndex((line) => predicate(line.trim()));
+    return index < 0 ? null : index + 1;
+  };
+  const declarationLine = findSourceLine((line) =>
+    line.includes(info.name) && /=\s*(?:new\s+\w+\s*\[|\{|\[)/.test(line)
+  );
+  const compareLine = findSourceLine((line) =>
+    /\bif\b/.test(line) && /\[\s*j\s*\]/.test(line) && /\[\s*j\s*\+\s*1\s*\]/.test(line)
+  );
+  const swapLine = findSourceLine((line) =>
+    /\bswap\s*\(/.test(line) ||
+    (line.includes(info.name) && /\[\s*j\s*(?:\+\s*1)?\s*\]\s*=/.test(line))
+  );
+  const outputLine = findSourceLine((line) =>
+    (/\b(?:print|println|printf|console\.log)\s*\(/.test(line) || /\bcout\s*<</.test(line)) && line.includes(info.name)
+  );
+
+  const lineForEvent = (event) => {
+    if (event.type === "initial_state") return declarationLine;
+    if (event.type === "compare") return compareLine;
+    if (event.type === "swap") return swapLine || compareLine;
+    if (event.type === "complete") return outputLine || compareLine || declarationLine;
+    return null;
+  };
+  for (const event of events) {
+    event.line = lineForEvent(event);
+  }
 
   return {
     supported: true,
@@ -1098,6 +1128,94 @@ function generateLinkedListTrace(code) {
     stoppedAtError: false,
     events,
   };
+}
+
+/*
+ * Pattern traces are models, not runtime snapshots. Still, every modeled
+ * operation should point to a real source statement so the editor can keep
+ * the source pane synchronized with the 3D state. These anchors deliberately
+ * stay within the recognized pattern and never affect execution output.
+ */
+function mapModeledSourceLines(code, trace) {
+  if (!trace?.supported || trace.runtimeInstrumented || !Array.isArray(trace.events)) return trace;
+
+  const lines = String(code || '').split(/\r?\n/);
+  const lineOf = (pattern, fromEnd = false) => {
+    const indices = lines.map((line, index) => pattern.test(line) ? index : -1).filter((index) => index >= 0);
+    if (!indices.length) return null;
+    return (fromEnd ? indices[indices.length - 1] : indices[0]) + 1;
+  };
+  const array = getPrimaryArray(code);
+  const identifier = (value) => value ? String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&') : '[\\w$]+';
+  const arrayName = identifier(array?.name);
+  const declarationLine = lineOf(new RegExp(`\\b${arrayName}\\b.*(?:=|\\{)`)) || lineOf(/\b(?:stack|queue)\s*</i) || lineOf(/\bnew\s+Node\s*\(/i);
+  const outputLine = lineOf(/\b(?:print|println|printf|cout|console\.log)\b/);
+  const returnLine = lineOf(/\breturn\b/);
+  const loopLine = lineOf(/\b(?:for|while)\b/);
+  const conditionLine = lineOf(/\b(?:if|while)\b.*(?:==|!=|<=|>=|<|>|\[)/);
+  const mutationLine = lineOf(new RegExp(`(?:${arrayName}\\s*\\[[^\\]]+\\]\\s*=|\\bswap\\s*\\(|\\+=|\\.\\s*(?:push|pop)\\s*\\()`, 'i'));
+  const executableLine = lineOf(/\S/);
+  const linkedAllocations = [...String(code).matchAll(/new\s+Node\s*\(/gi)].map((match) => String(code.slice(0, match.index)).split(/\r?\n/).length);
+  let allocationIndex = 0;
+  const methodLines = new Map();
+  const methodName = trace.events.find((event) => event.structureName)?.structureName;
+  if (methodName) {
+    const methodPattern = new RegExp(`\\b${identifier(methodName)}\\s*\\.\\s*(push|pop|top|empty|size|front|back)\\s*\\([^)]*\\)`, 'gi');
+    for (const match of String(code).matchAll(methodPattern)) {
+      const method = match[1].toLowerCase();
+      const occurrences = methodLines.get(method) || [];
+      occurrences.push(String(code.slice(0, match.index)).split(/\r?\n/).length);
+      methodLines.set(method, occurrences);
+    }
+  }
+  const methodOccurrence = new Map();
+  const nextMethodLine = (methods) => {
+    for (const method of methods) {
+      const occurrences = methodLines.get(method) || [];
+      const index = methodOccurrence.get(method) || 0;
+      if (occurrences[index]) {
+        methodOccurrence.set(method, index + 1);
+        return occurrences[index];
+      }
+    }
+    return null;
+  };
+
+  for (const event of trace.events) {
+    if (Number.isInteger(event.line) && event.line >= 1 && event.line <= lines.length) continue;
+    let line = null;
+    switch (event.type) {
+      case 'initial_state': line = declarationLine; break;
+      case 'compare':
+        line = trace.algorithm === 'array_traversal' ? loopLine : conditionLine || loopLine;
+        break;
+      case 'visit': line = lineOf(new RegExp(`\\b${arrayName}\\s*\\[`)) || loopLine || outputLine; break;
+      case 'range': case 'move_left': case 'move_right': line = conditionLine || loopLine; break;
+      case 'found': line = conditionLine || outputLine || returnLine; break;
+      case 'not_found': line = returnLine || outputLine || conditionLine || loopLine; break;
+      case 'select':
+        line = lineOf(/\b(?:key|minIndex|min_idx|minimum)\b\s*=/i) || loopLine || conditionLine;
+        break;
+      case 'swap': case 'shift': case 'insert':
+        if (trace.algorithm === 'linked_list' && event.type === 'insert') {
+          line = linkedAllocations[allocationIndex++] || lineOf(/\bnew\s+Node\s*\(/i);
+        } else {
+          line = mutationLine || conditionLine || loopLine;
+        }
+        break;
+      case 'link': line = lineOf(/(?:->|\.)\s*next\s*=/i) || lineOf(/\bnext\b/i); break;
+      case 'push': case 'pop': case 'peek':
+        line = nextMethodLine(event.type === 'push' ? ['push'] : event.type === 'pop' ? ['pop'] : ['top', 'empty', 'size']) || mutationLine;
+        break;
+      case 'enqueue': case 'dequeue': case 'front': case 'back':
+        line = nextMethodLine(event.type === 'enqueue' ? ['push'] : event.type === 'dequeue' ? ['pop'] : [event.type, 'empty', 'size']) || mutationLine;
+        break;
+      case 'complete': line = outputLine || returnLine || mutationLine || loopLine || declarationLine; break;
+      default: line = conditionLine || mutationLine || loopLine || declarationLine;
+    }
+    event.line = line || executableLine;
+  }
+  return trace;
 }
 
 /* =========================================================
@@ -2739,6 +2857,33 @@ function generateTrace(
       const primaryArray = Object.entries(arrays)[0];
       const nodes = [];
       const edges = [];
+      const graphEntry = Object.entries(variables).find(([name, value]) =>
+        /graph|adjacency|adj_list/i.test(name) && value && typeof value === 'object' && !Array.isArray(value)
+      ) || Object.entries(variables).find(([name, value]) =>
+        /graph|adjacency|adj_list/i.test(name) && Array.isArray(value) && value.some(Array.isArray)
+      );
+      if (graphEntry) {
+        const graph = graphEntry[1];
+        const adjacency = Array.isArray(graph)
+          ? graph.map((neighbors, vertex) => [String(vertex), neighbors])
+          : Object.entries(graph);
+        const vertexIds = new Map(adjacency.map(([vertex], index) => [String(vertex), index]));
+        for (const [vertex] of adjacency) {
+          const id = vertexIds.get(String(vertex));
+          nodes.push({ id, label: String(vertex).slice(0, 80), value: vertex, nodeType: 'vertex' });
+        }
+        for (const [vertex, neighbors] of adjacency) {
+          if (!Array.isArray(neighbors)) continue;
+          const from = vertexIds.get(String(vertex));
+          for (const neighbor of neighbors.slice(0, 100)) {
+            const target = Array.isArray(neighbor) ? neighbor[0] : neighbor;
+            const to = vertexIds.get(String(target));
+            if (to !== undefined) {
+              edges.push({ from, to, ...(Array.isArray(neighbor) && neighbor.length > 1 ? { weight: neighbor[1] } : {}) });
+            }
+          }
+        }
+      }
       const objectIds = new WeakMap();
       const relationKeys = new Set(['next', 'left', 'right', 'child', 'children', 'neighbors', 'adjacent']);
       const addNode = (object, relation = null, depth = 0) => {
@@ -2764,12 +2909,12 @@ function generateTrace(
         }
         return id;
       };
-      for (const value of Object.values(variables)) {
-        if (value && typeof value === 'object' && !Array.isArray(value)) addNode(value);
+      for (const [name, value] of Object.entries(variables)) {
+        if (name !== graphEntry?.[0] && value && typeof value === 'object' && !Array.isArray(value)) addNode(value);
       }
       const hasTreeEdges = edges.some((edge) => ['left', 'right', 'child', 'children'].includes(String(edge.label).toLowerCase()));
       const hasPointerEdges = edges.some((edge) => String(edge.label).toLowerCase() === 'next');
-      const structure = stackEntry ? 'stack' : queueEntry ? 'queue'
+      const structure = stackEntry ? 'stack' : queueEntry ? 'queue' : graphEntry ? 'graph'
         : nodes.length && edges.length ? (hasTreeEdges ? 'tree' : hasPointerEdges ? 'linked_list' : 'graph')
         : primaryArray ? 'array' : 'variables';
       return createEvent(index + 1, snapshot.event || 'runtime_line', {
@@ -2857,23 +3002,11 @@ function generateTrace(
     They are used only after the real
     executor reports success.
   */
-  if (detectStack(code)) {
-    return generateStackTrace(
-      code
-    );
-  }
+  if (detectStack(code)) return mapModeledSourceLines(code, generateStackTrace(code));
 
-  if (detectQueue(code)) {
-    return generateQueueTrace(
-      code
-    );
-  }
+  if (detectQueue(code)) return mapModeledSourceLines(code, generateQueueTrace(code));
 
-  if (detectLinkedList(code)) {
-    return generateLinkedListTrace(
-      code
-    );
-  }
+  if (detectLinkedList(code)) return mapModeledSourceLines(code, generateLinkedListTrace(code));
 
   if (detectBubbleSort(code)) {
     return generateBubbleSortTrace(
@@ -2881,35 +3014,15 @@ function generateTrace(
     );
   }
 
-  if (detectSelectionSort(code)) {
-    return generateSelectionSortTrace(
-      code
-    );
-  }
+  if (detectSelectionSort(code)) return mapModeledSourceLines(code, generateSelectionSortTrace(code));
 
-  if (detectInsertionSort(code)) {
-    return generateInsertionSortTrace(
-      code
-    );
-  }
+  if (detectInsertionSort(code)) return mapModeledSourceLines(code, generateInsertionSortTrace(code));
 
-  if (detectBinarySearch(code)) {
-    return generateBinarySearchTrace(
-      code
-    );
-  }
+  if (detectBinarySearch(code)) return mapModeledSourceLines(code, generateBinarySearchTrace(code));
 
-  if (detectLinearSearch(code)) {
-    return generateLinearSearchTrace(
-      code
-    );
-  }
+  if (detectLinearSearch(code)) return mapModeledSourceLines(code, generateLinearSearchTrace(code));
 
-  if (detectArrayTraversal(code)) {
-    return generateArrayTraversalTrace(
-      code
-    );
-  }
+  if (detectArrayTraversal(code)) return mapModeledSourceLines(code, generateArrayTraversalTrace(code));
 
   /*
     UNIVERSAL FALLBACK:

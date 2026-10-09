@@ -57,6 +57,20 @@ test('Judge0 maps all five editor languages and sends source plus stdin unchange
   }
 });
 
+test('Judge0 submits empty stdin unchanged for all five editor languages', async () => {
+  for (const language of ['c', 'cpp', 'java', 'javascript', 'python']) {
+    const result = await executor.executeWithJudge0(language, `// ${language}`, '', {
+      judge0Url: 'https://judge0.example',
+      fetchImpl: judge0Fetch(finalResult(3, { stdout: 'ok\n' }), (payload) => {
+        assert.equal(payload.stdin, '', `${language} should receive empty stdin unchanged`);
+      }),
+      pollIntervalMs: 0,
+    });
+    assert.equal(result.success, true, `${language} should accept an empty stdin string`);
+    assert.equal(result.output, 'ok\n');
+  }
+});
+
 test('Python Judge0 execution returns real line snapshots without changing stdout', async () => {
   const marker = '__CODE3D_RUNTIME_TRACE__';
   const snapshots = [{ step: 1, line: 1, event: 'runtime_line', variables: { value: 7 } }];
