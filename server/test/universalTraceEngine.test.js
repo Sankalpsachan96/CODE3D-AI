@@ -192,3 +192,39 @@ test('captured runtime object pointers become connected 3D nodes', () => {
   assert.deepEqual(result.events[0].nodes.map((node) => node.value), [10, 20]);
   assert.deepEqual(result.events[0].edges.map((edge) => [edge.from, edge.to, edge.label]), [[0, 1, 'next']]);
 });
+
+
+test('non-instrumented C, C++, Java and JavaScript traces are never labelled as exact runtime snapshots', () => {
+  const cases = [
+    ['c', 'int x = 10; x = x + 5; printf("%d\\n", x);'],
+    ['cpp', 'int x = 10; x = x + 5; std::cout << x;'],
+    ['java', 'class Main { void run() { int x = 10; x = x + 5; System.out.println(x); } }'],
+    ['javascript', 'let x = 10; x = x + 5; console.log(x);'],
+  ];
+
+  for (const [language, code] of cases) {
+    const result = universalTrace.generateTrace(code, language, {
+      success: true,
+      output: '15',
+    });
+    assert.notEqual(result.runtimeInstrumented, true, language + ' must not claim runtime instrumentation without captured snapshots');
+  }
+});
+
+test('captured runtime values override source-model estimates', () => {
+  const result = universalTrace.generateTrace(
+    'let x = 10;\\nx = x + 5;\\nconsole.log(x);',
+    'javascript',
+    {
+      success: true,
+      output: '15',
+      runtimeTrace: [
+        { step: 1, line: 1, event: 'runtime_line', variables: { x: 10 } },
+        { step: 2, line: 2, event: 'runtime_line', variables: { x: 15 } },
+      ],
+    },
+  );
+
+  assert.equal(result.runtimeInstrumented, true);
+  assert.deepEqual(result.events.map((event) => event.variables.x), [10, 15]);
+});
