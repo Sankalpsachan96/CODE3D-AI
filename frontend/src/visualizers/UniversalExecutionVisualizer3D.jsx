@@ -222,11 +222,36 @@ function HologramTerminalBoard({ outputStream = [] }) {
 export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
   if (!dataStructureState) return null;
 
-  // Include parsed arrays alongside scalar variables so generic source models still have visible memory state.
-  const arrayEntries = Object.entries(dataStructureState.arrays || {})
-    .filter(([, value]) => Array.isArray(value))
+  // Preserve the detected DSA type when rendering a generic trace.
+  const structureType = String(dataStructureState.structureType || dataStructureState.type || 'array')
+    .toLowerCase().replace(/_/g, '-');
+  const suppliedValues = Array.isArray(dataStructureState.values)
+    ? dataStructureState.values
+    : Array.isArray(dataStructureState.array) ? dataStructureState.array : [];
+  const suppliedArrays = Object.entries(dataStructureState.arrays || {})
+    .filter(([, value]) => Array.isArray(value));
+  const arrayEntries = (suppliedArrays.length
+    ? suppliedArrays
+    : suppliedValues.length && ['array', 'vector', 'stack', 'queue', 'linked-list', 'linkedlist'].includes(structureType)
+      ? [[dataStructureState.arrayName || structureType, suppliedValues]]
+      : [])
     .slice(0, 4)
     .map(([name, values]) => [name, values.slice(0, 16)]);
+  const graphNodes = Array.isArray(dataStructureState.nodes) ? dataStructureState.nodes.slice(0, 24) : [];
+  const graphEdges = Array.isArray(dataStructureState.edges) ? dataStructureState.edges.slice(0, 48) : [];
+  const graphNodePositions = graphNodes.map((node, index) => {
+    const angle = (index / Math.max(1, graphNodes.length)) * Math.PI * 2;
+    const radius = graphNodes.length <= 2 ? 1.4 : Math.max(1.8, graphNodes.length * 0.22);
+    return [Math.cos(angle) * radius, 0.65 + (index % 3) * 0.12, Math.sin(angle) * radius];
+  });
+  const nodeIndex = (value) => {
+    if (Number.isInteger(value)) return value;
+    const id = typeof value === 'object' && value !== null ? (value.id ?? value.value ?? value.label) : value;
+    return graphNodes.findIndex((node, index) => {
+      const nodeId = typeof node === 'object' && node !== null ? (node.id ?? node.value ?? node.label) : node;
+      return String(nodeId) === String(id) || String(index) === String(id);
+    });
+  };
   const rawVars = dataStructureState.variables || {};
   const varTypes = dataStructureState.variableTypes || {};
   const activeVar = dataStructureState.activeVariable || null;
@@ -278,6 +303,21 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         />
       </mesh>
 
+      {/* Show a visible 3D execution object even when no variables or structures can be inferred. */}
+      {arrayEntries.length === 0 && graphNodes.length === 0 && varEntries.length === 0 && !calcInfo && !condInfo && (
+        <Float speed={1.5} floatIntensity={0.12}>
+          <group position={[0, 0.9, 0]}>
+            <mesh>
+              <icosahedronGeometry args={[0.8, 1]} />
+              <meshStandardMaterial color="#0891b2" emissive="#0e7490" emissiveIntensity={1.2} wireframe />
+            </mesh>
+            <Text position={[0, -1.15, 0]} fontSize={0.22} color="#67e8f9" anchorX="center" anchorY="middle" maxWidth={5}>
+              {String(dataStructureState.label || dataStructureState.event || dataStructureState.operation || 'Execution state').slice(0, 80)}
+            </Text>
+          </group>
+        </Float>
+      )}
+
       {/* Floating ALU Expression Reactor */}
       {calcInfo && <AluReactor3D calculationInfo={calcInfo} />}
 
@@ -297,14 +337,14 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         return (
           <group key={`memory-array-${arrayName}`} position={[-rowWidth / 2, 0, rowZ]}>
             <Text position={[0, 1.15, 0]} fontSize={0.18} color="#67e8f9" anchorX="left" anchorY="middle" fontWeight="bold">
-              {`${arrayName}[] • ${values.length} cells`}
+              {`${arrayName} • ${values.length} items • ${structureType.toUpperCase()}`}
             </Text>
             {visibleValues.map((value, index) => {
               const active = activeIndex === index;
               const height = typeof value === 'number' ? Math.max(0.45, Math.min(1.7, Math.abs(value) / 25 + 0.45)) : 0.65;
               const color = active ? '#fbbf24' : '#0891b2';
               return (
-                <group key={`${arrayName}-${index}`} position={[index * cellSpacing, 0, 0]}>
+                <group key={`${arrayName}-${index}`} position={(structureType === 'stack' || structureType === 'linked-list' || structureType === 'linkedlist') ? [0, index * 0.9, 0] : [index * cellSpacing, 0, 0]}>
                   <mesh position={[0, height / 2, 0]}>
                     <boxGeometry args={[0.88, height, 0.82]} />
                     <meshStandardMaterial color={color} emissive={active ? '#d97706' : '#0e7490'} emissiveIntensity={active ? 1.2 : 0.35} metalness={0.45} roughness={0.25} />
@@ -322,6 +362,40 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
                 </group>
               );
             })}
+          </group>
+        );
+      })}
+
+      {/* Graph/tree snapshots supplied by the trace engine render as connected 3D nodes. */}
+      {graphEdges.map((edge, index) => {
+        const from = nodeIndex(Array.isArray(edge) ? edge[0] : (edge.from ?? edge.source ?? edge.u));
+        const to = nodeIndex(Array.isArray(edge) ? edge[1] : (edge.to ?? edge.target ?? edge.v));
+        if (from < 0 || to < 0 || !graphNodePositions[from] || !graphNodePositions[to]) return null;
+        const points = new Float32Array([...graphNodePositions[from], ...graphNodePositions[to]]);
+        return (
+          <lineSegments key={`graph-edge-${index}`}>
+            <bufferGeometry>
+              <bufferAttribute attach="attributes-position" args={[points, 3]} />
+            </bufferGeometry>
+            <lineBasicMaterial color="#22d3ee" transparent opacity={0.8} />
+          </lineSegments>
+        );
+      })}
+      {graphNodes.map((node, index) => {
+        const position = graphNodePositions[index];
+        const label = typeof node === 'object' && node !== null
+          ? (node.label ?? node.value ?? node.id ?? index)
+          : node;
+        const active = dataStructureState.activeIndex === index || String(dataStructureState.currentNode ?? '') === String(label);
+        return (
+          <group key={`graph-node-${index}`} position={position}>
+            <mesh>
+              <icosahedronGeometry args={[0.32, 1]} />
+              <meshStandardMaterial color={active ? '#fbbf24' : '#0891b2'} emissive={active ? '#d97706' : '#0e7490'} emissiveIntensity={active ? 1.4 : 0.5} metalness={0.35} roughness={0.25} />
+            </mesh>
+            <Text position={[0, 0.48, 0]} fontSize={0.2} color={active ? '#fef08a' : '#e2e8f0'} anchorX="center" anchorY="middle" fontWeight="bold">
+              {String(label).slice(0, 18)}
+            </Text>
           </group>
         );
       })}

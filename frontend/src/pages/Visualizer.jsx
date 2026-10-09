@@ -577,27 +577,32 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           );
           const isGenericModel = !execution.traceSupported;
           const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value));
-          const dataStructureState = isGenericModel
-            ? {
-                ...(step.dataStructureState || {}),
-                type: 'universal-execution',
-                variables,
-                arrays,
-                outputStream: actualOutput,
-                values: arrayEntry?.[1] || step.dataStructureState?.values || [],
-                arrayName: arrayEntry?.[0] || step.dataStructureState?.arrayName || null,
-                activeIndex: step.index ?? step.dataStructureState?.activeIndex ?? (
-                  Number.isInteger(variables.i) ? variables.i
-                    : Number.isInteger(variables.index) ? variables.index
-                      : Number.isInteger(variables.idx) ? variables.idx
-                        : Number.isInteger(variables.j) ? variables.j
-                          : null
-                ),
-                activeVariable: step.resultName || step.changedVariable || step.dataStructureState?.calculationInfo?.targetVar || null,
-                label: step.message || step.explanation || step.operation || step.event || 'Source-level step',
-                focusInfo: step.code || step.explanation || step.message || 'Modeled from source structure; not runtime instrumentation.',
-              }
-            : step.dataStructureState;
+          const sourceState = step.dataStructureState || {};
+          const structureType = String(sourceState.structureType || sourceState.type || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
+          const dataStructureState = {
+            ...sourceState,
+            type: isGenericModel ? 'universal-execution' : (sourceState.type || 'array'),
+            structureType,
+            variables,
+            arrays,
+            nodes: step.nodes || sourceState.nodes || [],
+            edges: step.edges || sourceState.edges || [],
+            stack: step.stack || sourceState.stack || (structureType === 'stack' ? sourceState.values : undefined),
+            queue: step.queue || sourceState.queue || (structureType === 'queue' ? sourceState.values : undefined),
+            outputStream: actualOutput,
+            values: arrayEntry?.[1] || sourceState.values || sourceState.array || [],
+            arrayName: arrayEntry?.[0] || sourceState.arrayName || null,
+            activeIndex: step.index ?? sourceState.activeIndex ?? (
+              Number.isInteger(variables.i) ? variables.i
+                : Number.isInteger(variables.index) ? variables.index
+                  : Number.isInteger(variables.idx) ? variables.idx
+                    : Number.isInteger(variables.j) ? variables.j
+                      : null
+            ),
+            activeVariable: step.resultName || step.changedVariable || sourceState.activeVariable || sourceState.calculationInfo?.targetVar || null,
+            label: step.message || step.explanation || step.operation || step.event || 'Source-level step',
+            focusInfo: step.code || step.explanation || step.message || 'Modeled from source structure; not runtime instrumentation.',
+          };
           return {
             ...step,
             stepNumber: step.stepNumber || step.step || index + 1,
@@ -835,16 +840,6 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       play();
     }
   };
-  // Universal editor runs the current source automatically after typing pauses.
-  // This replaces the removed Run button and keeps the 3D scene in sync with edits.
-  useEffect(() => {
-    if (!universalOnly || !code.trim() || code === lastExecutedCode) return undefined;
-    const timer = window.setTimeout(() => {
-      handleRunCode();
-    }, 900);
-    return () => window.clearTimeout(timer);
-  }, [code, language, universalOnly, lastExecutedCode]);
-
   // Window-level Ctrl+Enter / Cmd+Enter listener to trigger instant 3D execution
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -1080,7 +1075,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                     setRuntimeOutput([]);
                     setRuntimeStatus('IDLE');
                     setRuntimeTimeMs(null);
-                    setTraceNotice('Code changed. Executing automatically…');
+                    setTraceNotice('Code changed. Press Run & Visualize to execute and update the 3D scene.');
                   }
                 }}
                 language={language}
@@ -1092,7 +1087,6 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 isPlaying={isPlaying}
                 onPlay={handleRunCode}
                 onRunCode={handleRunCode}
-                hideRunButton={universalOnly}
                 onCancelExecution={universalOnly ? handleCancelExecution : undefined}
                 onResetCode={handleResetCode}
                 isExecuting={isExecuting}
@@ -1150,9 +1144,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                   sceneKey={selectedSample?.id || activeStriverProblem?.id || 'custom'}
                 >
                   <DsaSceneDispatcher
-                    dataStructureState={universalOnly && currentStep?.dataStructureState
-                      ? { ...currentStep.dataStructureState, type: 'universal-execution' }
-                      : currentStep?.dataStructureState}
+                    dataStructureState={currentStep?.dataStructureState}
                     showFallback={!universalOnly}
                   />
                 </SceneContainer>
