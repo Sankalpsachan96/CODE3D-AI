@@ -6,28 +6,33 @@ import universalExecutor from '../src/services/universalExecutor.cjs';
 const cases = [
   {
     language: 'cpp',
-    code: '#include <iostream>\nusing namespace std;\nint main() { int a = 10; int b = 20; cout << a + b; return 0; }',
-    expected: '30',
+    code: '#include <iostream>\nint main() {\n  int values[2] = {2, 4};\n  int total = 0;\n  for (int i = 0; i < 2; ++i) {\n    total += values[i];\n  }\n  std::cout << total << "\\n";\n}',
+    expected: '6',
+    loopLine: 6,
   },
   {
     language: 'c',
-    code: '#include <stdio.h>\nint main() { int a = 10; int b = 20; printf("%d", a + b); return 0; }',
-    expected: '30',
+    code: '#include <stdio.h>\nint main(void) {\n  int values[2] = {2, 4};\n  int total = 0;\n  for (int i = 0; i < 2; ++i) {\n    total += values[i];\n  }\n  printf("%d\\n", total);\n}',
+    expected: '6',
+    loopLine: 6,
   },
   {
     language: 'python',
-    code: 'a = 10\nb = 20\nprint(a + b)',
-    expected: '30',
+    code: 'values = [2, 4]\ntotal = 0\nfor i, value in enumerate(values):\n    total += value\nprint(total)',
+    expected: '6',
+    loopLine: 4,
   },
   {
     language: 'java',
-    code: 'public class Main { public static void main(String[] args) { int a = 10; int b = 20; System.out.print(a + b); } }',
-    expected: '30',
+    code: 'public class Main {\n  public static void main(String[] args) {\n    int[] values = {2, 4};\n    int total = 0;\n    for (int i = 0; i < values.length; i++) {\n      total += values[i];\n    }\n    System.out.println(total);\n  }\n}',
+    expected: '6',
+    loopLine: 6,
   },
   {
     language: 'javascript',
-    code: 'const a = 10; const b = 20; console.log(a + b);',
-    expected: '30',
+    code: 'const values = [2, 4];\nlet total = 0;\nfor (let i = 0; i < values.length; i++) {\n  total += values[i];\n}\nconsole.log(total);',
+    expected: '6',
+    loopLine: 4,
   },
 ];
 
@@ -64,6 +69,13 @@ test('Real universal executor: all supported languages produce real stdout', asy
 
       assert.equal(result.success, true, result.error || 'execution failed');
       assert.match(String(result.output).trim(), new RegExp(`^\\s*${item.expected}\\s*$`));
+      assert.ok(Array.isArray(result.runtimeTrace) && result.runtimeTrace.length > 0, `${item.language} should return captured runtime states`);
+      assert.ok(result.runtimeTrace.every((event) => Number.isInteger(event.line)), `${item.language} trace steps should map to source lines`);
+      const loopStates = result.runtimeTrace.filter((event) => event.line === item.loopLine);
+      assert.equal(loopStates.length, 2, `${item.language} should capture both actual loop iterations`);
+      assert.deepEqual(loopStates.map((event) => event.variables.i), [0, 1]);
+      assert.deepEqual(loopStates.map((event) => event.variables.total), [0, 2]);
+      assert.deepEqual(loopStates[0].variables.values, [2, 4]);
     });
   }
 });
