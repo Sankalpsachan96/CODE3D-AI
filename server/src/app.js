@@ -94,6 +94,15 @@ app.use('/api', generalLimiter);
 app.use('/api/executions', executionLimiter);
 app.use('/api/ai/explain', aiLimiter);
 
+// Lightweight deployment health check (does not require database access).
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    service: 'code3d-ai-api',
+    status: 'ok',
+  });
+});
+
 // API Routes
 app.use('/api', apiRouter);
 
