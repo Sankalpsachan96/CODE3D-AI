@@ -242,11 +242,56 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
   const graphNodes = Array.isArray(dataStructureState.nodes) ? dataStructureState.nodes.slice(0, 24)
     : Array.isArray(dataStructureState.linkedList) ? dataStructureState.linkedList.slice(0, 24) : [];
   const graphEdges = Array.isArray(dataStructureState.edges) ? dataStructureState.edges.slice(0, 48) : [];
-  const graphNodePositions = graphNodes.map((node, index) => {
-    const angle = (index / Math.max(1, graphNodes.length)) * Math.PI * 2;
-    const radius = graphNodes.length <= 2 ? 1.4 : Math.max(1.8, graphNodes.length * 0.22);
-    return [Math.cos(angle) * radius, 0.65 + (index % 3) * 0.12, Math.sin(angle) * radius];
-  });
+  const graphNodePositions = (() => {
+    const edges = graphEdges.map((edge) => ({
+      from: Array.isArray(edge) ? edge[0] : (edge.from ?? edge.source ?? edge.u),
+      to: Array.isArray(edge) ? edge[1] : (edge.to ?? edge.target ?? edge.v),
+      label: String(Array.isArray(edge) ? '' : (edge.label || '')).toLowerCase(),
+    }));
+    const nodeId = (node, index) => String(node && typeof node === 'object' ? (node.id ?? node.value ?? node.label ?? index) : node);
+    const resolve = (value) => {
+      if (Number.isInteger(value)) return value;
+      const wanted = value && typeof value === 'object' ? (value.id ?? value.value ?? value.label) : value;
+      return graphNodes.findIndex((node, index) => nodeId(node, index) === String(wanted) || String(index) === String(wanted));
+    };
+    const resolvedEdges = edges.map((edge) => ({ ...edge, from: resolve(edge.from), to: resolve(edge.to) }))
+      .filter((edge) => edge.from >= 0 && edge.to >= 0 && edge.from !== edge.to);
+    const treeLike = resolvedEdges.some((edge) => ['left', 'right', 'child', 'children'].includes(edge.label));
+    if (treeLike && graphNodes.length) {
+      const children = new Map();
+      const incoming = new Set();
+      resolvedEdges.forEach((edge) => {
+        if (!children.has(edge.from)) children.set(edge.from, []);
+        children.get(edge.from).push(edge);
+        incoming.add(edge.to);
+      });
+      const roots = graphNodes.map((_, index) => index).filter((index) => !incoming.has(index));
+      const positions = Array(graphNodes.length);
+      const visited = new Set();
+      const place = (index, left, right, depth) => {
+        if (index < 0 || index >= graphNodes.length || visited.has(index)) return;
+        visited.add(index);
+        const x = (left + right) / 2;
+        positions[index] = [x, Math.max(-1.4, 1.5 - depth * 0.95), 0.25 + depth * 0.28];
+        const childEdges = (children.get(index) || []).slice(0, 2);
+        childEdges.forEach((edge, childIndex) => {
+          const isRight = edge.label === 'right' || (edge.label !== 'left' && childIndex === 1);
+          if (isRight) place(edge.to, x, right, depth + 1);
+          else place(edge.to, left, x, depth + 1);
+        });
+      };
+      roots.forEach((root, index) => place(root, -Math.max(2, graphNodes.length * 0.45), Math.max(2, graphNodes.length * 0.45), 0));
+      graphNodes.forEach((_, index) => {
+        if (!positions[index]) positions[index] = [((index % 6) - 2.5) * 1.1, -1.2 - Math.floor(index / 6) * 0.8, 0.25];
+      });
+      return positions;
+    }
+    return graphNodes.map((_, index) => {
+      const angle = (index / Math.max(1, graphNodes.length)) * Math.PI * 2;
+      const radius = graphNodes.length <= 2 ? 1.4 : Math.max(1.8, graphNodes.length * 0.22);
+      return [Math.cos(angle) * radius, 0.65 + (index % 3) * 0.12, Math.sin(angle) * radius];
+    });
+  })();
   const nodeIndex = (value) => {
     if (Number.isInteger(value)) return value;
     const id = typeof value === 'object' && value !== null ? (value.id ?? value.value ?? value.label) : value;
