@@ -43,7 +43,12 @@ test('Judge0 maps all five editor languages and sends source plus stdin unchange
       pollIntervalMs: 0,
     });
     assert.equal(body.language_id, languageId);
-    assert.equal(body.source_code, `// ${language}`);
+    if (language === 'python') {
+      assert.match(body.source_code, /__CODE3D_RUNTIME_TRACE__/);
+      assert.match(body.source_code, /sys\.settrace/);
+    } else {
+      assert.equal(body.source_code, `// ${language}`);
+    }
     assert.equal(body.stdin, 'sample input\n');
     assert.equal(body.enable_network, false);
     assert.equal(result.success, true);
@@ -52,6 +57,19 @@ test('Judge0 maps all five editor languages and sends source plus stdin unchange
   }
 });
 
+test('Python Judge0 execution returns real line snapshots without changing stdout', async () => {
+  const marker = '__CODE3D_RUNTIME_TRACE__';
+  const snapshots = [{ step: 1, line: 1, event: 'runtime_line', variables: { value: 7 } }];
+  const result = await executor.executeWithJudge0('python', 'value = 7\\nprint(value)', '', {
+    judge0Url: 'https://judge0.example',
+    fetchImpl: judge0Fetch(finalResult(3, { stdout: '7\\n', stderr: marker + JSON.stringify(snapshots) + '\\n', time: '0.01' })),
+    pollIntervalMs: 0,
+  });
+  assert.equal(result.success, true);
+  assert.equal(result.output, '7\\n');
+  assert.deepEqual(result.runtimeTrace, snapshots);
+  assert.equal(result.stderr, '');
+});
 test('Judge0 compile and runtime errors preserve their stages and diagnostics', async () => {
   const compile = await executor.executeWithJudge0('java', 'bad source', '', {
     judge0Url: 'https://judge0.example',
