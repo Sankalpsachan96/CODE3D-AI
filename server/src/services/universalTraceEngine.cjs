@@ -698,13 +698,18 @@ function detectArrayTraversal(code) {
   const info = getPrimaryArray(code);
   if (!info) return false;
 
-  return (
+  const indexedTraversal =
     (/for\s*\(/i.test(code) ||
       /while\s*\(/i.test(code)) &&
-    new RegExp(`${info.name}\\s*\\[`).test(code)
-  );
-}
+    new RegExp(info.name + "\\s*\\[").test(code);
 
+  // Python commonly iterates lists without index syntax: for item in values:
+  const iterableTraversal =
+    info.kind === "list" &&
+    new RegExp("\\bfor\\s+\\w+\\s+in\\s+" + info.name + "\\b", "i").test(code);
+
+  return indexedTraversal || iterableTraversal;
+}
 function generateArrayTraversalTrace(code) {
   const info = getPrimaryArray(code);
   if (!info) return unsupported("array_traversal", "array");
