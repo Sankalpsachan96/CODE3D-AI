@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CodeEditor from '../components/CodeEditor';
 import StatePanel from '../components/StatePanel';
 import OutputConsole from '../components/OutputConsole';
@@ -19,6 +19,7 @@ import { validateSourceCode } from '../services/codeValidator';
 import { DEFAULT_JAVA_CODE, SAMPLE_PROGRAMS, LANGUAGE_DEFAULTS, CURRICULUM_CATEGORIES } from '../utils/sampleCodes';
 import { STRIVER_PROBLEMS } from '../utils/striverCatalog';
 import { executeProgram, analyzeCode, checkBackendHealth, recordExecutionHistory } from '../services/apiService';
+import { normalizeUniversalExecutionResult } from '../services/universalEditorExecution';
 import { executionManager } from '../execution/index.js';
 import { VisualizerErrorBoundary, EditorErrorBoundary } from '../components/ErrorBoundaries';
 import { useTheme } from '../context/ThemeContext';
@@ -127,13 +128,14 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       runtimeOutput,
     }));
   };
-  const universalStarter = { id: 'universal-editor', title: 'Universal Code Editor', category: 'Universal Engine', description: 'Write your own DSA code and execute it with runtime tracing.', difficulty: 'Custom', timeComplexity: '—', spaceComplexity: '—', code: LANGUAGE_DEFAULTS.java || DEFAULT_JAVA_CODE, language: 'java' };
+  const universalStarter = { id: 'universal-editor', title: 'Universal Code Editor', category: 'Universal Engine', description: 'Write and execute your own code; supported patterns can be shown as a modeled 3D visualization.', difficulty: 'Custom', timeComplexity: '—', spaceComplexity: '—', code: LANGUAGE_DEFAULTS.java || DEFAULT_JAVA_CODE, language: 'java' };
   const [selectedSample, setSelectedSample] = useState(initialConcept || (universalOnly ? universalStarter : SAMPLE_PROGRAMS[0]));
   const [code, setCode] = useState(initialConcept?.code || (universalOnly ? universalStarter.code : DEFAULT_JAVA_CODE));
   const [lastExecutedCode, setLastExecutedCode] = useState(initialConcept?.code || (universalOnly ? universalStarter.code : DEFAULT_JAVA_CODE));
   const isCodeDirty = code !== lastExecutedCode;
   const [language, setLanguage] = useState(initialConcept?.language || 'java');
   const [trace, setTrace] = useState(() => {
+    if (universalOnly) return [];
     if (initialConcept?.trace && initialConcept.trace.length > 0) {
       return initialConcept.trace;
     }
@@ -148,9 +150,14 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
   const [showStatePanel, setShowStatePanel] = useState(true);
   const [isFull3DView, setIsFull3DView] = useState(false);
   // Direct Form User Input
-  const [formInputValues, setFormInputValues] = useState('10, 20, 30, 40');
+  const [formInputValues, setFormInputValues] = useState(universalOnly ? '' : '10, 20, 30, 40');
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionError, setExecutionError] = useState(null);
+  const [runtimeOutput, setRuntimeOutput] = useState([]);
+  const [runtimeStatus, setRuntimeStatus] = useState('IDLE');
+  const [runtimeTimeMs, setRuntimeTimeMs] = useState(null);
+  const [traceNotice, setTraceNotice] = useState('');
+  const executionAbortRef = useRef(null);
   const [syntaxErrorLine, setSyntaxErrorLine] = useState(null);
   // Modals & responsive view state
   const [isAiOpen, setIsAiOpen] = useState(false);
@@ -226,12 +233,14 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
   };
   // Check backend health on mount
   useEffect(() => {
-    checkBackendHealth().then((isUp) => {
+    checkBackendHealth({ allowFallback: !universalOnly }).then((isUp) => {
       setBackendOnline(isUp);
     });
   }, []);
+  useEffect(() => () => executionAbortRef.current?.abort(), []);
   // Synchronize formInputValues whenever code or selected sample changes
   useEffect(() => {
+    if (universalOnly) return;
     const nums = extractNumbersFromCode(code);
     if (nums && nums.length > 0) {
       setFormInputValues(nums.join(', '));
@@ -371,6 +380,14 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       spaceComplexity: 'O(1)',
       code: template,
     });
+    if (universalOnly) {
+      setFormInputValues('');
+      setTrace([]);
+      setRuntimeOutput([]);
+      setRuntimeStatus('IDLE');
+      setTraceNotice('Run the program to see runtime output. A 3D trace appears only for recognized supported patterns.');
+      return;
+    }
     const nums = extractNumbersFromCode(template);
     if (nums && nums.length > 0) {
       setFormInputValues(nums.join(', '));
@@ -396,6 +413,13 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     if (!vals || vals.length === 0) return;
     const inputStr = vals.join(', ');
     setFormInputValues(inputStr);
+    if (universalOnly) {
+      setTrace([]);
+      setRuntimeOutput([]);
+      setRuntimeStatus('IDLE');
+      setTraceNotice('Input changed. Run the program to refresh its actual output.');
+      return;
+    }
     let updatedCode = code;
     const hasBracketNumbers = /\[[0-9,\s\-]+\]/.test(updatedCode);
     const hasBraceNumbers = /\{[0-9,\s\-]+\}/.test(updatedCode);
@@ -449,6 +473,14 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       spaceComplexity: 'O(1)',
       code: customCode,
     });
+    if (universalOnly) {
+      setFormInputValues('');
+      setTrace([]);
+      setRuntimeOutput([]);
+      setRuntimeStatus('IDLE');
+      setTraceNotice('Run the program to see its actual output. A 3D trace appears only for recognized supported patterns.');
+      return;
+    }
     const nums = extractNumbersFromCode(customCode);
     if (nums && nums.length > 0) {
       setFormInputValues(nums.join(', '));
@@ -487,15 +519,21 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
     }
   };
   // Execute User Code Pipeline:
-  // The backend universal executor is the single source of truth for
-  // compilation, runtime behaviour and stdout/stderr. The returned
-  // universal trace is already enriched with the REAL runtime output.
+  // The backend universal executor is authoritative for compilation, runtime
+  // status and stdout/stderr. Any supported visualization remains a model.
   const handleRunCode = async () => {
     if (isExecuting) return false;
     if (isPlaying) { pause(); return false; }
 
+    const abortController = new AbortController();
+    if (universalOnly) executionAbortRef.current = abortController;
     setIsExecuting(true);
     setExecutionError(null);
+    setRuntimeOutput([]);
+    setRuntimeStatus('RUNNING');
+    setRuntimeTimeMs(null);
+    setTrace([]);
+    setTraceNotice('Program is running in the isolated backend.');
 
     try {
       const backendResult = await executeProgram(
@@ -503,32 +541,50 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         activeStriverProblem?.id || selectedSample?.id || 'custom',
         language,
         formInputValues,
-        true
+        true,
+        universalOnly ? abortController.signal : undefined,
+        { allowFallback: !universalOnly }
       );
 
-      if (!backendResult || backendResult.status !== 'COMPLETED') {
-        const message =
-          backendResult?.message ||
-          'Execution failed on the backend.';
-        setExecutionError(message);
+      const execution = normalizeUniversalExecutionResult(backendResult || {});
+      if (execution.status !== 'COMPLETED' || backendResult?.success === false) {
+        setExecutionError(execution.error || 'Execution failed on the backend.');
+        setRuntimeOutput(execution.output);
+        setRuntimeStatus(backendResult?.errorCode || execution.status || 'ERROR');
+        setRuntimeTimeMs(execution.executionTimeMs);
+        setTrace([]);
+        setTraceNotice('No execution trace is shown for a failed run.');
         return false;
       }
 
-      // The backend result is the source of truth for compilation,
-      // runtime behaviour and stdout. For the 3D scene, however, use the
-      // problem-aware deterministic trace so a Striver/DSA problem does not
-      // collapse into the generic "array" visualizer.
-      const visualProblem = activeStriverProblem || selectedSample;
-      const semanticTrace = buildSemanticTrace(
-        code,
-        language,
-        formInputValues,
-        visualProblem
-      );
-      const visualTrace = attachRuntimeOutput(semanticTrace, backendResult);
+      const actualOutput = execution.output;
+      setRuntimeOutput(actualOutput);
+      setRuntimeStatus(execution.status);
+      setRuntimeTimeMs(execution.executionTimeMs);
 
-      if (visualTrace.length === 0) {
-        throw new Error('Execution completed but no semantic 3D trace was generated.');
+      let visualTrace;
+      if (universalOnly) {
+        // Only expose a modeled DSA trace when the backend reports an explicit
+        // supported pattern. Generic source-derived steps are not runtime traces.
+        visualTrace = execution.traceSupported
+          ? execution.steps.map((step, index) => ({
+              ...step,
+              stepNumber: step.stepNumber || step.step || index + 1,
+              lineNumber: step.lineNumber || step.line || null,
+            }))
+          : [];
+        setTraceNotice(execution.traceSupported
+          ? 'Algorithm visualization is a pattern-based model; program output and status come from the isolated runtime. Complexity is not inferred for arbitrary editor code.'
+          : `3D execution tracing is not supported for this code. ${execution.traceReason || 'The program still ran normally.'} Complexity is not inferred for arbitrary editor code.`);
+      } else {
+        const visualProblem = activeStriverProblem || selectedSample;
+        visualTrace = attachRuntimeOutput(
+          buildSemanticTrace(code, language, formInputValues, visualProblem),
+          backendResult
+        );
+        if (visualTrace.length === 0) {
+          throw new Error('Execution completed but no semantic 3D trace was generated.');
+        }
       }
 
       setTrace(visualTrace);
@@ -549,19 +605,31 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         status: backendResult.status,
         code,
         input: formInputValues,
-        output: backendResult.output || [],
+        output: actualOutput,
       });
 
       return true;
     } catch (err) {
+      if (universalOnly && (abortController.signal.aborted || err?.name === 'AbortError')) {
+        setRuntimeStatus('CANCELLED');
+        setExecutionError('Execution request cancelled. A remote Judge0 submission may continue until its provider limits apply if cancellation is unavailable.');
+        setTrace([]);
+        setTraceNotice('Execution trace unavailable for a cancelled run.');
+        return false;
+      }
       setExecutionError(
         err?.message || 'Execution failed on the backend.'
       );
+      setRuntimeStatus('ERROR');
+      setTrace([]);
       return false;
     } finally {
+      if (executionAbortRef.current === abortController) executionAbortRef.current = null;
       setIsExecuting(false);
     }
   };
+
+  const handleCancelExecution = () => executionAbortRef.current?.abort();
 
   // Bidirectional interaction: 3D Element Click -> Seek Timeline & Code Line (Section 40)
   const handleSelectElementFrom3D = (index, value) => {
@@ -959,6 +1027,13 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                   setCode(val);
                   if (syntaxErrorLine) setSyntaxErrorLine(null);
                   if (executionError) setExecutionError(null);
+                  if (universalOnly) {
+                    setTrace([]);
+                    setRuntimeOutput([]);
+                    setRuntimeStatus('IDLE');
+                    setRuntimeTimeMs(null);
+                    setTraceNotice('Code changed. Run the program to see its actual output and any supported visualization.');
+                  }
                 }}
                 language={language}
                 onChangeLanguage={handleLanguageChange}
@@ -969,6 +1044,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 isPlaying={isPlaying}
                 onPlay={handleRunCode}
                 onRunCode={handleRunCode}
+                onCancelExecution={universalOnly ? handleCancelExecution : undefined}
                 onResetCode={handleResetCode}
                 isExecuting={isExecuting}
                 isCodeDirty={isCodeDirty}
@@ -1007,7 +1083,17 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             isBright ? 'bg-white border-slate-200' : 'bg-[#0b0f19] border-slate-800/80'
           }`}>
             <InputGenerator
-              currentValues={extractNumbersFromCode(formInputValues) || [45, 12, 89, 23, 7, 64, 31]}
+              currentValues={[]}
+              currentText={formInputValues}
+              freeform={universalOnly}
+              onApplyText={(text) => {
+                setFormInputValues(text);
+                setTrace([]);
+                setRuntimeOutput([]);
+                setRuntimeStatus('IDLE');
+                setRuntimeTimeMs(null);
+                setTraceNotice('Stdin updated. The program uses it only if its code reads stdin.');
+              }}
               currentTarget={23}
               showTarget={selectedSample?.category === 'Searching' || selectedSample?.id?.includes('search')}
               onGenerate={({ values, target }) => {
@@ -1028,6 +1114,11 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           )}
           {/* 3D canvas + controls live together */}
           <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
+            {universalOnly && traceNotice && (
+              <div className={`shrink-0 px-3 py-1.5 text-[11px] border-b ${isBright ? 'bg-amber-50 text-amber-900 border-amber-200' : 'bg-amber-950/30 text-amber-200 border-amber-900/50'}`}>
+                {traceNotice}
+              </div>
+            )}
             <div className="flex-1 min-h-0 relative">
               <VisualizerErrorBoundary onReset={reset}>
                 <SceneContainer
@@ -1037,13 +1128,16 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                   activeDetails={currentStep?.dataStructureState?.focusInfo || null}
                   correctOutput={null}
                   isAtEnd={isAtEnd}
-                  cumulativeOutput={cumulativeOutput}
+                  cumulativeOutput={universalOnly ? runtimeOutput : cumulativeOutput}
                   isFull3DView={isFull3DView}
                   onToggleFull3D={() => setIsFull3DView((prev) => !prev)}
                   onSelectElement={handleSelectElementFrom3D}
                   sceneKey={selectedSample?.id || activeStriverProblem?.id || 'custom'}
                 >
-                  <DsaSceneDispatcher dataStructureState={currentStep?.dataStructureState} />
+                  <DsaSceneDispatcher
+                    dataStructureState={currentStep?.dataStructureState}
+                    showFallback={!universalOnly}
+                  />
                 </SceneContainer>
               </VisualizerErrorBoundary>
             </div>
@@ -1154,21 +1248,24 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 totalSteps={totalSteps}
                 correctOutput={null}
                 isAtEnd={isAtEnd}
-                complexity={selectedSample?.complexity}
+                complexity={universalOnly ? null : selectedSample?.complexity}
               />
             </div>
             <div className={`min-h-0 h-full overflow-y-auto overscroll-contain rounded-xl border custom-scrollbar ${
               isBright ? 'border-slate-200 bg-white' : 'border-slate-800/70 bg-[#0b0f19]'
             }`}>
               <OutputConsole
-                output={cumulativeOutput}
+                output={universalOnly ? runtimeOutput : cumulativeOutput}
                 correctOutput={null}
                 isAtEnd={isAtEnd}
                 input={formInputValues}
+                inputLabel={universalOnly ? 'Stdin provided' : 'Input'}
+                inputHint={universalOnly ? 'Sent with each run; the program uses it only if its code reads stdin.' : null}
                 currentStep={currentStep}
-                executionStatus={executionState}
+                executionStatus={universalOnly ? runtimeStatus : executionState}
                 error={executionError}
                 language={language}
+                executionTimeMs={universalOnly ? runtimeTimeMs : null}
               />
             </div>
           </div>

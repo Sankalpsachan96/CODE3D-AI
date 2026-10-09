@@ -23,6 +23,16 @@ function createEvent(step, type, data = {}) {
   };
 }
 
+function unsupported(algorithm, dataStructure) {
+  return {
+    supported: false,
+    algorithm,
+    dataStructure,
+    events: [],
+    reason: `A ${dataStructure} was not recognized for the ${algorithm} visualization model.`,
+  };
+}
+
 function normalizeLanguage(language = "cpp") {
   return String(language || "cpp").trim().toLowerCase();
 }

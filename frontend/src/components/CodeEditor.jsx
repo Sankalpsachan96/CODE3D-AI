@@ -123,6 +123,7 @@ export default function CodeEditor({
   isCodeDirty = false,
 
   onRunCode,
+  onCancelExecution,
 
   onResetCode,
 
@@ -899,6 +900,10 @@ export default function CodeEditor({
           type="button"
 
           onClick={() => {
+            if (isExecuting && onCancelExecution) {
+              onCancelExecution?.();
+              return;
+            }
             if (isExecuting) return;
             setRunFeedback(true);
             window.setTimeout(() => setRunFeedback(false), 900);
@@ -906,7 +911,7 @@ export default function CodeEditor({
             else if (onPlay) onPlay();
           }}
 
-          disabled={isExecuting}
+          disabled={isExecuting && !onCancelExecution}
 
           className={`h-9 px-4 rounded-lg flex items-center justify-center gap-2 text-xs font-bold transition shadow-md cursor-pointer disabled:cursor-not-allowed ${
 
@@ -918,7 +923,7 @@ export default function CodeEditor({
 
           }`}
 
-          title={isExecuting ? 'Executing code...' : 'Run code and visualize execution'}
+          title={isExecuting ? (onCancelExecution ? 'Cancel code execution' : 'Executing code...') : 'Run code and visualize execution'}
 
         >
 
@@ -928,7 +933,7 @@ export default function CodeEditor({
 
               <RefreshCw size={14} className="animate-spin" />
 
-              <span>Running...</span>
+              <span>{onCancelExecution ? 'Cancel' : 'Running...'}</span>
 
             </>
 

@@ -11,6 +11,9 @@ export default function OutputConsole({
   executionStatus = null,
   error = null,
   language = 'java',
+  executionTimeMs = null,
+  inputLabel = 'Input',
+  inputHint = null,
 }) {
   const { isBright } = useTheme();
   const [copied, setCopied] = useState(false);
@@ -54,7 +57,7 @@ export default function OutputConsole({
           <span className={`text-[11px] font-semibold tracking-wide uppercase truncate ${isBright ? 'text-slate-800' : 'text-slate-300'}`}>
             Standard Output Stream
           </span>
-          {isAtEnd && (
+          {isAtEnd && (!executionStatus || executionStatus === 'COMPLETED') && (
             <span className="hidden sm:inline-flex items-center gap-1 text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-bold">
               ✓ Process Finished (0)
             </span>
@@ -111,16 +114,18 @@ export default function OutputConsole({
             intentionally prints nothing (e.g. search/insert/return-only code). */}
         <div className={`grid grid-cols-1 ${isExpanded ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-2 mb-2`}>
           <div className={`rounded-lg border p-2 ${isBright ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'}`}>
-            <div className={`text-[9px] uppercase font-bold tracking-wider mb-1 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>Input</div>
+            <div className={`text-[9px] uppercase font-bold tracking-wider mb-1 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{inputLabel}</div>
             <div className={`font-mono text-[11px] break-all ${isBright ? 'text-slate-800' : 'text-slate-200'}`}>
-              {normalizedInput || 'No explicit stdin / preset input'}
+              {normalizedInput || 'No stdin supplied'}
             </div>
+            {inputHint && <div className={`mt-1 text-[9px] leading-relaxed ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{inputHint}</div>}
           </div>
           <div className={`rounded-lg border p-2 ${isBright ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'}`}>
             <div className={`text-[9px] uppercase font-bold tracking-wider mb-1 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>Execution</div>
             <div className={`font-mono text-[11px] ${executionStatus === 'COMPLETED' ? 'text-emerald-400' : isBright ? 'text-slate-800' : 'text-slate-200'}`}>
               {executionStatus || '3D simulation'}
               <span className={`ml-2 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{language.toUpperCase()}</span>
+              {Number.isFinite(executionTimeMs) && <span className={`ml-2 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{executionTimeMs} ms</span>}
             </div>
           </div>
           {isExpanded && (
@@ -151,7 +156,7 @@ export default function OutputConsole({
 
         {output.length === 0 && !correctOutput ? (
           <div className={`italic text-[11px] py-1 ${isBright ? 'text-slate-400' : 'text-slate-600'}`}>
-            No stdout lines produced by the program. Input and execution context are shown above.
+            No stdout lines produced by the program. Stdin and execution context are shown above.
           </div>
         ) : (
           output.map((line, idx) => (

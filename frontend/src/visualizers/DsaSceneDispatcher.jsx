@@ -1,7 +1,6 @@
 import React from 'react';
 import { getVisualizerComponent, visualizerRegistry } from './visualizerRegistry';
-
-const FALLBACK_VALUES = [12, 7, 19, 3, 15];
+import { resolveSceneState } from './sceneState';
 
 const ALGORITHM_TO_VISUALIZER = [
   [/^(bubble_sort|selection_sort|insertion_sort|merge_sort|quick_sort|sorting|sort)/, 'sorting'],
@@ -43,16 +42,12 @@ function resolveVisualizerType(state) {
 
 export default function DsaSceneDispatcher({
   dataStructureState,
+  showFallback = true,
   isXRayMode = false,
   onSelectElement = null,
 }) {
-  const state = dataStructureState || {
-    type: 'array',
-    values: FALLBACK_VALUES,
-    activeIndex: null,
-    label: 'Execution ready',
-    focusInfo: 'Waiting for the next executable step.',
-  };
+  const state = resolveSceneState(dataStructureState, { showFallback });
+  if (!state) return null;
 
   const rawType = String(state.type || 'array').toLowerCase().replace(/_/g, '-').trim();
   const { type, component: VisualizerComponent } = resolveVisualizerType(state);

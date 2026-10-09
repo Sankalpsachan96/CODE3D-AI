@@ -18,17 +18,19 @@ app.use(
 );
 
 // Exact CORS allowlist. Configure FRONTEND_URL and optionally CORS_ALLOWED_ORIGINS
-// (comma-separated) in production. Localhost is allowed only outside production.
+// (comma-separated) in production. Local development origins are also needed
+// when the Node service runs in Docker with NODE_ENV=production.
 const allowedOrigins = new Set([
   'https://code-3d-ai.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174',
   ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
   ...(process.env.CORS_ALLOWED_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean),
-  ...(process.env.NODE_ENV === 'production'
-    ? []
-    : ['http://localhost:5173', 'http://127.0.0.1:5173']),
 ]);
 
 app.use(

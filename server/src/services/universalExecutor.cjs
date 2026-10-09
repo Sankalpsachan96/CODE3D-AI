@@ -47,9 +47,9 @@ function sandboxAvailable() {
     "--",
     "/usr/bin/prlimit",
     "--cpu=2",
-    "--as=2147483648",
-    "--nproc=64",
-    "--fsize=104857600",
+    "--as=536870912",
+    "--nproc=32",
+    "--fsize=1048576",
     "--nofile=64",
     "--",
     "/usr/bin/true"
@@ -75,8 +75,6 @@ function sandboxAvailable() {
   return sandboxAvailabilityCache;
 }
 
-const JUDGE0_URL = (process.env.JUDGE0_URL || "").trim().replace(/\/+$/, "");
-const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY || "";
 const JUDGE0_LANGUAGES = {
   c: 50,
   cpp: 54,
@@ -85,21 +83,32 @@ const JUDGE0_LANGUAGES = {
   python: 71,
 };
 
+function getJudge0Config(options = {}) {
+  return {
+    url: String(options.judge0Url ?? process.env.JUDGE0_URL ?? "").trim().replace(/\/+$/, ""),
+    apiKey: options.judge0ApiKey ?? process.env.JUDGE0_API_KEY ?? "",
+  };
+}
+
 function getRuntimeAvailability() {
+  const judge0 = getJudge0Config();
+  const localSandbox = sandboxAvailable();
   return {
     javascript: Boolean(process.execPath),
     cpp: commandAvailable("g++"),
     c: commandAvailable("gcc"),
     python: Boolean(getPythonCommand()),
     java: commandAvailable("javac") && commandAvailable("java"),
-    sandbox: sandboxAvailable() || Boolean(JUDGE0_URL),
-    executionProvider: sandboxAvailable() ? "local-bubblewrap" : (JUDGE0_URL ? "remote-judge0" : "unavailable"),
+    sandbox: localSandbox || Boolean(judge0.url),
+    executionProvider: localSandbox ? "local-bubblewrap" : (judge0.url ? "remote-judge0" : "unavailable"),
     nodeVersion: process.version,
   };
 }
 
-async function executeWithJudge0(language, code, input = "") {
-  if (!JUDGE0_URL) {
+async function executeWithJudge0(language, code, input = "", options = {}) {
+  const { signal, fetchImpl = fetch } = options;
+  const { url: judge0Url, apiKey } = getJudge0Config(options);
+  if (!judge0Url) {
     return {
       success: false, stage: "sandbox", output: "",
       error: "Secure execution sandbox is unavailable and no remote sandbox provider is configured. Code was not executed.",
@@ -119,11 +128,48 @@ async function executeWithJudge0(language, code, input = "") {
 
   const startedAt = Date.now();
   const headers = { "Content-Type": "application/json", Accept: "application/json" };
-  if (JUDGE0_API_KEY) headers["X-Auth-Token"] = JUDGE0_API_KEY;
-  const requestTimeout = 12000;
+  if (apiKey) headers["X-Auth-Token"] = apiKey;
+  const requestTimeout = Number.isFinite(options.requestTimeoutMs) ? options.requestTimeoutMs : 12000;
+  const pollInterval = Number.isFinite(options.pollIntervalMs) ? options.pollIntervalMs : 500;
+  const deadlineMs = Number.isFinite(options.deadlineMs) ? options.deadlineMs : 20000;
+  let token;
+
+  const failure = (stage, error, executionTime) => ({
+    success: false, stage, output: "", error, executionTime,
+  });
+  const responseDetails = async (response) => {
+    try { return (await response.text()).slice(0, 500); } catch { return ""; }
+  };
+  const cancelRemoteSubmission = async () => {
+    if (!token) return;
+    try {
+      await fetchImpl(`${judge0Url}/submissions/${encodeURIComponent(token)}?fields=status`, {
+        method: "DELETE",
+        headers,
+        signal: AbortSignal.timeout(2000),
+      });
+    } catch (error) {
+      console.warn("[sandbox] Judge0 cancellation request failed:", error.message);
+    }
+  };
+  const waitForPoll = (duration) => new Promise((resolve, reject) => {
+    const finish = () => {
+      signal?.removeEventListener("abort", cancel);
+      resolve();
+    };
+    const timer = setTimeout(finish, duration);
+    const cancel = () => {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", cancel);
+      reject(Object.assign(new Error("Execution cancelled"), { name: "AbortError" }));
+    };
+    if (signal?.aborted) cancel();
+    else signal?.addEventListener("abort", cancel, { once: true });
+  });
 
   try {
-    const createResponse = await fetch(`${JUDGE0_URL}/submissions?base64_encoded=false&wait=false`, {
+    if (signal?.aborted) return failure("cancelled", "Execution was cancelled before submission.", 0);
+    const createResponse = await fetchImpl(`${judge0Url}/submissions?base64_encoded=false&wait=false`, {
       method: "POST",
       headers,
       body: JSON.stringify({
@@ -138,52 +184,76 @@ async function executeWithJudge0(language, code, input = "") {
         max_processes_and_or_threads: 30,
         enable_network: false,
       }),
-      signal: AbortSignal.timeout(requestTimeout),
+      signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(requestTimeout)]),
     });
     if (!createResponse.ok) {
-      const details = (await createResponse.text()).slice(0, 500);
-      throw new Error(`Remote sandbox submission failed (HTTP ${createResponse.status}): ${details}`);
+      const details = await responseDetails(createResponse);
+      if (createResponse.status === 429) throw Object.assign(new Error("Judge0 is rate limiting submissions. Wait briefly, then retry."), { stage: "rate_limit" });
+      if (createResponse.status === 401 || createResponse.status === 403) throw Object.assign(new Error("Judge0 rejected the configured credentials or access policy."), { stage: "provider" });
+      if (createResponse.status === 503 || createResponse.status === 502 || createResponse.status === 504) throw Object.assign(new Error("Judge0 is temporarily unavailable or its queue is full. Retry shortly."), { stage: "provider" });
+      throw Object.assign(new Error(`Judge0 rejected the submission (HTTP ${createResponse.status})${details ? `: ${details}` : "."}`), { stage: "provider" });
     }
     const submission = await createResponse.json();
-    if (!submission.token) throw new Error("Remote sandbox did not return a submission token.");
+    if (typeof submission.token !== "string" || !submission.token) throw Object.assign(new Error("Judge0 returned an invalid submission response."), { stage: "provider" });
+    token = submission.token;
 
-    const deadline = Date.now() + 20000;
+    const deadline = Date.now() + deadlineMs;
     let result;
     while (Date.now() < deadline) {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const pollResponse = await fetch(
-        `${JUDGE0_URL}/submissions/${encodeURIComponent(submission.token)}?base64_encoded=false&fields=stdout,stderr,compile_output,message,status,time`,
-        { headers, signal: AbortSignal.timeout(requestTimeout) }
+      if (signal?.aborted) {
+        await cancelRemoteSubmission();
+        return failure("cancelled", "Execution was cancelled. Judge0 cancellation was requested; the provider may continue the submission if deletion is unavailable.", Date.now() - startedAt);
+      }
+      await waitForPoll(pollInterval);
+      const pollResponse = await fetchImpl(
+        `${judge0Url}/submissions/${encodeURIComponent(token)}?base64_encoded=false&fields=stdout,stderr,compile_output,message,status,time,memory`,
+        { headers, signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(requestTimeout)]) }
       );
       if (!pollResponse.ok) {
-        const details = (await pollResponse.text()).slice(0, 500);
-        throw new Error(`Remote sandbox status check failed (HTTP ${pollResponse.status}): ${details}`);
+        const details = await responseDetails(pollResponse);
+        if (pollResponse.status === 429) throw Object.assign(new Error("Judge0 is rate limiting status checks. Retry shortly."), { stage: "rate_limit" });
+        throw Object.assign(new Error(`Judge0 status check failed (HTTP ${pollResponse.status})${details ? `: ${details}` : "."}`), { stage: "provider" });
       }
       result = await pollResponse.json();
+      if (!result || typeof result !== "object" || !Number.isInteger(result.status?.id)) throw Object.assign(new Error("Judge0 returned an invalid execution status."), { stage: "provider" });
       if (result.status?.id > 2) break;
     }
     if (!result || result.status?.id <= 2) {
-      return { success: false, stage: "timeout", output: "", error: "Remote sandbox timed out while waiting for execution. Please retry.", executionTime: Date.now() - startedAt };
+      await cancelRemoteSubmission();
+      return failure("timeout", "Judge0 did not finish before the 20 second execution deadline. The provider may still be processing the submission.", Date.now() - startedAt);
     }
 
     const output = String(result.stdout || "");
     const error = String(result.compile_output || result.stderr || result.message || "");
-    if (Buffer.byteLength(output, "utf8") > MAX_OUTPUT) {
-      return { success: false, stage: "runtime", output: output.slice(0, MAX_OUTPUT), error: "Output Limit Exceeded.", executionTime: Date.now() - startedAt };
+    const judge0Seconds = Number.parseFloat(result.time);
+    const executionTime = Number.isFinite(judge0Seconds)
+      ? Math.max(0, Math.round(judge0Seconds * 1000))
+      : Date.now() - startedAt;
+    const outputBytes = Buffer.from(output, "utf8");
+    if (outputBytes.length > MAX_OUTPUT) {
+      return { success: false, stage: "runtime", output: outputBytes.subarray(0, MAX_OUTPUT).toString("utf8"), error: "Output Limit Exceeded (100 KiB).", executionTime };
     }
-    const accepted = result.status?.id === 3;
+    const statusId = result.status.id;
+    if (statusId === 5) return { success: false, stage: "timeout", output, error: "Time Limit Exceeded. Judge0 stopped the program after its execution limit.", executionTime };
+    if (statusId === 13) return failure("provider", "Judge0 reported an internal execution error. Retry later.", executionTime);
+    const accepted = statusId === 3;
+    const stage = statusId === 6 ? "compile" : ([7, 8, 9, 10, 11, 12, 14].includes(statusId) ? "runtime" : "provider");
     return {
       success: accepted,
-      stage: accepted ? "complete" : (result.status?.id === 6 ? "compile" : "runtime"),
+      stage: accepted ? "complete" : stage,
       output,
-      error: accepted ? "" : (error || `Remote execution failed: ${result.status?.description || "unknown status"}`),
-      executionTime: Date.now() - startedAt,
+      error: accepted ? "" : (error || `Judge0 execution failed: ${result.status?.description || "unknown status"}`),
+      executionTime,
     };
   } catch (error) {
     console.error("[sandbox] Remote Judge0 execution failed:", error.message);
+    if (signal?.aborted || error?.name === "AbortError") {
+      await cancelRemoteSubmission();
+      return failure("cancelled", "Execution was cancelled. Judge0 cancellation was requested; the provider may continue the submission if deletion is unavailable.", Date.now() - startedAt);
+    }
     return {
-      success: false, stage: "sandbox", output: "",
-      error: "Secure remote code execution is currently unavailable. Please try again later; code was not executed locally.",
+      success: false, stage: error.stage || "sandbox", output: "",
+      error: error.stage ? error.message : `Could not reach the configured Judge0 service (${error.name === "TimeoutError" ? "request timed out" : "network or provider error"}). Code was not executed locally.`,
       executionTime: Date.now() - startedAt,
     };
   }
@@ -198,7 +268,7 @@ function createTempDirectory() {
   return directory;
 }
 
-function sandboxArguments(command, args, cwd) {
+function sandboxArguments(command, args, cwd, timeoutMs) {
   const bwrapArgs = ["--unshare-all", "--die-with-parent", "--new-session"];
   for (const directory of ["/usr", "/etc", "/lib", "/lib64"]) {
     if (fs.existsSync(directory)) bwrapArgs.push("--ro-bind", directory, directory);
@@ -215,10 +285,10 @@ function sandboxArguments(command, args, cwd) {
     "--setenv", "LANG", "C.UTF-8",
     "--",
     "/usr/bin/prlimit",
-    "--cpu=20",
-    "--as=2147483648",
-    "--nproc=64",
-    "--fsize=104857600",
+    `--cpu=${Math.max(1, Math.ceil(timeoutMs / 1000))}`,
+    "--as=536870912",
+    "--nproc=32",
+    "--fsize=1048576",
     "--nofile=64",
     "--",
     command,
@@ -259,10 +329,11 @@ function runProcess(command, args, options = {}) {
     let stdout = "";
     let stderr = "";
     let timedOut = false;
+    let cancelled = false;
     let outputLimitExceeded = false;
     const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : TIME_LIMIT;
 
-    const child = spawn("bwrap", sandboxArguments(command, args, options.cwd), {
+    const child = spawn("bwrap", sandboxArguments(command, args, options.cwd, timeoutMs), {
       cwd: options.cwd,
       shell: false,
       detached: process.platform !== "win32",
@@ -280,17 +351,34 @@ function runProcess(command, args, options = {}) {
       killProcessTree(child);
     }, timeoutMs);
 
+    const cancel = () => {
+      cancelled = true;
+      killProcessTree(child);
+    };
+    if (options.signal?.aborted) cancel();
+    else options.signal?.addEventListener("abort", cancel, { once: true });
+
+    const appendBounded = (current, data) => {
+      const totalBytes = Buffer.byteLength(stdout, "utf8") + Buffer.byteLength(stderr, "utf8");
+      const remaining = Math.max(0, MAX_OUTPUT - totalBytes);
+      const chunk = data.toString("utf8");
+      const bounded = Buffer.from(chunk, "utf8").subarray(0, remaining).toString("utf8");
+      return { value: current + bounded, exceeded: Buffer.byteLength(chunk, "utf8") > remaining };
+    };
+
     child.stdout.on("data", (data) => {
-      stdout += data.toString();
-      if (Buffer.byteLength(stdout, "utf8") > MAX_OUTPUT) {
+      const result = appendBounded(stdout, data);
+      stdout = result.value;
+      if (result.exceeded) {
         outputLimitExceeded = true;
         killProcessTree(child);
       }
     });
 
     child.stderr.on("data", (data) => {
-      stderr += data.toString();
-      if (Buffer.byteLength(stderr, "utf8") > MAX_OUTPUT) {
+      const result = appendBounded(stderr, data);
+      stderr = result.value;
+      if (result.exceeded) {
         outputLimitExceeded = true;
         killProcessTree(child);
       }
@@ -298,11 +386,13 @@ function runProcess(command, args, options = {}) {
 
     child.on("error", (error) => {
       clearTimeout(timer);
+      options.signal?.removeEventListener("abort", cancel);
       resolve({
         success: false,
         stdout,
         stderr: error.message,
         timedOut,
+        cancelled,
         outputLimitExceeded,
         exitCode: null,
       });
@@ -310,11 +400,13 @@ function runProcess(command, args, options = {}) {
 
     child.on("close", (code) => {
       clearTimeout(timer);
+      options.signal?.removeEventListener("abort", cancel);
       resolve({
         success: code === 0 && !timedOut && !outputLimitExceeded,
         stdout,
         stderr,
         timedOut,
+        cancelled,
         outputLimitExceeded,
         exitCode: code,
       });
@@ -329,7 +421,7 @@ function runProcess(command, args, options = {}) {
    C++ EXECUTION
 ========================= */
 
-async function executeCpp(code, input = "") {
+async function executeCpp(code, input = "", signal) {
   if (!commandAvailable("g++")) {
     return {
       success: false,
@@ -360,6 +452,7 @@ async function executeCpp(code, input = "") {
       {
         cwd: tempDirectory,
         timeoutMs: 15000,
+        signal,
       }
     );
 
@@ -383,6 +476,7 @@ async function executeCpp(code, input = "") {
       {
         cwd: tempDirectory,
         input,
+        signal,
       }
     );
 
@@ -456,7 +550,7 @@ async function executeCpp(code, input = "") {
    C EXECUTION
 ========================= */
 
-async function executeC(code, input = "") {
+async function executeC(code, input = "", signal) {
   if (!commandAvailable("gcc")) {
     return {
       success: false,
@@ -487,6 +581,7 @@ async function executeC(code, input = "") {
       {
         cwd: tempDirectory,
         timeoutMs: 15000,
+        signal,
       }
     );
 
@@ -510,6 +605,7 @@ async function executeC(code, input = "") {
       {
         cwd: tempDirectory,
         input,
+        signal,
       }
     );
 
@@ -583,7 +679,7 @@ async function executeC(code, input = "") {
    PYTHON EXECUTION
 ========================= */
 
-async function executePython(code, input = "") {
+async function executePython(code, input = "", signal) {
   const pythonCommand = getPythonCommand();
 
   if (!pythonCommand) {
@@ -611,6 +707,7 @@ async function executePython(code, input = "") {
       {
         cwd: tempDirectory,
         input,
+        signal,
       }
     );
 
@@ -684,7 +781,7 @@ async function executePython(code, input = "") {
    JAVA EXECUTION
 ========================= */
 
-async function executeJava(code, input = "") {
+async function executeJava(code, input = "", signal) {
   if (!commandAvailable("javac") || !commandAvailable("java")) {
     return {
       success: false,
@@ -715,6 +812,7 @@ async function executeJava(code, input = "") {
       {
         cwd: tempDirectory,
         timeoutMs: 15000,
+        signal,
       }
     );
 
@@ -738,6 +836,7 @@ async function executeJava(code, input = "") {
       {
         cwd: tempDirectory,
         input,
+        signal,
       }
     );
 
@@ -811,7 +910,7 @@ async function executeJava(code, input = "") {
    JAVASCRIPT EXECUTION
 ========================= */
 
-async function executeJavaScript(code, input = "") {
+async function executeJavaScript(code, input = "", signal) {
   const tempDirectory = createTempDirectory();
   const sourceFile = path.join(tempDirectory, "main.js");
 
@@ -825,6 +924,7 @@ async function executeJavaScript(code, input = "") {
       {
         cwd: tempDirectory,
         input,
+        signal,
       }
     );
     const executionTime = Date.now() - startTime;
@@ -888,7 +988,7 @@ async function executeJavaScript(code, input = "") {
    MAIN EXECUTOR
 ========================= */
 
-async function executeCode(language, code, input = "") {
+async function executeCode(language, code, input = "", options = {}) {
   if (!code || !code.trim()) {
     return {
       success: false,
@@ -919,7 +1019,7 @@ async function executeCode(language, code, input = "") {
   }
 
   if (!sandboxAvailable()) {
-    return executeWithJudge0(language, code, input);
+    return executeWithJudge0(language, code, input, options);
   }
 
   const normalizedLanguage = language
@@ -930,22 +1030,22 @@ async function executeCode(language, code, input = "") {
     normalizedLanguage === "c++" ||
     normalizedLanguage === "cpp"
   ) {
-    return executeCpp(code, input);
+    return executeCpp(code, input, options.signal);
   }
 
   if (normalizedLanguage === "c") {
-    return executeC(code, input);
+    return executeC(code, input, options.signal);
   }
 
   if (
     normalizedLanguage === "python" ||
     normalizedLanguage === "py"
   ) {
-    return executePython(code, input);
+    return executePython(code, input, options.signal);
   }
 
   if (normalizedLanguage === "java") {
-    return executeJava(code, input);
+    return executeJava(code, input, options.signal);
   }
 
   if (
@@ -953,7 +1053,7 @@ async function executeCode(language, code, input = "") {
     normalizedLanguage === "js" ||
     normalizedLanguage === "node"
   ) {
-    return executeJavaScript(code, input);
+    return executeJavaScript(code, input, options.signal);
   }
 
   return {
@@ -967,6 +1067,7 @@ async function executeCode(language, code, input = "") {
 
 module.exports = {
   executeCode,
+  executeWithJudge0,
   getRuntimeAvailability,
 };
 

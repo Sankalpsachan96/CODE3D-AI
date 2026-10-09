@@ -2,10 +2,11 @@
  * API Client connecting the CODE3D AI frontend to the active Node.js/Express backend.
  */
 
-import { solvePersonalProblem, correctPersonalCode } from './personalProblemSolver';
+import { solvePersonalProblem, correctPersonalCode } from './personalProblemSolver.js';
 
 const LIVE_RENDER_URL = 'https://code3d-ai-oscc.onrender.com/api';
 const LOCAL_URL = 'http://localhost:5000/api';
+const CONFIGURED_FALLBACK_URL = import.meta.env?.VITE_FALLBACK_BACKEND_URL || '';
 
 // When accessed from phone, GitHub Pages, or Vercel, always use the live Render backend!
 const isLocalhost =
@@ -14,10 +15,21 @@ const isLocalhost =
     window.location.hostname === '127.0.0.1');
 
 const BACKEND_BASE_URL =
-  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env?.VITE_BACKEND_URL ||
   (isLocalhost ? LOCAL_URL : LIVE_RENDER_URL);
 
-async function smartFetch(endpoint, options = {}) {
+function isSafeFallbackUrl(value) {
+  try {
+    const fallback = new URL(value);
+    const localHttp = fallback.protocol === 'http:' &&
+      ['localhost', '127.0.0.1', '[::1]'].includes(fallback.hostname);
+    return !fallback.username && !fallback.password && (fallback.protocol === 'https:' || localHttp);
+  } catch {
+    return false;
+  }
+}
+
+async function smartFetch(endpoint, options = {}, { allowFallback = true } = {}) {
   const fetchOpts = {
     ...options,
     credentials: 'include',
@@ -31,20 +43,20 @@ async function smartFetch(endpoint, options = {}) {
 
     return res;
   } catch (err) {
-    // If local fetch failed, fallback to live Render cloud backend
-    if (BACKEND_BASE_URL !== LIVE_RENDER_URL) {
+    // Only use a fallback endpoint when the deployment configured one explicitly.
+    if (allowFallback && isSafeFallbackUrl(CONFIGURED_FALLBACK_URL) && CONFIGURED_FALLBACK_URL !== BACKEND_BASE_URL) {
       try {
         console.warn(
-          `Local backend unreachable at ${BACKEND_BASE_URL}. Falling back to live cloud backend...`
+          `Backend unreachable at ${BACKEND_BASE_URL}. Trying the explicitly configured fallback...`
         );
 
         return await fetch(
-          `${LIVE_RENDER_URL}${endpoint}`,
+          `${CONFIGURED_FALLBACK_URL.replace(/\/+$/, '')}${endpoint}`,
           fetchOpts
         );
       } catch (fallbackErr) {
         console.warn(
-          'Live backend also unreachable:',
+          'Configured fallback backend also unreachable:',
           fallbackErr
         );
       }
@@ -54,11 +66,11 @@ async function smartFetch(endpoint, options = {}) {
   }
 }
 
-export async function checkBackendHealth() {
+export async function checkBackendHealth({ allowFallback = true } = {}) {
   try {
     const res = await smartFetch('/health', {
       method: 'GET'
-    });
+    }, { allowFallback });
 
     return res.ok;
   } catch (err) {
@@ -89,7 +101,9 @@ export async function executeProgram(
   conceptId = null,
   language = 'java',
   input = null,
-  universal = true
+  universal = true,
+  signal,
+  { allowFallback = true } = {}
 ) {
   try {
     const res = await smartFetch('/execute', {
@@ -97,6 +111,7 @@ export async function executeProgram(
       headers: {
         'Content-Type': 'application/json'
       },
+      signal,
       body: JSON.stringify({
         code,
         conceptId,
@@ -105,7 +120,7 @@ export async function executeProgram(
         title: conceptId || 'Custom Execution',
         universal,
       }),
-    });
+    }, { allowFallback });
 
     if (!res.ok) {
       let message = 'Execution failed on backend';

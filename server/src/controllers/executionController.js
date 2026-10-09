@@ -21,10 +21,25 @@ export async function runExecution(req, res) {
     const universal = req.body?.universal === true;
     let execResult;
     let universalTraceResult = null;
+    let rawStdout = null;
+    let rawStderr = null;
 
     if (universal) {
-      const rawResult = await universalExecutor.executeCode(language, code, input);
+      const abortController = new AbortController();
+      const abortOnDisconnect = () => {
+        if (!res.writableEnded) abortController.abort();
+      };
+      res.once('close', abortOnDisconnect);
+      let rawResult;
+      try {
+        rawResult = await universalExecutor.executeCode(language, code, input, { signal: abortController.signal });
+      } finally {
+        res.off('close', abortOnDisconnect);
+      }
+      if (abortController.signal.aborted || res.destroyed) return;
       universalTraceResult = universalTrace.generateTrace(code, language, rawResult);
+      rawStdout = rawResult.output || '';
+      rawStderr = rawResult.stderr || '';
       const rawSteps = universalTraceResult.events || [];
       const rawErrorText = rawResult.error || '';
       const rawErrorLineMatch = rawErrorText.match(/(?:line|Line)\s*[:#]?\s*(\d+)/) || rawErrorText.match(/:(\d+)(?::\d+)?/);
@@ -33,6 +48,7 @@ export async function runExecution(req, res) {
         status: rawResult.success ? 'COMPLETED' : 'ERROR',
         errorCode: rawResult.success ? null : (rawResult.stage || 'EXECUTION_ERROR').toUpperCase(),
         message: rawResult.error || null,
+        stderr: rawResult.stderr || '',
         language,
         steps: rawSteps.map((event, index) => ({
           step: event.step || index + 1,
@@ -79,7 +95,8 @@ export async function runExecution(req, res) {
         })),
         totalSteps: rawSteps.length,
         finalVariables: {},
-        output: rawResult.output ? String(rawResult.output).split(/\r?\n/).filter(Boolean) : [],
+        output: rawResult.output ? String(rawResult.output).split(/\r?\n/) : [],
+        stderr: rawResult.stderr || rawResult.error || '',
         executionTimeMs: rawResult.executionTime || 0,
         complexity: null,
       };
@@ -147,8 +164,13 @@ export async function runExecution(req, res) {
       totalSteps: execResult.totalSteps,
       finalVariables: execResult.finalVariables,
       output: execResult.output,
+      stdout: rawStdout,
       executionTimeMs: execResult.executionTimeMs,
       complexity: execResult.complexity,
+      traceSupported: universalTraceResult?.supported === true && universalTraceResult?.generic !== true && execResult.status === 'COMPLETED',
+      traceReason: universalTraceResult?.reason || (universalTraceResult?.generic ? 'No matching supported algorithm trace was found.' : null),
+      traceGeneric: universalTraceResult?.generic === true,
+      stderr: rawStderr || execResult.stderr || '',
       universalContext,
     });
   } catch (err) {

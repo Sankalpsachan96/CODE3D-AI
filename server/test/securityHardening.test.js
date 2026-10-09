@@ -14,13 +14,51 @@ async function request(path, options = {}) {
       },
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
-    return { status: response.status, data: await response.json().catch(() => null) };
+    return {
+      status: response.status,
+      headers: response.headers,
+      data: await response.json().catch(() => null),
+    };
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
 }
 
 test('security hardening: CORS, AI payload limits, and AI rate limiting', async () => {
+  const localOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
+  ];
+
+  for (const origin of localOrigins) {
+    const preflight = await request('/api/execute', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: origin,
+        'Access-Control-Request-Method': 'POST',
+        'Access-Control-Request-Headers': 'content-type,x-session-token',
+      },
+    });
+    assert.equal(preflight.status, 204, `${origin} should receive a successful preflight`);
+    assert.equal(preflight.headers.get('access-control-allow-origin'), origin);
+    assert.equal(preflight.headers.get('access-control-allow-credentials'), 'true');
+
+    const health = await request('/api/health', { headers: { Origin: origin } });
+    assert.equal(health.headers.get('access-control-allow-origin'), origin);
+  }
+
+  const blockedPreflight = await request('/api/execute', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'https://untrusted.invalid',
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'content-type',
+    },
+  });
+  assert.notEqual(blockedPreflight.headers.get('access-control-allow-origin'), 'https://untrusted.invalid');
+
   const blockedOrigin = await request('/api/ai/explain', {
     method: 'POST',
     headers: { Origin: 'https://untrusted.invalid' },

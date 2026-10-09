@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Terminal, Target, Play, AlertCircle } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -40,7 +40,10 @@ export const generateNearlySortedArray = (size = 8) => {
  */
 export default function InputGenerator({
   onApplyInput,
+  onApplyText,
   currentValues = [10, 20, 30, 40],
+  currentText,
+  freeform = false,
   isSearching = false,
   currentTarget = 30,
 }) {
@@ -51,8 +54,18 @@ export default function InputGenerator({
   const [targetVal, setTargetVal] = useState(currentTarget || 23);
   const [validationError, setValidationError] = useState(null);
 
+  useEffect(() => {
+    if (freeform) {
+      setCustomText(String(currentText ?? ''));
+    }
+  }, [currentText, freeform]);
+
   const handleApply = () => {
     setValidationError(null);
+    if (freeform) {
+      onApplyText?.(customText);
+      return;
+    }
     const parsed = customText
       .split(/[,\s]+/)
       .map((s) => s.trim())
@@ -82,7 +95,7 @@ export default function InputGenerator({
         {/* Input Header Icon */}
         <div className="flex items-center gap-1.5 shrink-0 text-slate-400 font-mono text-[11px]">
           <Terminal size={13} className="text-cyan-400" />
-          <span className="font-semibold text-slate-300">Input (stdin):</span>
+          <span className="font-semibold text-slate-300">{freeform ? 'Stdin:' : 'Input (stdin):'}</span>
         </div>
 
         {/* Custom Input Field */}
@@ -92,7 +105,7 @@ export default function InputGenerator({
             value={customText}
             onChange={(e) => setCustomText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleApply()}
-            placeholder="e.g. 10, 20, 30, 40, 50"
+            placeholder={freeform ? 'Text sent to the program as stdin' : 'e.g. 10, 20, 30, 40, 50'}
             className={`w-full px-2.5 py-1 rounded-md text-xs font-mono border focus:outline-none focus:ring-1 focus:ring-cyan-500 transition ${
               isBright
                 ? 'bg-white border-slate-300 text-slate-900 placeholder:text-slate-400'
@@ -123,12 +136,18 @@ export default function InputGenerator({
         <button
           onClick={handleApply}
           className="px-3 py-1 rounded-md font-bold text-xs transition shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950"
-          title="Apply input data into code execution and 3D simulation"
+          title={freeform ? 'Send this text as stdin; code must read stdin to use it' : 'Apply input data into code execution and 3D simulation'}
         >
           <Play size={11} className="fill-slate-950" />
-          <span>Apply Input</span>
+          <span>{freeform ? 'Set stdin' : 'Apply Input'}</span>
         </button>
       </div>
+
+      {freeform && (
+        <div className="pt-1 text-[10px] text-slate-500">
+          Stdin is passed to the program. It affects the result only if the code reads it.
+        </div>
+      )}
 
       {/* Validation warning if present */}
       {validationError && (
