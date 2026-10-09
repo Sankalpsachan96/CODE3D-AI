@@ -413,6 +413,26 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         );
       })}
 
+      {/* Captured runtime call frames: useful for recursion and nested calls. */}
+      {Array.isArray(dataStructureState.callStack) && dataStructureState.callStack.length > 0 && (
+        <group position={[-4.2, 0.15, -1.6]}>
+          {dataStructureState.callStack.slice(-8).map((frameName, index, visibleFrames) => (
+            <group key={"call-frame-" + index} position={[index * 1.05, index * 0.12, 0]}>
+              <mesh position={[0, 0.28, 0]}>
+                <boxGeometry args={[0.92, 0.48, 0.5]} />
+                <meshStandardMaterial color={index === visibleFrames.length - 1 ? "#f59e0b" : "#164e63"} emissive={index === visibleFrames.length - 1 ? "#b45309" : "#0e7490"} emissiveIntensity={0.55} />
+              </mesh>
+              <Text position={[0, 0.3, 0.28]} fontSize={0.11} color="#f8fafc" anchorX="center" anchorY="middle" maxWidth={0.85}>
+                {String(frameName).slice(0, 14)}
+              </Text>
+            </group>
+          ))}
+          <Text position={[0, -0.18, 0]} fontSize={0.14} color="#67e8f9" anchorX="left" anchorY="middle">
+            {String(dataStructureState.callStack.length) + " active call frame(s)"}
+          </Text>
+        </group>
+      )}
+
       {/* Render 3D Variable Memory Pedestals */}
       {varEntries.map(([name, val], index) => {
         let posX = 0;
