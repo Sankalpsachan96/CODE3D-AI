@@ -569,7 +569,11 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         visualTrace = execution.steps.map((step, index) => {
           const lineNumber = step.lineNumber || step.line || null;
           const variables = step.variables || step.dataStructureState?.variables || {};
-          const arrays = step.arrays || step.dataStructureState?.arrays || {};
+          const arrays = step.arrays || step.dataStructureState?.arrays || (
+            Array.isArray(step.dataStructureState?.array)
+              ? { [step.dataStructureState?.arrayName || 'array']: step.dataStructureState.array }
+              : {}
+          );
           const isGenericModel = !execution.traceSupported;
           const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value));
           const dataStructureState = isGenericModel
