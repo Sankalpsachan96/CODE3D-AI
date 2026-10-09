@@ -1280,6 +1280,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 input={formInputValues}
                 inputLabel={universalOnly ? 'Stdin provided' : 'Input'}
                 inputHint={universalOnly ? 'Sent with each run; the program uses it only if its code reads stdin.' : null}
+                hideInput={universalOnly}
                 currentStep={currentStep}
                 executionStatus={universalOnly ? runtimeStatus : executionState}
                 error={executionError}
