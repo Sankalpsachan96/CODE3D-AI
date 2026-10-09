@@ -223,6 +223,10 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
   if (!dataStructureState) return null;
 
   // Include parsed arrays alongside scalar variables so generic source models still have visible memory state.
+  const arrayEntries = Object.entries(dataStructureState.arrays || {})
+    .filter(([, value]) => Array.isArray(value))
+    .slice(0, 4)
+    .map(([name, values]) => [name, values.slice(0, 16)]);
   const rawVars = { ...(dataStructureState.arrays || {}), ...(dataStructureState.variables || {}) };
   const varTypes = dataStructureState.variableTypes || {};
   const activeVar = dataStructureState.activeVariable || null;
@@ -282,6 +286,45 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
 
       {/* In-Scene Holographic Terminal Streamer */}
       <HologramTerminalBoard outputStream={outputStream} />
+
+      {/* Dynamic array memory cells: values and active index follow the current source-model step. */}
+      {arrayEntries.map(([arrayName, values], arrayIndex) => {
+        const cellSpacing = 1.12;
+        const visibleValues = values;
+        const rowWidth = Math.max(0, (visibleValues.length - 1) * cellSpacing);
+        const activeIndex = Number.isInteger(dataStructureState.activeIndex) ? dataStructureState.activeIndex : null;
+        const rowZ = 2.4 + arrayIndex * 1.25;
+        return (
+          <group key={`memory-array-${arrayName}`} position={[-rowWidth / 2, 0, rowZ]}>
+            <Text position={[0, 1.15, 0]} fontSize={0.18} color="#67e8f9" anchorX="left" anchorY="middle" fontWeight="bold">
+              {`${arrayName}[] • ${values.length} cells`}
+            </Text>
+            {visibleValues.map((value, index) => {
+              const active = activeIndex === index;
+              const height = typeof value === 'number' ? Math.max(0.45, Math.min(1.7, Math.abs(value) / 25 + 0.45)) : 0.65;
+              const color = active ? '#fbbf24' : '#0891b2';
+              return (
+                <group key={`${arrayName}-${index}`} position={[index * cellSpacing, 0, 0]}>
+                  <mesh position={[0, height / 2, 0]}>
+                    <boxGeometry args={[0.88, height, 0.82]} />
+                    <meshStandardMaterial color={color} emissive={active ? '#d97706' : '#0e7490'} emissiveIntensity={active ? 1.2 : 0.35} metalness={0.45} roughness={0.25} />
+                  </mesh>
+                  <lineSegments position={[0, height / 2, 0]}>
+                    <edgesGeometry args={[new THREE.BoxGeometry(0.9, height + 0.02, 0.84)]} />
+                    <lineBasicMaterial color={active ? '#fef08a' : '#67e8f9'} />
+                  </lineSegments>
+                  <Text position={[0, height + 0.22, 0]} fontSize={0.17} color={active ? '#fef08a' : '#e2e8f0'} anchorX="center" anchorY="middle" fontWeight="bold">
+                    {String(value)}
+                  </Text>
+                  <Text position={[0, -0.2, 0]} fontSize={0.13} color={active ? '#fbbf24' : '#94a3b8'} anchorX="center" anchorY="middle">
+                    {`[${index}]`}
+                  </Text>
+                </group>
+              );
+            })}
+          </group>
+        );
+      })}
 
       {/* Render 3D Variable Memory Pedestals */}
       {varEntries.map(([name, val], index) => {
