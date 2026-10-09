@@ -66,3 +66,65 @@ test('C-style array declarations remain recognized after Java array parsing fix'
   assert.equal(result.algorithm, 'array_traversal');
   assert.deepEqual(result.events[0].array, [10, 20, 30, 40]);
 });
+
+
+test('representative DSA trace coverage: stack, queue, linked list, sorting and search', () => {
+  const cases = [
+    {
+      name: 'stack LIFO',
+      code: 'stack<int> s; s.push(10); s.push(20); s.pop();',
+      language: 'cpp',
+      algorithm: 'stack_operations',
+      dataStructure: 'stack',
+      stateField: 'stack',
+      expected: [10],
+    },
+    {
+      name: 'queue FIFO',
+      code: 'queue<int> q; q.push(10); q.push(20); q.pop();',
+      language: 'cpp',
+      algorithm: 'queue_operations',
+      dataStructure: 'queue',
+      stateField: 'queue',
+      expected: [20],
+    },
+    {
+      name: 'linked-list node allocations',
+      code: 'struct Node { int value; Node* next; }; Node* head = new Node(10); head->next = new Node(20);',
+      language: 'cpp',
+      algorithm: 'linked_list',
+      dataStructure: 'linked_list',
+      stateField: 'values',
+      expected: [10, 20],
+    },
+    {
+      name: 'bubble sort',
+      code: 'int arr[3] = {3, 1, 2}; // bubble sort\nfor (int i=0; i<3; i++) { for (int j=0; j<2; j++) { if (arr[j] > arr[j+1]) { int t=arr[j]; arr[j]=arr[j+1]; arr[j+1]=t; } } }',
+      language: 'cpp',
+      algorithm: 'bubble_sort',
+      dataStructure: 'array',
+      stateField: 'array',
+      expected: [1, 2, 3],
+    },
+    {
+      name: 'linear search',
+      code: 'int arr[4] = {10, 20, 30, 40}; int target = 30; for (int i=0; i<4; i++) { if (arr[i] == target) break; }',
+      language: 'cpp',
+      algorithm: 'linear_search',
+      dataStructure: 'array',
+      stateField: 'array',
+      expected: [10, 20, 30, 40],
+    },
+  ];
+
+  for (const item of cases) {
+    const result = universalTrace.generateTrace(item.code, item.language, { success: true, output: '' });
+    assert.equal(result.supported, true, item.name + ': supported');
+    assert.notEqual(result.generic, true, item.name + ': specialized trace expected');
+    assert.equal(result.algorithm, item.algorithm, item.name + ': algorithm');
+    assert.equal(result.dataStructure, item.dataStructure, item.name + ': structure');
+    const final = [...result.events].reverse().find((event) => event.type === 'complete' || event.type === 'pop' || event.type === 'insert');
+    assert.ok(final, item.name + ': final state event exists');
+    assert.deepEqual(final[item.stateField], item.expected, item.name + ': expected final state');
+  }
+});
