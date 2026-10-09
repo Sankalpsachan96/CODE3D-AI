@@ -571,14 +571,16 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           const lineNumber = step.lineNumber || step.line || null;
           const variables = step.variables || step.dataStructureState?.variables || {};
           const arrays = step.arrays || step.dataStructureState?.arrays || (
-            Array.isArray(step.dataStructureState?.array)
-              ? { [step.dataStructureState?.arrayName || 'array']: step.dataStructureState.array }
-              : {}
+            Array.isArray(step.array)
+              ? { [step.arrayName || step.structureName || 'array']: step.array }
+              : Array.isArray(step.dataStructureState?.array)
+                ? { [step.dataStructureState?.arrayName || 'array']: step.dataStructureState.array }
+                : {}
           );
           const isGenericModel = !execution.traceSupported;
           const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value));
           const sourceState = step.dataStructureState || {};
-          const structureType = String(sourceState.structureType || sourceState.type || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
+          const structureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
           const dataStructureState = {
             ...sourceState,
             type: universalOnly ? 'universal-execution' : (isGenericModel ? 'universal-execution' : (sourceState.type || 'array')),
@@ -590,9 +592,9 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             stack: step.stack || sourceState.stack || (structureType === 'stack' ? sourceState.values : undefined),
             queue: step.queue || sourceState.queue || (structureType === 'queue' ? sourceState.values : undefined),
             outputStream: actualOutput,
-            values: arrayEntry?.[1] || sourceState.values || sourceState.array || [],
+            values: arrayEntry?.[1] || step.values || step.array || sourceState.values || sourceState.array || (structureType === 'stack' ? step.stack : undefined) || (structureType === 'queue' ? step.queue : undefined) || [],
             arrayName: arrayEntry?.[0] || sourceState.arrayName || null,
-            activeIndex: step.index ?? sourceState.activeIndex ?? (
+            activeIndex: step.index ?? (Array.isArray(step.indices) ? step.indices[0] : null) ?? step.innerIndex ?? step.outerIndex ?? sourceState.activeIndex ?? (
               Number.isInteger(variables.i) ? variables.i
                 : Number.isInteger(variables.index) ? variables.index
                   : Number.isInteger(variables.idx) ? variables.idx
