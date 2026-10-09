@@ -14,6 +14,7 @@ export default function OutputConsole({
   executionTimeMs = null,
   inputLabel = 'Input',
   inputHint = null,
+  hideInput = false,
 }) {
   const { isBright } = useTheme();
   const [copied, setCopied] = useState(false);
@@ -113,13 +114,13 @@ export default function OutputConsole({
         {/* Runtime context: shows the exact input used even when the program
             intentionally prints nothing (e.g. search/insert/return-only code). */}
         <div className={`grid grid-cols-1 ${isExpanded ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-2 mb-2`}>
-          <div className={`rounded-lg border p-2 ${isBright ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'}`}>
+          {!hideInput && (<div className={`rounded-lg border p-2 ${isBright ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'}`}>
             <div className={`text-[9px] uppercase font-bold tracking-wider mb-1 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{inputLabel}</div>
             <div className={`font-mono text-[11px] break-all ${isBright ? 'text-slate-800' : 'text-slate-200'}`}>
               {normalizedInput || 'No stdin supplied'}
             </div>
             {inputHint && <div className={`mt-1 text-[9px] leading-relaxed ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>{inputHint}</div>}
-          </div>
+          </div>)}
           <div className={`rounded-lg border p-2 ${isBright ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/70 border-slate-800'}`}>
             <div className={`text-[9px] uppercase font-bold tracking-wider mb-1 ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>Execution</div>
             <div className={`font-mono text-[11px] ${executionStatus === 'COMPLETED' ? 'text-emerald-400' : isBright ? 'text-slate-800' : 'text-slate-200'}`}>
@@ -156,7 +157,7 @@ export default function OutputConsole({
 
         {output.length === 0 && !correctOutput ? (
           <div className={`italic text-[11px] py-1 ${isBright ? 'text-slate-400' : 'text-slate-600'}`}>
-            No stdout lines produced by the program. Stdin and execution context are shown above.
+            No stdout lines produced by the program.
           </div>
         ) : (
           output.map((line, idx) => (
