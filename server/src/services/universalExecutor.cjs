@@ -134,14 +134,14 @@ function buildPythonInstrumentedSource(source) {
     ,"finally:"
     ," sys.settrace(None)"
     ," print(\"" + RUNTIME_TRACE_MARKER + "\" + json.dumps(__code3d_events, separators=(\",\", \":\")), file=sys.stderr)"
-  ].join("\\n");
+  ].join("\n");
 }
 function extractPythonRuntimeTrace(stderr) {
   const text = String(stderr || "");
   const i = text.lastIndexOf(RUNTIME_TRACE_MARKER);
   if (i < 0) return { stderr: text, runtimeTrace: null };
   const before = text.slice(0, i).trimEnd();
-  const payload = text.slice(i + RUNTIME_TRACE_MARKER.length).split(/\\r?\\n/, 1)[0];
+  const payload = text.slice(i + RUNTIME_TRACE_MARKER.length).split(/\r?\n/, 1)[0];
   try { const events = JSON.parse(payload); return { stderr: before, runtimeTrace: Array.isArray(events) ? events : null }; }
   catch { return { stderr: text, runtimeTrace: null }; }
 }
