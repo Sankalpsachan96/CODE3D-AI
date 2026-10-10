@@ -45,6 +45,8 @@ test('JavaScript runtime tracer captures executed lines and real local values wi
     assert.deepEqual(loopStates.map((step) => step.variables.i), [0, 1]);
     assert.deepEqual(loopStates.map((step) => step.variables.total), [0, 2]);
     assert.deepEqual(loopStates[0].variables.values, [2, 4]);
+    assert.equal(trace.runtimeTrace[trace.runtimeTrace.length - 1].line, 6, 'the post-loop output line must be captured after loop-body snapshots');
+    assert.equal(trace.runtimeTrace[trace.runtimeTrace.length - 1].variables.total, 6);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
