@@ -93,14 +93,22 @@ function getJudge0Config(options = {}) {
 function getRuntimeAvailability() {
   const judge0 = getJudge0Config();
   const localSandbox = sandboxAvailable();
+  const remoteJudge0Configured = Boolean(judge0.url);
+  const executionAvailable = localSandbox || remoteJudge0Configured;
   return {
     javascript: Boolean(process.execPath),
     cpp: commandAvailable("g++"),
     c: commandAvailable("gcc"),
     python: Boolean(getPythonCommand()),
     java: commandAvailable("javac") && commandAvailable("java"),
-    sandbox: localSandbox || Boolean(judge0.url),
-    executionProvider: localSandbox ? "local-bubblewrap" : (judge0.url ? "remote-judge0" : "unavailable"),
+    // "sandbox" means the local Bubblewrap sandbox actually passed its namespace probe.
+    // A configured remote provider is reported separately; configuration alone does not
+    // prove that provider is reachable or accepting submissions.
+    sandbox: localSandbox,
+    localSandboxAvailable: localSandbox,
+    remoteJudge0Configured,
+    executionAvailable,
+    executionProvider: localSandbox ? "local-bubblewrap" : (remoteJudge0Configured ? "remote-judge0" : "unavailable"),
     nodeVersion: process.version,
   };
 }
