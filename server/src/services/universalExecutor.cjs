@@ -180,10 +180,10 @@ function extractRuntimeTrace(stderr) {
 }
 
 function buildJavaScriptTraceRunnerSource(embeddedSource = null) {
-  return String.raw`const inspector = require("node:inspector");
-const vm = require("node:vm");
-const fs = require("node:fs");
-const path = require("node:path");
+  return String.raw`const inspector = require("inspector");
+const vm = require("vm");
+const fs = require("fs");
+const path = require("path");
 const marker = "__CODE3D_RUNTIME_TRACE__";
 const userPath = process.argv[2] || "code3d-user.js";
 const userSource = ${embeddedSource === null ? 'fs.readFileSync(userPath, "utf8")' : `Buffer.from("${Buffer.from(embeddedSource, "utf8").toString("base64")}", "base64").toString("utf8")`}.replace(/^#!/, "//");
