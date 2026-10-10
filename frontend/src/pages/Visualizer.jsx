@@ -61,7 +61,11 @@ function buildBstPatternTrace(source, runtimeOutput = []) {
   if (!hasNodeLinks || !hasTreeOps) return null;
 
   const arrayMatch = code.match(/(?:int|long|Integer|var)\s*(?:\[\s*\]\s*)?\w*values\w*\s*(?:\[\s*\])?\s*=\s*[\{\[]([^}\]]+)[}\]]/i)
-    || code.match(/values\s*=\s*[\{\[]([^}\]]+)[}\]]/i);
+    || code.match(/values\s*=\s*[\{\[]([^}\]]+)[}\]]/i)
+    // Python: for value in [50, 30, ...]
+    || code.match(/\bfor\s+\w+\s+in\s+\[([^\]]+)\]/i)
+    // JavaScript: for (const value of [50, 30, ...])
+    || code.match(/\bfor\s*\([^)]*\bof\s+\[([^\]]+)\]\s*\)/i);
   const values = arrayMatch
     ? (arrayMatch[1].match(/-?\d+/g) || []).map(Number).slice(0, 40)
     : [];
