@@ -173,10 +173,17 @@ function sourceStructureState(type, values, extra = {}) {
 export function buildLinearStructurePatternTrace(source, runtimeOutput = []) {
   const code = String(source || '');
   const lower = code.toLowerCase();
-  const declaredStack = /\b(?:stack|Stack)\s*(?:<[^>]+>)?\s+\w+|\b(?:const|let|var)\s+stack\s*=\s*\[\s*\]/.test(code);
-  const declaredQueue = /\b(?:queue|Queue|Deque)\s*(?:<[^>]+>)?\s+\w+|\b(?:const|let|var)\s+queue\s*=\s*\[\s*\]/.test(code);
-  const isStack = declaredStack || (!declaredQueue && /\b(?:push|pop|peek|top)\b/.test(lower));
-  const isQueue = declaredQueue || (!declaredStack && /\b(?:enqueue|dequeue|offer|poll|shift)\b/.test(lower));
+  // Only classify a program as a Stack when it declares/uses an identifiable
+  // stack object. Generic array methods such as arr.push(...) and arr.pop(...)
+  // are Array operations, not evidence of a Stack.
+  const declaredStack = /\b(?:stack|Stack)\s*(?:<[^>]+>)?\s+\w+|\b(?:const|let|var)\s+stack\s*=\s*(?:\[\s*\]|new\s+Stack\s*\(|Stack\s*\()/i.test(code)
+    || /\bclass\s+Stack\b/.test(code) && /\bstack\s*=\s*(?:new\s+Stack\s*\(|Stack\s*\(|\[\s*\])/i.test(code);
+  const declaredQueue = /\b(?:queue|Queue|Deque)\s*(?:<[^>]+>)?\s+\w+|\b(?:const|let|var)\s+queue\s*=\s*(?:\[\s*\]|new\s+(?:Queue|Deque)\s*\(|(?:Queue|Deque)\s*\()/i.test(code);
+  const stackReceiverCall = /\b(?:stack|s)\s*\.\s*(?:push|pop|peek|top)\s*\(/i.test(code);
+  const queueReceiverCall = /\b(?:queue|q|deque)\s*\.\s*(?:enqueue|dequeue|offer|poll|peek|front|shift|push|pop)\s*\(/i.test(code);
+  const hasArrayReceiver = /\b(?:arr|array|values|nums|items)\s*\.\s*(?:push|pop|shift|unshift|splice)\s*\(/i.test(code);
+  const isStack = declaredStack || stackReceiverCall || (!hasArrayReceiver && !declaredQueue && /\b(?:std::)?stack\s*<|\b(?:push|pop|peek|top)\s*\(/i.test(code) && /\b(?:stack|Stack)\b/.test(code));
+  const isQueue = declaredQueue || queueReceiverCall || (!hasArrayReceiver && !declaredStack && /\b(?:enqueue|dequeue|offer|poll)\s*\(/i.test(code) && /\b(?:queue|Queue|Deque)\b/.test(code));
   if (isStack === isQueue) return null;
   const type = isStack ? 'stack' : 'queue';
   const values = [];
