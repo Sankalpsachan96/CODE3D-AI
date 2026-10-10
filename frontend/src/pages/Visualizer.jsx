@@ -54,27 +54,27 @@ import {
  */
 function buildBstPatternTrace(source, runtimeOutput = []) {
   const code = String(source || '');
-  const hasNodeLinks = /(?:Node|node|TreeNode)\\s*\\*?\\s+\\w+|class\\s+Node|struct\\s+Node/i.test(code)
-    && /\\.left|->left/i.test(code) && /\\.right|->right/i.test(code);
-  const hasTreeOps = /inorder|preorder|postorder|insert\\s*\\(|search\\s*\\(/i.test(code);
+  const hasNodeLinks = /(?:Node|node|TreeNode)\s*\*?\s+\w+|class\s+Node|struct\s+Node/i.test(code)
+    && /\.left|->left/i.test(code) && /\.right|->right/i.test(code);
+  const hasTreeOps = /inorder|preorder|postorder|insert\s*\(|search\s*\(/i.test(code);
   if (!hasNodeLinks || !hasTreeOps) return null;
 
-  const arrayMatch = code.match(/(?:int|long|Integer|var)\\s*(?:\\[\\s*\\]\\s*)?\\w*values\\w*\\s*(?:\\[\\s*\\])?\\s*=\\s*[\\{\\[]([^}\\]]+)[}\\]]/i)
-    || code.match(/values\\s*=\\s*[\\{\\[]([^}\\]]+)[}\\]]/i);
+  const arrayMatch = code.match(/(?:int|long|Integer|var)\s*(?:\[\s*\]\s*)?\w*values\w*\s*(?:\[\s*\])?\s*=\s*[\{\[]([^}\]]+)[}\]]/i)
+    || code.match(/values\s*=\s*[\{\[]([^}\]]+)[}\]]/i);
   const values = arrayMatch
-    ? (arrayMatch[1].match(/-?\\d+/g) || []).map(Number).slice(0, 40)
+    ? (arrayMatch[1].match(/-?\d+/g) || []).map(Number).slice(0, 40)
     : [];
   if (!values.length) return null;
 
   const lineFor = (pattern, fallback = 1) => {
     const match = code.match(pattern);
-    return match ? code.slice(0, match.index).split('\\n').length : fallback;
+    return match ? code.slice(0, match.index).split('\n').length : fallback;
   };
-  const insertLine = lineFor(/(?:root\\s*=\\s*)?insert\\s*\\(/i, lineFor(/for\\s*\\(/i, 1));
-  const inorderLine = lineFor(/inorder\\s*\\(/i, insertLine);
-  const preorderLine = lineFor(/preorder\\s*\\(/i, inorderLine);
-  const postorderLine = lineFor(/postorder\\s*\\(/i, preorderLine);
-  const searchLine = lineFor(/search\\s*\\(/i, postorderLine);
+  const insertLine = lineFor(/(?:root\s*=\s*)?insert\s*\(/i, lineFor(/for\s*\(/i, 1));
+  const inorderLine = lineFor(/inorder\s*\(/i, insertLine);
+  const preorderLine = lineFor(/preorder\s*\(/i, inorderLine);
+  const postorderLine = lineFor(/postorder\s*\(/i, preorderLine);
+  const searchLine = lineFor(/search\s*\(/i, postorderLine);
   const nodes = [];
   const steps = [];
   let sequence = 1;
@@ -129,10 +129,10 @@ function buildBstPatternTrace(source, runtimeOutput = []) {
     };
     visit(0);
   };
-  if (/inorder\\s*\\(/i.test(code)) traverse('Inorder', inorderLine);
-  if (/preorder\\s*\\(/i.test(code)) traverse('Preorder', preorderLine);
-  if (/postorder\\s*\\(/i.test(code)) traverse('Postorder', postorderLine);
-  const searchMatch = code.match(/search\\s*\\(\\s*root\\s*,\\s*(-?\\d+)/i);
+  if (/inorder\s*\(/i.test(code)) traverse('Inorder', inorderLine);
+  if (/preorder\s*\(/i.test(code)) traverse('Preorder', preorderLine);
+  if (/postorder\s*\(/i.test(code)) traverse('Postorder', postorderLine);
+  const searchMatch = code.match(/search\s*\(\s*root\s*,\s*(-?\d+)/i);
   if (searchMatch) {
     const target = Number(searchMatch[1]);
     let current = 0;
