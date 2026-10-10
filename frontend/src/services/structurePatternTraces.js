@@ -173,8 +173,10 @@ function sourceStructureState(type, values, extra = {}) {
 export function buildLinearStructurePatternTrace(source, runtimeOutput = []) {
   const code = String(source || '');
   const lower = code.toLowerCase();
-  const isStack = /\b(?:stack|push|pop|peek|top)\b/.test(lower);
-  const isQueue = /\b(?:queue|enqueue|dequeue|offer|poll)\b/.test(lower);
+  const declaredStack = /\b(?:stack|Stack)\s*(?:<[^>]+>)?\s+\w+|\b(?:const|let|var)\s+stack\s*=\s*\[\s*\]/.test(code);
+  const declaredQueue = /\b(?:queue|Queue|Deque)\s*(?:<[^>]+>)?\s+\w+|\b(?:const|let|var)\s+queue\s*=\s*\[\s*\]/.test(code);
+  const isStack = declaredStack || (!declaredQueue && /\b(?:push|pop|peek|top)\b/.test(lower));
+  const isQueue = declaredQueue || (!declaredStack && /\b(?:enqueue|dequeue|offer|poll|shift)\b/.test(lower));
   if (isStack === isQueue) return null;
   const type = isStack ? 'stack' : 'queue';
   const values = [];
