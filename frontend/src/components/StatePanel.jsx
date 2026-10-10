@@ -91,7 +91,7 @@ export default function StatePanel({ currentStep, totalSteps = 0, correctOutput 
         </div>
       </div>
 
-      <div className="p-3.5 space-y-3.5 flex-1 text-xs">
+      <div className="p-3.5 space-y-3.5 flex-1 min-h-0 overflow-y-auto overscroll-contain text-xs">
         {/* Step Inspector Component */}
         {currentStep ? (
           <StepInspector currentStep={currentStep} totalSteps={totalSteps} />

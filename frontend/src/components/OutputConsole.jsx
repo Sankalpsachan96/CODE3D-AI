@@ -36,7 +36,7 @@ export default function OutputConsole({
 
   return (
     <div className={isExpanded
-      ? `fixed inset-4 z-[130] rounded-2xl border shadow-2xl overflow-hidden flex flex-col font-mono text-xs transition-colors duration-200 ${
+      ? `fixed z-[130] w-[min(860px,calc(100vw-32px))] h-[min(720px,calc(100vh-32px))] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl border shadow-2xl overflow-hidden flex flex-col min-h-0 font-mono text-xs transition-colors duration-200 ${
           isBright
             ? 'bg-white border-slate-200 text-slate-800 shadow-slate-900/20'
             : 'bg-[#070b14] border-slate-700/80 text-slate-300 shadow-black/70'
@@ -104,7 +104,7 @@ export default function OutputConsole({
       </div>
 
       {/* Output Content Stream */}
-      <div className={`flex-1 p-3 overflow-y-auto space-y-1.5 font-mono select-text transition-colors ${
+      <div className={`flex-1 min-h-0 p-3 overflow-y-auto overscroll-contain space-y-1.5 font-mono select-text transition-colors ${
         isBright ? 'bg-white' : 'bg-[#070b14]'
       }`}>
         <div className={`text-[11px] select-none ${isBright ? 'text-slate-400' : 'text-slate-600'}`}>
