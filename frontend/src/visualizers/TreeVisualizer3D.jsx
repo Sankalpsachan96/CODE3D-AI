@@ -52,9 +52,7 @@ function TreeBranch({ start, end, isActive }) {
  * Helper to build a BST structure if given a raw flat list of values or incomplete nodes
  */
 function buildBstFromValues(values) {
-  if (!values || values.length === 0) {
-    values = [50, 30, 70, 20, 40, 60, 80];
-  }
+  if (!Array.isArray(values) || values.length === 0) return [];
 
   const nodes = [];
   let nextId = 0;
