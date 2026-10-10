@@ -33,7 +33,11 @@ test('JavaScript runtime tracer captures executed lines and real local values wi
   try {
     fs.writeFileSync(runner, executor.buildJavaScriptTraceRunnerSource());
     fs.writeFileSync(sourceFile, source);
-    const run = spawnSync(process.execPath, [runner, sourceFile], { encoding: 'utf8', timeout: 5000 });
+    const run = spawnSync(process.execPath, [runner, sourceFile], {
+      encoding: 'utf8',
+      timeout: 5000,
+      env: { ...process.env, FORCE_COLOR: '0', NO_COLOR: '1' },
+    });
     assert.equal(run.status, 0, run.stderr);
     assert.equal(run.stdout, '6\n');
     const trace = executor.extractRuntimeTrace(run.stderr);
