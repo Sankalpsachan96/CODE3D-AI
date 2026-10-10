@@ -20,7 +20,7 @@ import { DEFAULT_JAVA_CODE, SAMPLE_PROGRAMS, LANGUAGE_DEFAULTS, CURRICULUM_CATEG
 import { STRIVER_PROBLEMS } from '../utils/striverCatalog';
 import { executeProgram, analyzeCode, checkBackendHealth, recordExecutionHistory } from '../services/apiService';
 import { normalizeUniversalExecutionResult } from '../services/universalEditorExecution';
-import { buildGraphPatternTrace, buildLinearStructurePatternTrace, buildLinkedListPatternTrace } from '../services/structurePatternTraces';
+import { buildGraphPatternTrace, buildLinearStructurePatternTrace, buildLinkedListPatternTrace, buildTreePatternTrace } from '../services/structurePatternTraces';
 import { executionManager } from '../execution/index.js';
 import { VisualizerErrorBoundary, EditorErrorBoundary } from '../components/ErrorBoundaries';
 import { useTheme } from '../context/ThemeContext';
@@ -678,14 +678,18 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         // supported pattern. Generic source-derived steps are not runtime traces.
         const bstPatternTrace = buildBstPatternTrace(code, actualOutput);
         const graphPatternTrace = bstPatternTrace ? null : buildGraphPatternTrace(code, actualOutput);
-        const linkedListPatternTrace = (bstPatternTrace || graphPatternTrace) ? null : buildLinkedListPatternTrace(code, actualOutput);
-        const linearStructureTrace = (bstPatternTrace || graphPatternTrace || linkedListPatternTrace) ? null : buildLinearStructurePatternTrace(code, actualOutput);
+        const treePatternTrace = (bstPatternTrace || graphPatternTrace) ? null : buildTreePatternTrace(code, actualOutput);
+        const linkedListPatternTrace = (bstPatternTrace || graphPatternTrace || treePatternTrace) ? null : buildLinkedListPatternTrace(code, actualOutput);
+        const linearStructureTrace = (bstPatternTrace || graphPatternTrace || treePatternTrace || linkedListPatternTrace) ? null : buildLinearStructurePatternTrace(code, actualOutput);
         if (bstPatternTrace) {
           visualTrace = bstPatternTrace;
           setTraceNotice('BST pattern model • Tree insertions, traversal visits and search are inferred from source; program output/status are real.');
         } else if (graphPatternTrace) {
           visualTrace = graphPatternTrace;
           setTraceNotice('Graph pattern model • Vertices, edges and traversal are inferred from source; program output/status are real.');
+        } else if (treePatternTrace) {
+          visualTrace = treePatternTrace;
+          setTraceNotice('Binary-tree pattern model • Explicit node allocations and left/right links are inferred from source; program output/status are real.');
         } else if (linkedListPatternTrace) {
           visualTrace = linkedListPatternTrace;
           setTraceNotice('Linked-list pattern model • Node allocation and next-pointer links are inferred from source; program output/status are real.');
