@@ -711,9 +711,24 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value));
           const sourceState = step.dataStructureState || {};
           const structureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
+          const semanticStructureTypes = new Set([
+            'array', 'vector', 'matrix', 'graph', 'tree', 'bst', 'heap', 'stack', 'queue',
+            'linked-list', 'linkedlist', 'doubly-linked-list', 'hash-table', 'hash-table',
+            'sorting', 'searching', 'dp', 'recursion', 'trie', 'deque',
+          ]);
+          const sourceType = String(sourceState.type || '').toLowerCase().replace(/_/g, '-');
+          const resolvedSceneType = semanticStructureTypes.has(structureType)
+            ? structureType
+            : (semanticStructureTypes.has(sourceType) ? sourceType : (sourceType || structureType || 'array'));
           const dataStructureState = {
             ...sourceState,
-            type: isGenericModel ? 'universal-execution' : (sourceState.type || structureType || 'array'),
+            // The generic trace envelope must not override a concrete DSA type.
+            // Otherwise the dispatcher renders only the universal halo instead of the array/tree/graph scene.
+            type: isGenericModel
+              ? 'universal-execution'
+              : (sourceType === 'universal-execution' && semanticStructureTypes.has(structureType)
+                ? resolvedSceneType
+                : (sourceState.type || resolvedSceneType || 'array')),
             structureType,
             variables,
             arrays,
