@@ -12,9 +12,9 @@ const executor = require('../src/services/universalExecutor.cjs');
 test('JavaScript trace wrapper uses module names and syntax supported by older Node runtimes', () => {
   const runner = executor.buildJavaScriptTraceRunnerSource('console.log(1);');
 
-  assert.doesNotMatch(runner, /require\\(["']node:/);
-  assert.doesNotMatch(runner, /\\?\\./);
-  assert.doesNotMatch(runner, /\\.at\\(/);
+  assert.doesNotMatch(runner, /require\(["']node:/);
+  assert.doesNotMatch(runner, /\?\./);
+  assert.doesNotMatch(runner, /\.at\(/);
 });
 
 test('JavaScript runtime tracer captures executed lines and real local values without changing stdout', () => {
