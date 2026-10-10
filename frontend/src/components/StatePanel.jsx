@@ -51,7 +51,7 @@ export default function StatePanel({ currentStep, totalSteps = 0, correctOutput 
   return (
     <div
       className={isExpanded
-        ? `fixed z-[120] w-[min(860px,calc(100vw-32px))] h-[min(720px,calc(100vh-32px))] left-1/2 top-1/2 rounded-2xl border shadow-2xl overflow-hidden ${
+        ? `fixed z-[120] w-[min(860px,calc(100vw-32px))] h-[min(720px,calc(100vh-32px))] left-1/2 top-1/2 rounded-2xl border shadow-2xl overflow-hidden flex flex-col min-h-0 ${
             isBright
               ? 'bg-white text-slate-800 border-slate-200 shadow-slate-900/20'
               : 'bg-[#0b101d] text-slate-200 border-slate-700/80 shadow-black/60'
