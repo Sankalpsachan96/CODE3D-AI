@@ -47,7 +47,7 @@ function GraphEdge({ start, end, isActive, weight }) {
 export default function GraphVisualizer3D({ dataStructureState }) {
   const {
     values = [],
-    nodes = [],
+    nodes: stateNodes = [],
     activeIndex = null,
     pointers = {},
     swappedIndices = [],
@@ -56,42 +56,48 @@ export default function GraphVisualizer3D({ dataStructureState }) {
     traversal = 'BFS',
   } = dataStructureState || {};
 
-  // Standard graph topology (5 vertices: 0, 1, 2, 3, 4)
-  const numVertices = Math.max(5, nodes.length || values.length || 5);
-  const radius = 3.2;
+  // Never invent a sample graph for user code. Render only vertices and edges
+  // provided by its trace; vertex IDs may be labels (e.g. 10, 20, 30), not array indices.
+  const sourceNodes = Array.isArray(stateNodes) && stateNodes.length
+    ? stateNodes
+    : (Array.isArray(values) ? values : []).map((value, id) => ({ id, value, val: value, label: String(value) }));
+  const vertexIds = sourceNodes.map((node, index) => node?.id ?? node?.value ?? node?.val ?? index);
+  const idToIndex = new Map(vertexIds.map((id, index) => [String(id), index]));
+  const numVertices = sourceNodes.length;
+  const radius = Math.max(1.8, Math.min(3.2, numVertices * 0.48));
 
-  const vertices = Array.from({ length: numVertices }).map((_, i) => {
-    const angle = (i / numVertices) * Math.PI * 2 - Math.PI / 2;
+  const vertices = sourceNodes.map((node, i) => {
+    const angle = (i / Math.max(numVertices, 1)) * Math.PI * 2 - Math.PI / 2;
     const x = Math.cos(angle) * radius;
     const y = Math.sin(angle) * radius * 0.75;
-    const label = nodes[i]?.val ?? nodes[i]?.name ?? `V${i}`;
-    const distVal = values[i] !== undefined ? values[i] : null;
-
-    return {
-      id: i,
-      label: String(label),
-      dist: distVal,
-      pos: [x, y, 0],
-    };
+    const label = node?.label ?? node?.val ?? node?.value ?? node?.name ?? vertexIds[i];
+    const distVal = node?.dist ?? (values[i] !== undefined ? values[i] : null);
+    return { id: vertexIds[i], index: i, label: String(label), dist: distVal, pos: [x, y, 0] };
   });
 
-  // Default graph edges: 0-1, 0-2, 1-3, 2-4, 1-2
-  const edges = (Array.isArray(stateEdges) && stateEdges.length > 0 ? stateEdges : [
-    { from: 0, to: 1, weight: 4 },
-    { from: 0, to: 2, weight: 2 },
-    { from: 1, to: 2, weight: 1 },
-    { from: 1, to: 3, weight: 5 },
-    { from: 2, to: 4, weight: 8 },
-    { from: 3, to: 4, weight: 2 },
-  ]).filter(e => e.from < numVertices && e.to < numVertices);
+  const resolveVertexIndex = (endpoint) => {
+    const raw = endpoint && typeof endpoint === 'object'
+      ? (endpoint.id ?? endpoint.value ?? endpoint.val ?? endpoint.label)
+      : endpoint;
+    if (idToIndex.has(String(raw))) return idToIndex.get(String(raw));
+    const numeric = Number(raw);
+    return Number.isInteger(numeric) && numeric >= 0 && numeric < numVertices ? numeric : -1;
+  };
+  const edges = (Array.isArray(stateEdges) ? stateEdges : []).map((edge) => {
+    const from = Array.isArray(edge) ? edge[0] : (edge.from ?? edge.source ?? edge.u);
+    const to = Array.isArray(edge) ? edge[1] : (edge.to ?? edge.target ?? edge.v);
+    return { ...(!Array.isArray(edge) ? edge : {}), fromIndex: resolveVertexIndex(from), toIndex: resolveVertexIndex(to), weight: Array.isArray(edge) ? edge[2] : edge.weight };
+  }).filter((edge) => edge.fromIndex >= 0 && edge.toIndex >= 0);
 
   return (
     <group position={[0, 0.2, 0]} userData={{ traversal }}>
       {/* 3D Connecting Edges */}
       {edges.map((e, idx) => {
-        const v1 = vertices[e.from];
-        const v2 = vertices[e.to];
-        const isEdgeActive = activeIndex === e.from || activeIndex === e.to || (visited.includes(e.from) && visited.includes(e.to));
+        const v1 = vertices[e.fromIndex];
+        const v2 = vertices[e.toIndex];
+        const fromId = v1?.id;
+        const toId = v2?.id;
+        const isEdgeActive = String(activeIndex) === String(fromId) || String(activeIndex) === String(toId) || (visited.some((id) => String(id) === String(fromId)) && visited.some((id) => String(id) === String(toId)));
         return (
           <GraphEdge
             key={`edge-${idx}`}
@@ -105,8 +111,8 @@ export default function GraphVisualizer3D({ dataStructureState }) {
 
       {/* 3D Graph Nodes */}
       {vertices.map((v) => {
-        const isActive = activeIndex === v.id;
-        const isVisited = visited.includes(v.id) || (swappedIndices && swappedIndices.includes(v.id)) || (v.dist !== null && v.dist < 900);
+        const isActive = String(activeIndex) === String(v.id) || activeIndex === v.index;
+        const isVisited = visited.some((id) => String(id) === String(v.id) || id === v.index) || (swappedIndices && swappedIndices.some((id) => String(id) === String(v.id) || id === v.index)) || (v.dist !== null && v.dist < 900);
 
         let color = '#1e293b';
         let emissive = '#0f172a';
