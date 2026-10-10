@@ -708,9 +708,27 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 : {}
           );
           const isGenericModel = !execution.traceSupported;
-          const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value));
           const sourceState = step.dataStructureState || {};
-          const structureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
+          const variableArrayEntry = Object.entries(variables).find(([, value]) => Array.isArray(value) && value.length > 0);
+          const sourceArrayMatch = !variableArrayEntry && !Object.values(arrays).some(Array.isArray)
+            ? code.match(/(?:\b(?:int|long|double|float|char|String|auto|var)\s*\[\s*\]\s*\w+|\b(?:int|long|double|float|char|auto)\s+\w+\s*\[\s*\])\s*=\s*[\[{]([^}\]]+)[}\]]|\b(?:let|const|var)\s+\w+\s*=\s*\[([^\]]+)\]/)
+            : null;
+          const sourceArrayValues = sourceArrayMatch
+            ? ((sourceArrayMatch[1] || sourceArrayMatch[2] || '').match(/-?\d+(?:\.\d+)?/g) || []).map(Number).slice(0, 40)
+            : [];
+          const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value)) || variableArrayEntry || (sourceArrayValues.length ? ['source-array', sourceArrayValues] : null);
+          const rawStructureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
+          const inferredArrayType = arrayEntry
+            ? (/\b(sort|qsort)\s*\(|\.sort\s*\(|Arrays\.sort/i.test(code) ? 'sorting' : 'array')
+            : '';
+          const knownStructureTypes = new Set([
+            'array', 'vector', 'matrix', 'graph', 'tree', 'bst', 'heap', 'stack', 'queue',
+            'linked-list', 'linkedlist', 'doubly-linked-list', 'hash-table', 'sorting', 'searching',
+            'dp', 'recursion', 'trie', 'deque',
+          ]);
+          const structureType = !knownStructureTypes.has(rawStructureType) && inferredArrayType
+            ? inferredArrayType
+            : rawStructureType;
           const semanticStructureTypes = new Set([
             'array', 'vector', 'matrix', 'graph', 'tree', 'bst', 'heap', 'stack', 'queue',
             'linked-list', 'linkedlist', 'doubly-linked-list', 'hash-table', 'hash-table',
@@ -724,11 +742,13 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             ...sourceState,
             // The generic trace envelope must not override a concrete DSA type.
             // Otherwise the dispatcher renders only the universal halo instead of the array/tree/graph scene.
-            type: isGenericModel
+            // Preserve a concrete array/sorting scene even when the backend's trace is generic.
+            // Runtime-instrumented variables can still contain the actual array state.
+            type: isGenericModel && !semanticStructureTypes.has(structureType)
               ? 'universal-execution'
               : (sourceType === 'universal-execution' && semanticStructureTypes.has(structureType)
                 ? resolvedSceneType
-                : (sourceState.type || resolvedSceneType || 'array')),
+                : (semanticStructureTypes.has(structureType) ? structureType : (sourceState.type || resolvedSceneType || 'array'))),
             structureType,
             variables,
             arrays,

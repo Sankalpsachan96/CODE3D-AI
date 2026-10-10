@@ -692,10 +692,7 @@ export default function SceneContainer({
                   : children}
               </group>
             ) : (
-              <Center
-                {...(centerHierarchyScene ? {} : { top: true })}
-                position={[0, -0.3, 0]}
-              >
+              <Center position={[0, -0.3, 0]}>
                 {React.isValidElement(children)
                   ? React.cloneElement(children, {
                       isXRayMode,
