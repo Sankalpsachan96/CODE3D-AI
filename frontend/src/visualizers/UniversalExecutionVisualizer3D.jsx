@@ -232,11 +232,16 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         : Array.isArray(dataStructureState.queue) ? dataStructureState.queue : [];
   const suppliedArrays = Object.entries(dataStructureState.arrays || {})
     .filter(([, value]) => Array.isArray(value));
-  const arrayEntries = (suppliedArrays.length
-    ? suppliedArrays
-    : suppliedValues.length && ['array', 'vector', 'stack', 'queue', 'linked-list', 'linkedlist'].includes(structureType)
-      ? [[dataStructureState.arrayName || structureType, suppliedValues]]
-      : [])
+  // Linked-list snapshots already have node/edge geometry. Rendering their
+  // values again as memory cells duplicates every item and causes overlap.
+  const isLinkedListScene = ['linked-list', 'linkedlist', 'linkedlist-visualization'].includes(structureType);
+  const arrayEntries = (isLinkedListScene
+    ? []
+    : (suppliedArrays.length
+      ? suppliedArrays
+      : suppliedValues.length && ['array', 'vector', 'stack', 'queue'].includes(structureType)
+        ? [[dataStructureState.arrayName || structureType, suppliedValues]]
+        : []))
     .slice(0, 4)
     .map(([name, values]) => [name, values.slice(0, 16)]);
   const graphNodes = Array.isArray(dataStructureState.nodes) ? dataStructureState.nodes.slice(0, 24)
@@ -257,6 +262,16 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
     const resolvedEdges = edges.map((edge) => ({ ...edge, from: resolve(edge.from), to: resolve(edge.to) }))
       .filter((edge) => edge.from >= 0 && edge.to >= 0 && edge.from !== edge.to);
     const treeLike = resolvedEdges.some((edge) => ['left', 'right', 'child', 'children'].includes(edge.label));
+    // Linked lists are sequences, not circular graphs. Keep nodes on a
+    // single horizontal axis so labels and next-pointer edges stay readable.
+    if (isLinkedListScene && graphNodes.length) {
+      const gap = graphNodes.length > 8 ? 1.35 : 1.8;
+      return graphNodes.map((_, index) => [
+        (index - (graphNodes.length - 1) / 2) * gap,
+        0.65,
+        0.25,
+      ]);
+    }
     if (treeLike && graphNodes.length) {
       const children = new Map();
       const incoming = new Set();
@@ -309,7 +324,7 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
   const errorInfo = dataStructureState.errorInfo || null;
 
   // Filter out internal simulator tokens
-  const varEntries = Object.entries(rawVars).filter(([key]) => {
+  const varEntries = (isLinkedListScene ? [] : Object.entries(rawVars)).filter(([key]) => {
     return !['output', '__stream', 'result'].includes(key) && !key.includes('[');
   });
 
@@ -350,15 +365,17 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         </Text>
       </group>
 
-      {/* Grid Floor Pedestal Stage */}
-      <mesh position={[0, -0.15, 0]} receiveShadow>
-        <boxGeometry args={[Math.max(8, Math.min(18, Math.max(count, arrayEntries.reduce((sum, entry) => sum + entry[1].length, 0)) * 1.15)), 0.12, 4.4]} />
-        <meshStandardMaterial
-          color="#0b1120"
-          metalness={0.7}
-          roughness={0.3}
-        />
-      </mesh>
+      {/* Keep the generic stage for memory scenes; it obscures low linked-list nodes. */}
+      {!isLinkedListScene && (
+        <mesh position={[0, -0.15, 0]} receiveShadow>
+          <boxGeometry args={[Math.max(8, Math.min(18, Math.max(count, arrayEntries.reduce((sum, entry) => sum + entry[1].length, 0)) * 1.15)), 0.12, 4.4]} />
+          <meshStandardMaterial
+            color="#0b1120"
+            metalness={0.7}
+            roughness={0.3}
+          />
+        </mesh>
+      )}
 
       {/* Show a visible 3D execution object even when no variables or structures can be inferred. */}
       {arrayEntries.length === 0 && graphNodes.length === 0 && varEntries.length === 0 && !calcInfo && !condInfo && (
