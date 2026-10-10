@@ -4,9 +4,9 @@ import universalTrace from '../src/services/universalTraceEngine.cjs';
 
 const cases = [
   ['array traversal', `const arr = [4, 2, 7]; for (let i = 0; i < arr.length; i++) console.log(arr[i]);`, 'array'],
-  ['bubble sort', `function bubbleSort(arr) { for (let i=0;i<arr.length;i++) for(let j=0;j<arr.length-i-1;j++) if(arr[j]>arr[j+1]) [arr[j],arr[j+1]]=[arr[j+1],arr[j]]; return arr; } const values=[3,1,2]; bubbleSort(values);`, 'array'],
-  ['selection sort', `function selectionSort(arr) { for (let i=0;i<arr.length;i++) { let min=i; for(let j=i+1;j<arr.length;j++) if(arr[j]<arr[min]) min=j; [arr[i],arr[min]]=[arr[min],arr[i]]; } } const values=[3,1,2]; selectionSort(values);`, 'array'],
-  ['insertion sort', `function insertionSort(arr) { for(let i=1;i<arr.length;i++){ let key=arr[i], j=i-1; while(j>=0 && arr[j]>key){arr[j+1]=arr[j];j--;} arr[j+1]=key;} } const values=[3,1,2]; insertionSort(values);`, 'array'],
+  ['bubble sort', `function bubbleSort(arr) { for (let i=0;i<arr.length;i++) for(let j=0;j<arr.length-i-1;j++) if(arr[j]>arr[j+1]) [arr[j],arr[j+1]]=[arr[j+1],arr[j]]; return arr; }\nconst values=[3,1,2]; bubbleSort(values);`, 'array'],
+  ['selection sort', `function selectionSort(arr) { for (let i=0;i<arr.length;i++) { let min=i; for(let j=i+1;j<arr.length;j++) if(arr[j]<arr[min]) min=j; [arr[i],arr[min]]=[arr[min],arr[i]]; } }\nconst values=[3,1,2]; selectionSort(values);`, 'array'],
+  ['insertion sort', `function insertionSort(arr) { for(let i=1;i<arr.length;i++){ let key=arr[i], j=i-1; while(j>=0 && arr[j]>key){arr[j+1]=arr[j];j--;} arr[j+1]=key;} }\nconst values=[3,1,2]; insertionSort(values);`, 'array'],
   ['linear search', `const arr=[5,8,2]; const target=8; for(let i=0;i<arr.length;i++){ if(arr[i]===target) console.log(i); }`, 'array'],
   ['binary search', `const arr=[1,3,5,7,9]; const target=7; let low=0, high=arr.length-1; while(low<=high){ const mid=Math.floor((low+high)/2); if(arr[mid]===target) break; if(arr[mid]<target) low=mid+1; else high=mid-1; }`, 'array'],
   ['stack', `const stack=[]; stack.push(10); stack.push(20); stack.pop();`, 'stack'],
