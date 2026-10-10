@@ -66,7 +66,8 @@ export default function GraphVisualizer3D({ dataStructureState }) {
   // but omit its topology. Recover the canonical 5-node graph only in that case;
   // never replace explicit nodes or edges supplied by an actual trace.
   const hasTraversalContext = Array.isArray(queue) || Array.isArray(stack) ||
-    Array.isArray(visited) || (traversal && typeof traversal === 'object');
+    Array.isArray(visited) || (traversal && typeof traversal === 'object') ||
+    String(dataStructureState?.type || '').toLowerCase() === 'graph';
   const inferredNodes = hasTraversalContext
     ? Array.from({ length: 5 }, (_, id) => ({ id, value: id, val: 'V' + id, label: 'V' + id }))
     : [];
