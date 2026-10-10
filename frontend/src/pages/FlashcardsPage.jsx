@@ -121,7 +121,7 @@ export default function FlashcardsPage({ onSelectConcept }) {
         {!flipped ? <><div style={{ color: accent, marginBottom: 18 }}><Sparkles size={24} /></div><p style={{ fontSize: 'clamp(21px,3vw,28px)', fontWeight: 800, lineHeight: 1.35, margin: 0 }}>{card.front}</p><p style={{ color: muted, fontSize: 13, marginTop: 24 }}>Tap to reveal answer</p></> : <><div style={{ color: '#22c55e', marginBottom: 12 }}><Check size={27} /></div><p style={{ fontSize: 'clamp(23px,3vw,30px)', color: accent, fontWeight: 850, lineHeight: 1.25, margin: '0 0 14px' }}>{card.back}</p><p style={{ fontSize: 15, lineHeight: 1.65, color: muted, maxWidth: 520, margin: 0 }}>{card.explain}</p><p style={{ color: muted, fontSize: 11, marginTop: 24 }}>Swipe right = knew it · Swipe left = review again</p></>}
       </div>
       {flipped && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 14 }}><button onClick={() => answer(false)} style={buttonStyle('#dc2626')}><X size={17} /> Didn't know <span style={{ opacity: .8, fontSize: 11 }}>←</span></button><button onClick={() => answer(true)} style={buttonStyle('#16a34a')}><Check size={17} /> Knew it <span style={{ opacity: .8, fontSize: 11 }}>→</span></button></div>}
-      {canOpen3D && <button onClick={openIn3D} style={{ ...buttonStyle('transparent', text), width: '100%', borderColor: border, marginTop: 12 }}><Box size={16} /> Explore {topic} in 3D <ChevronRight size={16} /></button>}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', color: muted, fontSize: 12, marginTop: 18 }}><span>Known first try: {knownCount}</span><span>Current streak: {streak} 🔥</span></div>
     </div>}
 
