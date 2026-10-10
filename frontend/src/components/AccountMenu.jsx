@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, BookOpen, BrainCircuit, Clock3, History, LogIn, LogOut, PlaySquare, Settings, Trophy, UserRound } from 'lucide-react';
+import { Bot, BookOpen, BrainCircuit, Clock3, History, Layers, LogIn, LogOut, PlaySquare, Settings, Trophy, UserRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AccountMenu({ onClose }) {
@@ -31,6 +31,7 @@ export default function AccountMenu({ onClose }) {
       <button onClick={() => go('/ai')}><Bot size={15} /> AI Tutor</button>
       <button onClick={() => go('/quiz')}><Trophy size={15} /> Quiz Arena</button>
       <button onClick={() => go('/dsa-learning')}><BookOpen size={15} /> DSA Learning</button>
+      <button onClick={() => go('/flashcards')}><Layers size={15} /> AI Flashcards <span className="account-menu-new">NEW</span></button>
       <div className="account-menu-label">Your activity</div>
       <button onClick={() => go('/history')}><History size={15} /> Execution History</button>
       <button onClick={() => go('/saved')}><Clock3 size={15} /> Saved Visualizations</button>
