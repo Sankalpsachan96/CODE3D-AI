@@ -721,7 +721,12 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           const inferredArrayType = arrayEntry
             ? (/\b(sort|qsort)\s*\(|\.sort\s*\(|Arrays\.sort/i.test(code) ? 'sorting' : 'array')
             : '';
-          const structureType = rawStructureType === 'universal-execution' && inferredArrayType
+          const knownStructureTypes = new Set([
+            'array', 'vector', 'matrix', 'graph', 'tree', 'bst', 'heap', 'stack', 'queue',
+            'linked-list', 'linkedlist', 'doubly-linked-list', 'hash-table', 'sorting', 'searching',
+            'dp', 'recursion', 'trie', 'deque',
+          ]);
+          const structureType = !knownStructureTypes.has(rawStructureType) && inferredArrayType
             ? inferredArrayType
             : rawStructureType;
           const semanticStructureTypes = new Set([
