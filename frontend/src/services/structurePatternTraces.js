@@ -223,26 +223,87 @@ export function buildLinkedListPatternTrace(source, runtimeOutput = []) {
   const hasNext = /(?:->|\.)\s*next\b|\bnext\s*=/.test(code);
   const hasNodeType = /\b(?:class|struct)\s+(?:Node|ListNode)\b|\b(?:Node|ListNode)\s*\*/i.test(code);
   if (!hasNext || !hasNodeType) return null;
-  const nodes = [];
-  const names = new Map();
-  const edges = [];
-  const steps = [];
-  let sequence = 1;
   const lineOf = (index) => code.slice(0, index).split(/\r?\n/).length;
+  const nodes = [], edges = [], steps = [];
+  let sequence = 1;
+  const snapshot = (index, message, operation, activeIndex = null) => {
+    const nodeCopies = nodes.map((node) => ({ ...node }));
+    steps.push({
+      stepNumber: sequence++, lineNumber: lineOf(index), algorithm: 'linked_list',
+      eventType: operation, operation, message, explanation: message,
+      variables: { size: nodes.length, activeIndex },
+      dataStructureState: sourceStructureState('linked-list', nodeCopies.map((node) => node.val), {
+        nodes: nodeCopies, edges: edges.map((edge) => ({ ...edge })),
+        activeIndex, label: message,
+        focusInfo: 'Linked-list operation modeled from source calls; program output/status are real.'
+      }),
+      traceKind: 'pattern-model', output: runtimeOutput,
+    });
+  };
+  const relink = () => {
+    edges.length = 0;
+    nodes.forEach((node, index) => {
+      node.next = index + 1 < nodes.length ? nodes[index + 1].id : null;
+      if (node.next !== null) edges.push({ from: node.id, to: node.next, label: 'next' });
+    });
+  };
+  const add = (value, position, index, label) => {
+    const node = { id: sequence + nodes.length + steps.length, val: value, value, label: String(value), next: null, nodeType: 'list_node' };
+    const at = Math.max(0, Math.min(nodes.length, position));
+    nodes.splice(at, 0, node);
+    relink();
+    snapshot(index, label, 'LIST_INSERT', at);
+  };
+  const remove = (position, index, label) => {
+    if (!nodes.length) { snapshot(index, label + ': list is empty', 'LIST_DELETE_EMPTY'); return; }
+    const at = Math.max(0, Math.min(nodes.length - 1, position));
+    const [deleted] = nodes.splice(at, 1);
+    relink();
+    snapshot(index, label + ': removed ' + deleted.val, 'LIST_DELETE', at < nodes.length ? at : null);
+  };
+  const callPattern = /\b(?:\w+\s*\.\s*)?(insertBeginning|insert_beginning|insertEnd|insert_end|insertMiddle|insert_middle|deleteBeginning|delete_beginning|deleteEnd|delete_end|deleteMiddle|delete_middle|search|display)\s*\(([^)]*)\)/g;
+  const calls = [...code.matchAll(callPattern)].filter((match) => {
+    const prefix = code.slice(Math.max(0, match.index - 30), match.index);
+    return !/\b(?:def|function)\s*$/.test(prefix) && !/\b(?:void|int|bool|public|private)\s*$/.test(prefix.trim());
+  });
+  if (calls.length) {
+    for (const match of calls) {
+      const method = match[1].toLowerCase();
+      const args = match[2].split(',').map((part) => part.trim());
+      const numberValue = (raw) => {
+        if (/^-?\d+(?:\.\d+)?$/.test(raw)) return Number(raw);
+        const quoted = raw.match(/^(['"])(.*)\1$/);
+        return quoted ? quoted[2] : null;
+      };
+      const value = numberValue(args[0]);
+      const position = Number(args[1]);
+      if (method.startsWith('insert') && value !== null) {
+        if (method.includes('beginning')) add(value, 0, match.index, 'Insert ' + value + ' at beginning');
+        else if (method.includes('end')) add(value, nodes.length, match.index, 'Insert ' + value + ' at end');
+        else if (method.includes('middle')) add(value, Number.isFinite(position) ? position - 1 : nodes.length, match.index, 'Insert ' + value + ' at position ' + position);
+      } else if (method.startsWith('delete')) {
+        if (method.includes('beginning')) remove(0, match.index, 'Delete from beginning');
+        else if (method.includes('end')) remove(nodes.length - 1, match.index, 'Delete from end');
+        else if (method.includes('middle')) remove(Number.isFinite(position) ? position - 1 : 0, match.index, 'Delete at position ' + position);
+      } else if (method === 'search' && value !== null) {
+        const found = nodes.findIndex((node) => node.val === value);
+        snapshot(match.index, found >= 0 ? 'Found ' + value + ' at position ' + (found + 1) : value + ' not found', 'LIST_SEARCH', found >= 0 ? found : null);
+      } else if (method === 'display') {
+        snapshot(match.index, 'Display ' + nodes.length + ' linked-list node(s)', 'LIST_DISPLAY');
+      }
+    }
+    if (steps.length) return steps;
+  }
+  const names = new Map();
   const allocations = /\b(\w+)\s*=\s*(?:new\s+)?(?:Node|ListNode)\s*\(\s*([^,)]+)[^)]*\)/gi;
   for (const match of code.matchAll(allocations)) {
-    const name = match[1];
-    const raw = match[2].trim();
+    const name = match[1], raw = match[2].trim();
     const value = /^['"]/.test(raw) ? raw.slice(1, -1) : (/^-?\d+(?:\.\d+)?$/.test(raw) ? Number(raw) : raw);
     if (names.has(name)) continue;
     const id = nodes.length;
     names.set(name, id);
     nodes.push({ id, val: value, value, label: String(value), next: null, nodeType: 'list_node', name });
-    const state = sourceStructureState('linked-list', nodes.map((node) => node.val), {
-      nodes: nodes.map((node) => ({ ...node })), edges: edges.map((edge) => ({ ...edge })),
-      activeIndex: id, label: `Create node ${value}`, focusInfo: 'Node allocation inferred from source; this is not runtime instrumentation.',
-    });
-    steps.push({ stepNumber: sequence++, lineNumber: lineOf(match.index), algorithm: 'linked_list', eventType: 'LIST_CREATE', operation: 'CREATE_NODE', message: `Create node ${value}`, explanation: `Allocate list node ${value}.`, dataStructureState: state, traceKind: 'pattern-model', output: runtimeOutput });
+    snapshot(match.index, 'Create node ' + value, 'LIST_CREATE', id);
   }
   const links = /\b(\w+)\s*(?:->|\.)\s*next\s*=\s*(\w+)\s*;?/gi;
   for (const match of code.matchAll(links)) {
@@ -250,15 +311,10 @@ export function buildLinkedListPatternTrace(source, runtimeOutput = []) {
     if (from === undefined || to === undefined) continue;
     nodes[from].next = to;
     if (!edges.some((edge) => edge.from === from && edge.to === to)) edges.push({ from, to, label: 'next' });
-    const state = sourceStructureState('linked-list', nodes.map((node) => node.val), {
-      nodes: nodes.map((node) => ({ ...node })), edges: edges.map((edge) => ({ ...edge })),
-      activeIndex: from, label: `Link ${nodes[from].val} → ${nodes[to].val}`, focusInfo: 'The next pointer connects these nodes.',
-    });
-    steps.push({ stepNumber: sequence++, lineNumber: lineOf(match.index), algorithm: 'linked_list', eventType: 'LIST_LINK', operation: 'LINK_NEXT', message: `Link ${nodes[from].val} → ${nodes[to].val}`, explanation: `Set next pointer of ${nodes[from].val} to ${nodes[to].val}.`, dataStructureState: state, traceKind: 'pattern-model', output: runtimeOutput });
+    snapshot(match.index, 'Link ' + nodes[from].val + ' → ' + nodes[to].val, 'LIST_LINK', from);
   }
   return steps.length ? steps : null;
 }
-
 /** Tree/Binary-tree traces for explicit Node allocations and left/right links. */
 export function buildTreePatternTrace(source, runtimeOutput = []) {
   const code = String(source || '');
