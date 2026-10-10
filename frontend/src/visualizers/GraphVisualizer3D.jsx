@@ -104,6 +104,7 @@ export default function GraphVisualizer3D({ dataStructureState }) {
     { source: 1, target: 3 },
     { source: 1, target: 4 },
     { source: 2, target: 4 },
+    { source: 3, target: 4 },
   ];
   const edgesToRender = Array.isArray(stateEdges) && stateEdges.length
     ? stateEdges
