@@ -20,6 +20,7 @@ import { DEFAULT_JAVA_CODE, SAMPLE_PROGRAMS, LANGUAGE_DEFAULTS, CURRICULUM_CATEG
 import { STRIVER_PROBLEMS } from '../utils/striverCatalog';
 import { executeProgram, analyzeCode, checkBackendHealth, recordExecutionHistory } from '../services/apiService';
 import { normalizeUniversalExecutionResult } from '../services/universalEditorExecution';
+import { buildGraphPatternTrace } from '../services/structurePatternTraces';
 import { executionManager } from '../execution/index.js';
 import { VisualizerErrorBoundary, EditorErrorBoundary } from '../components/ErrorBoundaries';
 import { useTheme } from '../context/ThemeContext';
@@ -676,9 +677,13 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         // Only expose a modeled DSA trace when the backend reports an explicit
         // supported pattern. Generic source-derived steps are not runtime traces.
         const bstPatternTrace = buildBstPatternTrace(code, actualOutput);
+        const graphPatternTrace = bstPatternTrace ? null : buildGraphPatternTrace(code, actualOutput);
         if (bstPatternTrace) {
           visualTrace = bstPatternTrace;
           setTraceNotice('BST pattern model • Tree insertions, traversal visits and search are inferred from source; program output/status are real.');
+        } else if (graphPatternTrace) {
+          visualTrace = graphPatternTrace;
+          setTraceNotice('Graph pattern model • Vertices, edges and traversal are inferred from source; program output/status are real.');
         } else {
         visualTrace = execution.steps.map((step, index) => {
           const lineNumber = step.lineNumber || step.line || null;
