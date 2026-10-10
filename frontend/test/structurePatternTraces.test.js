@@ -55,8 +55,10 @@ test('unrelated source is not falsely classified as a graph', () => {
 test('explicit tree allocations and left/right links produce tree edges', () => {
   const code = `class Node { int data; Node left, right; Node(int data) { this.data = data; } }
 Node root = new Node(50);
-root.left = new Node(30);
-root.right = new Node(70);`;
+Node left = new Node(30);
+Node right = new Node(70);
+root.left = left;
+root.right = right;`;
   const trace = buildTreePatternTrace(code, ['actual output']);
   assert.ok(trace && trace.length >= 2);
   const finalState = trace.at(-1).dataStructureState;
