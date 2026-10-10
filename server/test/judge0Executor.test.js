@@ -18,6 +18,13 @@ function judge0Fetch(result, onCreate = () => {}) {
       return jsonResponse({ token: 'test-token' }, 201);
     }
     if (options.method === 'DELETE') return jsonResponse({ status: { id: 3 } });
+    if (new URL(url).searchParams.get('base64_encoded') === 'true') {
+      const encoded = { ...result };
+      for (const field of ['stdout', 'stderr', 'compile_output']) {
+        if (typeof encoded[field] === 'string') encoded[field] = Buffer.from(encoded[field], 'utf8').toString('base64');
+      }
+      return jsonResponse(encoded);
+    }
     return jsonResponse(result);
   };
 }
@@ -47,7 +54,7 @@ test('Judge0 maps all five editor languages and sends source plus stdin unchange
       assert.match(body.source_code, /__CODE3D_RUNTIME_TRACE__/);
       assert.match(body.source_code, /sys\.settrace/);
     } else if (language === 'javascript') {
-      assert.match(body.source_code, /node:inspector/);
+      assert.match(body.source_code, /require\("inspector"\)/);
       assert.match(body.source_code, /Debugger\.setBreakpointByUrl/);
       assert.ok(body.source_code.includes(Buffer.from('// javascript').toString('base64')), 'source is embedded for the Judge0 wrapper');
     } else {
@@ -104,6 +111,19 @@ test('Judge0 compile and runtime errors preserve their stages and diagnostics', 
   });
   assert.equal(runtime.stage, 'runtime');
   assert.match(runtime.error, /Traceback/);
+});
+
+test('Judge0 base64 polling safely decodes non-UTF-8 compiler diagnostics', async () => {
+  const compilerBytes = Buffer.from([0x4d, 0x61, 0x69, 0x6e, 0x2e, 0x63, 0x3a, 0x20, 0xff, 0xfe]);
+  const result = await executor.executeWithJudge0('c', 'int main( {', '', {
+    judge0Url: 'https://judge0.example',
+    fetchImpl: judge0Fetch(finalResult(6, { compile_output: compilerBytes.toString('utf8') })),
+    pollIntervalMs: 0,
+  });
+  assert.equal(result.success, false);
+  assert.equal(result.stage, 'compile');
+  assert.match(result.error, /Main\\.c/);
+  assert.match(result.error, /�/);
 });
 
 test('Judge0 reports execution time limits distinctly and bounds stdout', async () => {
