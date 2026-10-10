@@ -708,9 +708,16 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 : {}
           );
           const isGenericModel = !execution.traceSupported;
-          const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value));
           const sourceState = step.dataStructureState || {};
-          const structureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
+          const variableArrayEntry = Object.entries(variables).find(([, value]) => Array.isArray(value) && value.length > 0);
+          const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value)) || variableArrayEntry;
+          const rawStructureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
+          const inferredArrayType = arrayEntry
+            ? (/\\b(sort|qsort)\\s*\\(|\\.sort\\s*\\(|Arrays\\.sort/i.test(code) ? 'sorting' : 'array')
+            : '';
+          const structureType = rawStructureType === 'universal-execution' && inferredArrayType
+            ? inferredArrayType
+            : rawStructureType;
           const semanticStructureTypes = new Set([
             'array', 'vector', 'matrix', 'graph', 'tree', 'bst', 'heap', 'stack', 'queue',
             'linked-list', 'linkedlist', 'doubly-linked-list', 'hash-table', 'hash-table',
@@ -724,11 +731,13 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             ...sourceState,
             // The generic trace envelope must not override a concrete DSA type.
             // Otherwise the dispatcher renders only the universal halo instead of the array/tree/graph scene.
-            type: isGenericModel
+            // Preserve a concrete array/sorting scene even when the backend's trace is generic.
+            // Runtime-instrumented variables can still contain the actual array state.
+            type: isGenericModel && !semanticStructureTypes.has(structureType)
               ? 'universal-execution'
               : (sourceType === 'universal-execution' && semanticStructureTypes.has(structureType)
                 ? resolvedSceneType
-                : (sourceState.type || resolvedSceneType || 'array')),
+                : (semanticStructureTypes.has(structureType) ? structureType : (sourceState.type || resolvedSceneType || 'array'))),
             structureType,
             variables,
             arrays,
