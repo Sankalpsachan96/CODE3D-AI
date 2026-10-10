@@ -591,7 +591,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           const structureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
           const dataStructureState = {
             ...sourceState,
-            type: universalOnly ? 'universal-execution' : (isGenericModel ? 'universal-execution' : (sourceState.type || 'array')),
+            type: isGenericModel ? 'universal-execution' : (sourceState.type || structureType || 'array'),
             structureType,
             variables,
             arrays,
