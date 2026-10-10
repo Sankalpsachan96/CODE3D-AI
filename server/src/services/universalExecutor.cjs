@@ -304,7 +304,10 @@ function buildGdbTraceScript(sourceFile, stdinFile, stdoutFile, stderrFile, temp
     "            start = impl['_M_start']",
     "            finish = impl['_M_finish']",
     "            element_type = t.template_argument(0)",
-    "            length = min(max(0, (int(finish) - int(start)) // max(1, int(element_type.sizeof))), 40)",
+    "            distance = int(finish) - int(start)",
+    "            element_size = max(1, int(element_type.sizeof))",
+    "            if int(start) == 0 or distance < 0 or distance > element_size * 1024: return '<unavailable>'",
+    "            length = min(distance // element_size, 40)",
     "            return [safe_value((start + index).dereference(), depth + 1, seen) for index in range(length)]",
     "        if code == gdb.TYPE_CODE_PTR:",
     "            address = int(value)",
@@ -502,13 +505,14 @@ public final class Code3dJavaTraceRunner {
     LaunchingConnector connector=Bootstrap.virtualMachineManager().defaultConnector();
     Map<String,Connector.Argument> a=connector.defaultArguments();
     a.get("main").setValue(mainClass);
-    a.get("options").setValue("-cp \""+classPath+"\"");
+    String jvmLimits="-Xms16m -Xmx96m -Xss256k -XX:+UseSerialGC -XX:ActiveProcessorCount=2 -XX:ReservedCodeCacheSize=32m -XX:MaxMetaspaceSize=64m -XX:CompressedClassSpaceSize=32m";
+    a.get("options").setValue(jvmLimits+" -cp \""+classPath+"\"");
     VirtualMachine vm;
     try { vm=connector.launch(a); }
     catch (Exception tracingFailure) {
       System.err.println("Runtime tracing unavailable in this sandbox; running the program without runtime snapshots: "+tracingFailure.getMessage());
       String java=System.getProperty("java.home")+File.separator+"bin"+File.separator+"java";
-      Process plain=new ProcessBuilder(java,"-cp",classPath,mainClass).start();
+      Process plain=new ProcessBuilder(java,"-Xms16m","-Xmx96m","-Xss256k","-XX:+UseSerialGC","-XX:ActiveProcessorCount=2","-XX:ReservedCodeCacheSize=32m","-XX:MaxMetaspaceSize=64m","-XX:CompressedClassSpaceSize=32m","-cp",classPath,mainClass).start();
       Thread plainOut=new Thread(() -> pump(plain.getInputStream(),System.out)); plainOut.start();
       Thread plainErr=new Thread(() -> pump(plain.getErrorStream(),System.err)); plainErr.start();
       Thread plainIn=new Thread(() -> { try { pump(System.in,plain.getOutputStream()); } finally { try { plain.getOutputStream().close(); } catch(IOException ignored){} } }); plainIn.start();
@@ -520,7 +524,6 @@ public final class Code3dJavaTraceRunner {
     Thread in=new Thread(() -> { try { pump(System.in,child.getOutputStream()); } finally { try { child.getOutputStream().close(); } catch(IOException ignored){} } }); in.setDaemon(true); in.start();
     EventRequestManager manager=vm.eventRequestManager();
     boolean done=false;
-    vm.resume();
     while (!done) {
       EventSet set=vm.eventQueue().remove();
       try {
@@ -763,11 +766,12 @@ function createTempDirectory() {
   return directory;
 }
 
-function sandboxArguments(command, args, cwd, timeoutMs) {
+function sandboxArguments(command, args, cwd, timeoutMs, limits = {}) {
   const bwrapArgs = ["--unshare-all", "--die-with-parent", "--new-session"];
   for (const directory of ["/usr", "/etc", "/lib", "/lib64"]) {
     if (fs.existsSync(directory)) bwrapArgs.push("--ro-bind", directory, directory);
   }
+  bwrapArgs.push("--symlink", "usr/bin", "/bin", "--symlink", "usr/sbin", "/sbin");
   bwrapArgs.push(
     "--proc", "/proc",
     "--dev", "/dev",
@@ -781,7 +785,8 @@ function sandboxArguments(command, args, cwd, timeoutMs) {
     "--",
     "/usr/bin/prlimit",
     `--cpu=${Math.max(1, Math.ceil(timeoutMs / 1000))}`,
-    "--as=536870912",
+    `--as=${limits.addressSpaceBytes || 2147483648}`,
+    `--data=${limits.dataLimitBytes || 536870912}`,
     "--nproc=32",
     "--fsize=1048576",
     "--nofile=64",
@@ -828,7 +833,7 @@ function runProcess(command, args, options = {}) {
     let outputLimitExceeded = false;
     const timeoutMs = Number.isFinite(options.timeoutMs) ? options.timeoutMs : TIME_LIMIT;
 
-    const child = spawn("bwrap", sandboxArguments(command, args, options.cwd, timeoutMs), {
+    const child = spawn("bwrap", sandboxArguments(command, args, options.cwd, timeoutMs, options), {
       cwd: options.cwd,
       shell: false,
       detached: process.platform !== "win32",
@@ -949,6 +954,7 @@ async function executeCpp(code, input = "", signal) {
       {
         cwd: tempDirectory,
         timeoutMs: 15000,
+        dataLimitBytes: 1073741824,
         signal,
       }
     );
@@ -1308,7 +1314,7 @@ async function executeJava(code, input = "", signal) {
 
     const compileResult = await runProcess(
       "javac",
-      ["--add-modules", "jdk.jdi", "-g", "-d", tempDirectory, sourceFile, traceRunnerFile],
+      ["-J-Xms16m", "-J-Xmx96m", "-J-Xss256k", "-J-XX:+UseSerialGC", "-J-XX:ActiveProcessorCount=2", "-J-XX:ReservedCodeCacheSize=32m", "-J-XX:MaxMetaspaceSize=64m", "-J-XX:CompressedClassSpaceSize=32m", "--add-modules", "jdk.jdi", "-g", "-d", tempDirectory, sourceFile, traceRunnerFile],
       {
         cwd: tempDirectory,
         timeoutMs: 15000,
@@ -1323,12 +1329,12 @@ async function executeJava(code, input = "", signal) {
         output: "",
         error: compileResult.timedOut
           ? "Java compilation timed out. The backend is under heavy load; please try again."
-          : compileResult.stderr || "Java compilation failed.",
+          : compileResult.stderr || compileResult.stdout || `Java compilation failed (exit code ${compileResult.exitCode ?? "unknown"}).`,
         executionTime: null,
       };
     }
 
-    const javaArgs = ["--add-modules", "jdk.jdi", "-cp", tempDirectory, "Code3dJavaTraceRunner", tempDirectory, mainClass, `${mainClass}.java`];
+    const javaArgs = ["-Xms16m", "-Xmx96m", "-Xss256k", "-XX:+UseSerialGC", "-XX:ActiveProcessorCount=2", "-XX:ReservedCodeCacheSize=32m", "-XX:MaxMetaspaceSize=64m", "-XX:CompressedClassSpaceSize=32m", "--add-modules", "jdk.jdi", "-cp", tempDirectory, "Code3dJavaTraceRunner", tempDirectory, mainClass, `${mainClass}.java`];
     const javaCommand = process.platform === "linux" ? getPythonCommand() : "java";
     if (!javaCommand) return { success: false, stage: "environment", output: "", error: "Python 3 is required to prepare the isolated loopback channel for Java runtime tracing.", executionTime: null };
     const executionArgs = process.platform === "linux" ? [launcherFile, "java", ...javaArgs] : javaArgs;
@@ -1338,6 +1344,7 @@ async function executeJava(code, input = "", signal) {
       input,
       signal,
       timeoutMs: Math.max(10000, TIME_LIMIT * 3),
+      dataLimitBytes: 1073741824,
     });
     const executionTime = Date.now() - startTime;
     const traced = extractRuntimeTrace(executionResult.stderr);
