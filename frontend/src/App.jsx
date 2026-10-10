@@ -87,6 +87,7 @@ function MainAppContent() {
           <Route path="/ai" element={<ProtectedRoute><AiTutorPage onSendToVisualizer={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/quiz" element={<ProtectedRoute><QuizArena /></ProtectedRoute>} />
           <Route path="/dsa-learning" element={<ProtectedRoute><DsaLearningPage /></ProtectedRoute>} />
+          <Route path="/flashcards" element={<ProtectedRoute><FlashcardsPage onSelectConcept={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/history" element={<ProtectedRoute><HistoryPage onRerunProgram={handleRerunFromHistory} /></ProtectedRoute>} />
           <Route path="/saved" element={<ProtectedRoute><SavedVisualizationsPage onReplay={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
