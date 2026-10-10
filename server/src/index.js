@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import { checkDatabaseConnection } from './db.js';
 import { purgeLegacyDemoAccounts } from './controllers/authController.js';
+import { seedDatabase } from './seed.js';
 
 dotenv.config();
 // Load the app after dotenv so its origin allowlist sees environment settings
@@ -11,6 +12,8 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 
 async function startServer() {
   await checkDatabaseConnection();
+  // Populate memory fallback and idempotently seed the DSA catalog in PostgreSQL.
+  await seedDatabase();
   await purgeLegacyDemoAccounts();
 
   app.listen(PORT, '0.0.0.0', () => {

@@ -121,7 +121,35 @@ export async function seedDatabase() {
         });
       }
 
-      console.log('✅ Seeded DSA Topics into PostgreSQL.');
+      // Seed Problems after topics so each problem can connect to its topic.
+      for (const problem of SEED_PROBLEMS) {
+        const { topicSlug, ...data } = problem;
+        const problemData = {
+          title: data.title,
+          difficulty: data.difficulty,
+          archetype: data.archetype,
+          timeComplexity: data.timeComplexity,
+          spaceComplexity: data.spaceComplexity,
+          description: data.description,
+          defaultInput: data.defaultInput ?? null,
+          starterCode: data.starterCode,
+        };
+
+        await prisma.dsaProblem.upsert({
+          where: { slug: data.slug },
+          update: {
+            ...problemData,
+            topic: { connect: { slug: topicSlug } },
+          },
+          create: {
+            ...problemData,
+            slug: data.slug,
+            topic: { connect: { slug: topicSlug } },
+          },
+        });
+      }
+
+      console.log(`✅ Seeded ${SEED_TOPICS.length} DSA topics and ${SEED_PROBLEMS.length} DSA problems into PostgreSQL.`);
     } catch (err) {
       console.warn('⚠️ Seeding into PostgreSQL skipped:', err.message);
     }
@@ -130,5 +158,3 @@ export async function seedDatabase() {
   console.log('✅ Seed catalog ready in memory.');
 }
 
-// Auto-seed in memory on import
-seedDatabase();
