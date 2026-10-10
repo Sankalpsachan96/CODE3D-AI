@@ -702,7 +702,7 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
       }
       await waitForPoll(pollInterval);
       const pollResponse = await fetchImpl(
-        `${judge0Url}/submissions/${encodeURIComponent(token)}?base64_encoded=false&fields=stdout,stderr,compile_output,message,status,time,memory`,
+        `${judge0Url}/submissions/${encodeURIComponent(token)}?base64_encoded=true&fields=stdout,stderr,compile_output,message,status,time,memory`,
         { headers, signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(requestTimeout)]) }
       );
       if (!pollResponse.ok) {
@@ -712,6 +712,9 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
       }
       result = await pollResponse.json();
       if (!result || typeof result !== "object" || !Number.isInteger(result.status?.id)) throw Object.assign(new Error("Judge0 returned an invalid execution status."), { stage: "provider" });
+      for (const field of ["stdout", "stderr", "compile_output"]) {
+        if (typeof result[field] === "string") result[field] = Buffer.from(result[field], "base64").toString("utf8");
+      }
       if (result.status?.id > 2) break;
     }
     if (!result || result.status?.id <= 2) {
