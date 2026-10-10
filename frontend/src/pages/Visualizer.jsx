@@ -711,10 +711,10 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           const sourceState = step.dataStructureState || {};
           const variableArrayEntry = Object.entries(variables).find(([, value]) => Array.isArray(value) && value.length > 0);
           const sourceArrayMatch = !variableArrayEntry && !Object.values(arrays).some(Array.isArray)
-            ? code.match(/(?:\\b(?:int|long|double|float|char|String|auto|var)\\s*\\[\\s*\\]\\s*\\w+|\\b(?:int|long|double|float|char|auto)\\s+\\w+\\s*\\[\\s*\\])\\s*=\\s*[\\[{]([^}\\]]+)[}\\]]|\\b(?:let|const|var)\\s+\\w+\\s*=\\s*\\[([^\\]]+)\\]/)
+            ? code.match(/(?:\b(?:int|long|double|float|char|String|auto|var)\s*\[\s*\]\s*\w+|\b(?:int|long|double|float|char|auto)\s+\w+\s*\[\s*\])\s*=\s*[\[{]([^}\]]+)[}\]]|\b(?:let|const|var)\s+\w+\s*=\s*\[([^\]]+)\]/)
             : null;
           const sourceArrayValues = sourceArrayMatch
-            ? ((sourceArrayMatch[1] || sourceArrayMatch[2] || '').match(/-?\\d+(?:\\.\\d+)?/g) || []).map(Number).slice(0, 40)
+            ? ((sourceArrayMatch[1] || sourceArrayMatch[2] || '').match(/-?\d+(?:\.\d+)?/g) || []).map(Number).slice(0, 40)
             : [];
           const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value)) || variableArrayEntry || (sourceArrayValues.length ? ['source-array', sourceArrayValues] : null);
           const rawStructureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
