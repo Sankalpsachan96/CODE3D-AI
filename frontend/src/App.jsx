@@ -12,6 +12,7 @@ import AiTutorPage from './pages/AiTutorPage';
 import SheetsPage from './pages/SheetsPage';
 import DsaProblemPage from './pages/DsaProblemPage';
 import DsaLearningPage from './pages/DsaLearningPage';
+import FlashcardsPage from './pages/FlashcardsPage';
 import SavedVisualizationsPage from './pages/SavedVisualizationsPage';
 import ComingSoonPage from './pages/ComingSoonPage';
 import LoginModal from './components/LoginModal';
