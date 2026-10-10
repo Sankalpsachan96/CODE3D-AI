@@ -232,7 +232,7 @@ session.on("Debugger.paused", async ({ params }) => {
     if (frame && events.length < maxSteps) {
       const variables = {};
       for (const scope of frame.scopeChain.filter((item) => ["local", "block", "script"].includes(item.type))) {
-        if (!scope?.object?.objectId) continue;
+        if (!scope || !scope.object || !scope.object.objectId) continue;
         const result = await post("Runtime.getProperties", { objectId: scope.object.objectId, ownProperties: true, accessorPropertiesOnly: false });
         for (const property of (result.result || []).filter((item) => item.value && !ignoredNames.has(item.name)).slice(0, 100)) {
           if (!(property.name in variables)) variables[property.name] = await serializeRemote(property.value);
@@ -240,7 +240,7 @@ session.on("Debugger.paused", async ({ params }) => {
       }
       events.push({ step: events.length + 1, line: Math.max(1, frame.location.lineNumber), event: "runtime_line", variables, callStack: params.callFrames.filter(isUserFrame).map((item) => item.functionName || "<main>"), message: "Runtime snapshot captured at this executed line." });
     } else if (events.length === maxSteps) {
-      const last = events.at(-1) || {};
+      const last = events.length ? events[events.length - 1] : {};
       events.push({ step: maxSteps + 1, line: last.line, variables: last.variables || {}, event: "trace_limit", message: "Runtime trace capped at 120 line events; program output still reflects the complete run." });
       await post("Debugger.disable");
     }
@@ -249,7 +249,7 @@ session.on("Debugger.paused", async ({ params }) => {
   } finally {
     session.post("Debugger.resume", {}, () => {
       pendingPauseHandlers -= 1;
-      if (userCodeFinished && pendingPauseHandlers === 0) finishPauseWait?.();
+      if (userCodeFinished && pendingPauseHandlers === 0 && finishPauseWait) finishPauseWait();
     });
   }
 });
