@@ -117,6 +117,9 @@ function ArrayCell({
   index,
   isActive,
   isPrevious,
+  isComparing = false,
+  isSwapping = false,
+  isSorted = false,
   isInWindow,
   positionX,
   pointerNames = [],
@@ -136,12 +139,14 @@ function ArrayCell({
   const baseHeight = customHeight ? Math.max(0.6, Math.min(customHeight * 0.45, 4.5)) : 1.4;
   const hoverScaleMultiplier = isHovered ? 1.32 : 1.0;
   const hoverElevation = isHovered ? 0.38 : 0;
-  const targetY = (isTargetFound ? 1.0 : isActive ? 0.75 : isInWindow ? 0.25 : 0) + hoverElevation;
+  const targetY = (isTargetFound ? 1.0 : isSwapping ? 0.9 : isComparing ? 0.62 : isActive ? 0.75 : isInWindow ? 0.25 : 0) + hoverElevation;
   const targetScale = (isTargetFound ? 1.15 : isActive ? 1.08 : isInWindow ? 1.02 : 1.0) * hoverScaleMultiplier;
 
   useFrame((_, delta) => {
     if (meshRef.current) {
-      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, targetY + baseHeight / 2 - 0.7, delta * 12);
+      meshRef.current.position.y = THREE.MathUtils.lerp(meshRef.current.position.y, targetY + baseHeight / 2 - 0.7, delta * (isSwapping ? 18 : 12));
+      const swapPulse = isSwapping ? Math.sin(performance.now() * 0.018 + index * Math.PI) * 0.22 : 0;
+      meshRef.current.position.x = THREE.MathUtils.lerp(meshRef.current.position.x, swapPulse, delta * 14);
       meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), delta * 12);
     }
   });
@@ -163,6 +168,14 @@ function ArrayCell({
     boxColor = '#d97706';
     emissiveColor = '#b45309';
     wireColor = '#fde68a';
+  } else if (isSwapping) {
+    boxColor = '#f97316';
+    emissiveColor = '#ea580c';
+    wireColor = '#fdba74';
+  } else if (isComparing) {
+    boxColor = '#7c3aed';
+    emissiveColor = '#6d28d9';
+    wireColor = '#c4b5fd';
   } else if (isActive) {
     boxColor = isNegative ? '#9f1239' : '#06b6d4';
     emissiveColor = isNegative ? '#e11d48' : '#0891b2';
@@ -171,6 +184,10 @@ function ArrayCell({
     boxColor = isNegative ? '#4c0519' : '#164e63';
     emissiveColor = isNegative ? '#881337' : '#0e7490';
     wireColor = isNegative ? '#f43f5e' : '#22d3ee';
+  } else if (isSorted) {
+    boxColor = '#065f46';
+    emissiveColor = '#047857';
+    wireColor = '#34d399';
   } else if (isPrevious) {
     boxColor = '#334155';
     emissiveColor = '#1e293b';
@@ -208,7 +225,7 @@ function ArrayCell({
             metalness={isXRayMode ? 0.85 : 0.55}
             roughness={isXRayMode ? 0.1 : 0.18}
             emissive={isXRayMode ? '#38bdf8' : emissiveColor}
-            emissiveIntensity={isHovered ? 1.8 : isTargetFound ? 1.5 : isActive ? 1.1 : isInWindow ? 0.6 : 0.25}
+            emissiveIntensity={isHovered ? 1.8 : isTargetFound ? 1.5 : isSwapping ? 1.65 : isComparing ? 1.35 : isActive ? 1.1 : isInWindow ? 0.6 : isSorted ? 0.55 : 0.25}
             transparent={isXRayMode}
             opacity={isXRayMode ? 0.55 : 1.0}
             wireframe={isXRayMode && !isHovered}
@@ -246,8 +263,16 @@ function ArrayCell({
           </Float>
         )}
 
-        {/* Active Holo Ring around active cell */}
-        {isActive && !isTargetFound && <CellHoloRing color={isNegative ? '#f43f5e' : '#00f2fe'} />}
+        {/* State-specific holographic ring: comparison, swap, active pointer, or found target */}
+        {(isComparing || isSwapping || isActive) && !isTargetFound && (
+          <CellHoloRing color={isSwapping ? '#fb923c' : isComparing ? '#c4b5fd' : (isNegative ? '#f43f5e' : '#00f2fe')} />
+        )}
+        {isSorted && !isActive && !isComparing && !isSwapping && (
+          <mesh position={[0, baseHeight / 2 + 0.18, 0]}>
+            <torusGeometry args={[0.72, 0.035, 8, 24]} />
+            <meshBasicMaterial color="#34d399" />
+          </mesh>
+        )}
 
         {/* Target Found Laser Beacon and Golden Ring */}
         {isTargetFound && (
@@ -494,6 +519,9 @@ export default function ArrayVisualizer3D({ dataStructureState, isXRayMode = fal
   const effectiveXRay = isXRayMode || !!dataStructureState?.isXRayMode;
   const {
     values = [],
+    comparedIndices = [],
+    swappedIndices = [],
+    sortedIndices = [],
     activeIndex = null,
     previousIndex = null,
     pointers = {},
@@ -617,6 +645,9 @@ export default function ArrayVisualizer3D({ dataStructureState, isXRayMode = fal
         const posX = startX + idx * spacing;
         const isActive = activeIndex === idx || idx === leftPointer || idx === rightPointer;
         const isPrevious = previousIndex === idx;
+        const isComparing = Array.isArray(comparedIndices) && comparedIndices.includes(idx);
+        const isSwapping = Array.isArray(swappedIndices) && swappedIndices.includes(idx);
+        const isSorted = Array.isArray(sortedIndices) && sortedIndices.includes(idx);
         const isInWindow = windowStart !== null && windowEnd !== null && idx >= windowStart && idx <= windowEnd;
         const cellPointers = pointersByIndex[idx] || [];
         const isCellTargetFound = targetFound && (pointers?.target === idx || activeIndex === idx);
@@ -631,6 +662,9 @@ export default function ArrayVisualizer3D({ dataStructureState, isXRayMode = fal
             value={val}
             isActive={isActive}
             isPrevious={isPrevious}
+            isComparing={isComparing}
+            isSwapping={isSwapping}
+            isSorted={isSorted}
             isInWindow={isInWindow}
             positionX={posX}
             pointerNames={cellPointers}
