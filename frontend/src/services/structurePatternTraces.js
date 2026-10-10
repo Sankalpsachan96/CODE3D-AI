@@ -164,3 +164,95 @@ export function buildGraphPatternTrace(source, runtimeOutput = []) {
   snapshot(null, `${algorithm.toUpperCase()} complete`, `Traversal reached ${visited.length} vertex(es) from start vertex ${start}.`, 'GRAPH_COMPLETE');
   return steps;
 }
+
+function sourceStructureState(type, values, extra = {}) {
+  return { type, structureType: type, values: [...values], ...extra };
+}
+
+/** Trace simple stack/queue operations when the values and operations are explicit. */
+export function buildLinearStructurePatternTrace(source, runtimeOutput = []) {
+  const code = String(source || '');
+  const lower = code.toLowerCase();
+  const isStack = /\b(?:stack|push|pop|peek|top)\b/.test(lower);
+  const isQueue = /\b(?:queue|enqueue|dequeue|offer|poll)\b/.test(lower);
+  if (isStack === isQueue) return null;
+  const type = isStack ? 'stack' : 'queue';
+  const values = [];
+  const steps = [];
+  const lineOf = (index) => code.slice(0, index).split(/\r?\n/).length;
+  const operations = /\b(push|append|add|offer|enqueue|pop|poll|dequeue|peek|top)\s*\(\s*([^)]*)\)/gi;
+  let sequence = 1;
+  for (const match of code.matchAll(operations)) {
+    const operation = match[1].toLowerCase();
+    const arg = match[2].trim();
+    const lineNumber = lineOf(match.index);
+    let message = '';
+    let eventType = '';
+    let value;
+    if (['push', 'append', 'add', 'offer', 'enqueue'].includes(operation)) {
+      if (!arg || !/^-?\d+(?:\.\d+)?$|^['"][^'"]*['"]$|^(true|false)$/i.test(arg)) continue;
+      value = /^['"]/.test(arg) ? arg.slice(1, -1) : (/^-?\d/.test(arg) ? Number(arg) : arg);
+      values.push(value);
+      message = `${type === 'stack' ? 'Push onto stack' : 'Enqueue into queue'}: ${value}`;
+      eventType = type === 'stack' ? 'STACK_PUSH' : 'QUEUE_ENQUEUE';
+    } else if (['pop', 'poll', 'dequeue'].includes(operation)) {
+      value = type === 'stack' ? values.pop() : values.shift();
+      message = value === undefined ? `${type} is empty; remove operation has no element` : `${type === 'stack' ? 'Pop from stack' : 'Dequeue from queue'}: ${value}`;
+      eventType = type === 'stack' ? 'STACK_POP' : 'QUEUE_DEQUEUE';
+    } else {
+      value = type === 'stack' ? values[values.length - 1] : values[0];
+      message = value === undefined ? `${type} is empty` : `${type === 'stack' ? 'Top' : 'Front'} element: ${value}`;
+      eventType = type === 'stack' ? 'STACK_PEEK' : 'QUEUE_PEEK';
+    }
+    const state = sourceStructureState(type, values, { activeIndex: values.length ? values.length - 1 : null, label: message, focusInfo: 'Modeled from explicit source operations; actual program output/status are shown separately.' });
+    steps.push({
+      stepNumber: sequence++, lineNumber, algorithm: type, eventType, operation: eventType,
+      message, explanation: message, variables: { value, size: values.length },
+      dataStructureState: state, traceKind: 'pattern-model', output: runtimeOutput,
+    });
+  }
+  if (!steps.length) return null;
+  return steps;
+}
+
+/** Trace linked-list node creation and next-pointer links from common C-family/JS syntax. */
+export function buildLinkedListPatternTrace(source, runtimeOutput = []) {
+  const code = String(source || '');
+  const hasNext = /(?:->|\.)\s*next\b|\bnext\s*=/.test(code);
+  const hasNodeType = /\b(?:class|struct)\s+(?:Node|ListNode)\b|\b(?:Node|ListNode)\s*\*/i.test(code);
+  if (!hasNext || !hasNodeType) return null;
+  const nodes = [];
+  const names = new Map();
+  const edges = [];
+  const steps = [];
+  let sequence = 1;
+  const lineOf = (index) => code.slice(0, index).split(/\r?\n/).length;
+  const allocations = /\b(\w+)\s*=\s*(?:new\s+)?(?:Node|ListNode)\s*\(\s*([^,)]+)[^)]*\)/gi;
+  for (const match of code.matchAll(allocations)) {
+    const name = match[1];
+    const raw = match[2].trim();
+    const value = /^['"]/.test(raw) ? raw.slice(1, -1) : (/^-?\d+(?:\.\d+)?$/.test(raw) ? Number(raw) : raw);
+    if (names.has(name)) continue;
+    const id = nodes.length;
+    names.set(name, id);
+    nodes.push({ id, val: value, value, label: String(value), next: null, nodeType: 'list_node', name });
+    const state = sourceStructureState('linked-list', nodes.map((node) => node.val), {
+      nodes: nodes.map((node) => ({ ...node })), edges: edges.map((edge) => ({ ...edge })),
+      activeIndex: id, label: `Create node ${value}`, focusInfo: 'Node allocation inferred from source; this is not runtime instrumentation.',
+    });
+    steps.push({ stepNumber: sequence++, lineNumber: lineOf(match.index), algorithm: 'linked_list', eventType: 'LIST_CREATE', operation: 'CREATE_NODE', message: `Create node ${value}`, explanation: `Allocate list node ${value}.`, dataStructureState: state, traceKind: 'pattern-model', output: runtimeOutput });
+  }
+  const links = /\b(\w+)\s*(?:->|\.)\s*next\s*=\s*(\w+)\s*;?/gi;
+  for (const match of code.matchAll(links)) {
+    const from = names.get(match[1]), to = names.get(match[2]);
+    if (from === undefined || to === undefined) continue;
+    nodes[from].next = to;
+    if (!edges.some((edge) => edge.from === from && edge.to === to)) edges.push({ from, to, label: 'next' });
+    const state = sourceStructureState('linked-list', nodes.map((node) => node.val), {
+      nodes: nodes.map((node) => ({ ...node })), edges: edges.map((edge) => ({ ...edge })),
+      activeIndex: from, label: `Link ${nodes[from].val} → ${nodes[to].val}`, focusInfo: 'The next pointer connects these nodes.',
+    });
+    steps.push({ stepNumber: sequence++, lineNumber: lineOf(match.index), algorithm: 'linked_list', eventType: 'LIST_LINK', operation: 'LINK_NEXT', message: `Link ${nodes[from].val} → ${nodes[to].val}`, explanation: `Set next pointer of ${nodes[from].val} to ${nodes[to].val}.`, dataStructureState: state, traceKind: 'pattern-model', output: runtimeOutput });
+  }
+  return steps.length ? steps : null;
+}
