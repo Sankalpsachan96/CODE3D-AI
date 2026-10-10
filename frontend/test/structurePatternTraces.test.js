@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildGraphPatternTrace } from '../src/services/structurePatternTraces.js';
+import { buildGraphPatternTrace, buildLinearStructurePatternTrace, buildLinkedListPatternTrace, buildTreePatternTrace } from '../src/services/structurePatternTraces.js';
 
 const cases = [
   {
@@ -50,4 +50,44 @@ test('graph trace uses addEdge calls for C++/Java-style graph builders', () => {
 
 test('unrelated source is not falsely classified as a graph', () => {
   assert.equal(buildGraphPatternTrace('int sum = 1 + 2; printf("%d", sum);', []), null);
+});
+
+test('explicit tree allocations and left/right links produce tree edges', () => {
+  const code = `class Node { int data; Node left, right; Node(int data) { this.data = data; } }
+Node root = new Node(50);
+root.left = new Node(30);
+root.right = new Node(70);`;
+  const trace = buildTreePatternTrace(code, ['actual output']);
+  assert.ok(trace && trace.length >= 2);
+  const finalState = trace.at(-1).dataStructureState;
+  assert.equal(finalState.type, 'tree');
+  assert.equal(finalState.nodes.length, 3);
+  assert.deepEqual(finalState.edges.map(({ from, to, label }) => [from, to, label]), [[0, 1, 'left'], [0, 2, 'right']]);
+});
+
+test('linked-list node allocation and next links create a linked-list scene', () => {
+  const code = `struct Node { int data; Node* next; };
+Node* head = new Node(10);
+Node* tail = new Node(20);
+head->next = tail;`;
+  const trace = buildLinkedListPatternTrace(code, []);
+  assert.ok(trace && trace.some((step) => step.eventType === 'LIST_LINK'));
+  assert.equal(trace.at(-1).dataStructureState.type, 'linked-list');
+  assert.deepEqual(trace.at(-1).dataStructureState.edges.map(({ from, to }) => [from, to]), [[0, 1]]);
+});
+
+test('stack and queue explicit operations create separate timelines', () => {
+  const stack = buildLinearStructurePatternTrace('stack<int> s; s.push(10); s.push(20); s.pop();', []);
+  assert.deepEqual(stack.at(-1).dataStructureState.values, [10]);
+  assert.equal(stack.at(-1).dataStructureState.type, 'stack');
+
+  const queue = buildLinearStructurePatternTrace('queue<int> q; q.push(10); q.push(20); q.pop();', []);
+  assert.deepEqual(queue.at(-1).dataStructureState.values, [20]);
+  assert.equal(queue.at(-1).dataStructureState.type, 'queue');
+});
+
+test('source without an identifiable graph, tree, linked list, stack or queue stays unclassified', () => {
+  assert.equal(buildTreePatternTrace('int total = 3;', []), null);
+  assert.equal(buildLinkedListPatternTrace('int total = 3;', []), null);
+  assert.equal(buildLinearStructurePatternTrace('int total = 3;', []), null);
 });
