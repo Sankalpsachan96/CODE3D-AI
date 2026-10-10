@@ -713,7 +713,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           const arrayEntry = Object.entries(arrays).find(([, value]) => Array.isArray(value)) || variableArrayEntry;
           const rawStructureType = String(sourceState.structureType || sourceState.type || step.dataStructure || step.structureType || execution.universalContext?.analysis?.dataStructure || 'array').toLowerCase().replace(/_/g, '-');
           const inferredArrayType = arrayEntry
-            ? (/\\b(sort|qsort)\\s*\\(|\\.sort\\s*\\(|Arrays\\.sort/i.test(code) ? 'sorting' : 'array')
+            ? (/\b(sort|qsort)\s*\(|\.sort\s*\(|Arrays\.sort/i.test(code) ? 'sorting' : 'array')
             : '';
           const structureType = rawStructureType === 'universal-execution' && inferredArrayType
             ? inferredArrayType
