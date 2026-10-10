@@ -107,23 +107,45 @@ export default function TreeVisualizer3D({ dataStructureState }) {
   const { isBright } = useTheme();
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
 
-  const { activeIndex = null, nodes: rawNodes = [], values = [] } = dataStructureState || {};
+  const { activeIndex = null, nodes: rawNodes = [], values = [], edges: rawEdges = [] } = dataStructureState || {};
 
   // Compute clean tree nodes with guaranteed parent-child pointers
   const treeNodes = useMemo(() => {
     if (rawNodes && rawNodes.length > 0) {
-      // Ensure each node has left, right, parent, depth
-      return rawNodes.map((n, i) => ({
-        id: n.id ?? i,
-        val: n.val ?? n.value ?? n.id ?? i,
-        left: n.left ?? null,
-        right: n.right ?? null,
-        parent: n.parent ?? null,
-        depth: n.depth ?? 0,
-      }));
+      // Some runtime adapters provide nodes and labelled edges separately.
+      // Reconstruct child pointers from the actual edge list before laying out the tree.
+      const nodeIds = rawNodes.map((node, index) => node.id ?? index);
+      const normalizeEndpoint = (endpoint) => {
+        const raw = endpoint && typeof endpoint === 'object'
+          ? (endpoint.id ?? endpoint.value ?? endpoint.val ?? endpoint.label)
+          : endpoint;
+        const exact = nodeIds.find((id) => String(id) === String(raw));
+        if (exact !== undefined) return exact;
+        const numeric = Number(raw);
+        return Number.isInteger(numeric) && numeric >= 0 && numeric < nodeIds.length ? nodeIds[numeric] : null;
+      };
+      const relations = (Array.isArray(rawEdges) ? rawEdges : []).map((edge) => ({
+        from: normalizeEndpoint(Array.isArray(edge) ? edge[0] : (edge.from ?? edge.source ?? edge.u)),
+        to: normalizeEndpoint(Array.isArray(edge) ? edge[1] : (edge.to ?? edge.target ?? edge.v)),
+        label: String(Array.isArray(edge) ? '' : (edge.label ?? edge.relation ?? edge.side ?? '')).toLowerCase(),
+      })).filter((edge) => edge.from !== null && edge.to !== null && edge.from !== edge.to);
+      return rawNodes.map((n, i) => {
+        const id = n.id ?? i;
+        const leftEdge = relations.find((edge) => String(edge.from) === String(id) && edge.label === 'left');
+        const rightEdge = relations.find((edge) => String(edge.from) === String(id) && edge.label === 'right');
+        const parentEdge = relations.find((edge) => String(edge.to) === String(id) && ['left', 'right', 'child', 'children'].includes(edge.label));
+        return {
+          id,
+          val: n.val ?? n.value ?? n.label ?? n.id ?? i,
+          left: n.left ?? leftEdge?.to ?? null,
+          right: n.right ?? rightEdge?.to ?? null,
+          parent: n.parent ?? parentEdge?.from ?? null,
+          depth: n.depth ?? 0,
+        };
+      });
     }
     return buildBstFromValues(values);
-  }, [rawNodes, values]);
+  }, [rawNodes, values, rawEdges]);
 
   // Deterministic tidy layout: inorder gives stable horizontal ordering and
   // depth gives a strict horizontal level. This avoids modifier/contour drift
