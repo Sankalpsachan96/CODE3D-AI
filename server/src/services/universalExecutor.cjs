@@ -194,6 +194,7 @@ let userScriptId = null;
 let pendingPauseHandlers = 0;
 let userCodeFinished = false;
 let finishPauseWait = null;
+let pauseQueue = Promise.resolve();
 const ignoredNames = new Set(["require", "module", "exports", "__filename", "__dirname", "arguments"]);
 const post = (method, params = {}) => new Promise((resolve, reject) => session.post(method, params, (error, result) => error ? reject(error) : resolve(result)));
 
@@ -224,34 +225,35 @@ async function serializeRemote(remote, depth = 0, seen = new Set()) {
 
 session.connect();
 session.on("Debugger.scriptParsed", ({ params }) => { if (params.url.endsWith("code3d-user.js")) userScriptId = params.scriptId; });
-session.on("Debugger.paused", async ({ params }) => {
+session.on("Debugger.paused", ({ params }) => {
   pendingPauseHandlers += 1;
-  try {
-    const isUserFrame = (item) => item.location.scriptId === userScriptId;
-    const frame = params.callFrames.find(isUserFrame);
-    if (frame && events.length < maxSteps) {
-      const variables = {};
-      for (const scope of frame.scopeChain.filter((item) => ["local", "block", "script"].includes(item.type))) {
-        if (!scope || !scope.object || !scope.object.objectId) continue;
-        const result = await post("Runtime.getProperties", { objectId: scope.object.objectId, ownProperties: true, accessorPropertiesOnly: false });
-        for (const property of (result.result || []).filter((item) => item.value && !ignoredNames.has(item.name)).slice(0, 100)) {
-          if (!(property.name in variables)) variables[property.name] = await serializeRemote(property.value);
+  pauseQueue = pauseQueue.then(async () => {
+    try {
+      const isUserFrame = (item) => item.location.scriptId === userScriptId;
+      const frame = params.callFrames.find(isUserFrame);
+      if (frame && events.length < maxSteps) {
+        const variables = {};
+        for (const scope of frame.scopeChain.filter((item) => ["local", "block", "script"].includes(item.type))) {
+          if (!scope || !scope.object || !scope.object.objectId) continue;
+          const result = await post("Runtime.getProperties", { objectId: scope.object.objectId, ownProperties: true, accessorPropertiesOnly: false });
+          for (const property of (result.result || []).filter((item) => item.value && !ignoredNames.has(item.name)).slice(0, 100)) {
+            if (!(property.name in variables)) variables[property.name] = await serializeRemote(property.value);
+          }
         }
+        events.push({ step: events.length + 1, line: Math.max(1, frame.location.lineNumber), event: "runtime_line", variables, callStack: params.callFrames.filter(isUserFrame).map((item) => item.functionName || "<main>"), message: "Runtime snapshot captured at this executed line." });
+      } else if (events.length === maxSteps) {
+        const last = events.length ? events[events.length - 1] : {};
+        events.push({ step: maxSteps + 1, line: last.line, variables: last.variables || {}, event: "trace_limit", message: "Runtime trace capped at 120 line events; program output still reflects the complete run." });
+        await post("Debugger.disable");
       }
-      events.push({ step: events.length + 1, line: Math.max(1, frame.location.lineNumber), event: "runtime_line", variables, callStack: params.callFrames.filter(isUserFrame).map((item) => item.functionName || "<main>"), message: "Runtime snapshot captured at this executed line." });
-    } else if (events.length === maxSteps) {
-      const last = events.length ? events[events.length - 1] : {};
-      events.push({ step: maxSteps + 1, line: last.line, variables: last.variables || {}, event: "trace_limit", message: "Runtime trace capped at 120 line events; program output still reflects the complete run." });
-      await post("Debugger.disable");
-    }
-  } catch (error) {
-    process.stderr.write("Runtime tracing warning: " + error.message + "\n");
-  } finally {
-    session.post("Debugger.resume", {}, () => {
+    } catch (error) {
+      process.stderr.write("Runtime tracing warning: " + error.message + "\n");
+    } finally {
+      await post("Debugger.resume").catch(() => {});
       pendingPauseHandlers -= 1;
       if (userCodeFinished && pendingPauseHandlers === 0 && finishPauseWait) finishPauseWait();
-    });
-  }
+    }
+  });
 });
 
 (async () => {
