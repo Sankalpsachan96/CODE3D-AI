@@ -47,6 +47,106 @@ import {
   BookOpen,
   Scale,
 } from 'lucide-react';
+
+/**
+ * Build a pedagogical BST trace for common user-written tree programs.
+ * These are inferred visual-model steps, not runtime instrumentation.
+ */
+function buildBstPatternTrace(source, runtimeOutput = []) {
+  const code = String(source || '');
+  const hasNodeLinks = /(?:Node|node|TreeNode)\\s*\\*?\\s+\\w+|class\\s+Node|struct\\s+Node/i.test(code)
+    && /\\.left|->left/i.test(code) && /\\.right|->right/i.test(code);
+  const hasTreeOps = /inorder|preorder|postorder|insert\\s*\\(|search\\s*\\(/i.test(code);
+  if (!hasNodeLinks || !hasTreeOps) return null;
+
+  const arrayMatch = code.match(/(?:int|long|Integer|var)\\s*(?:\\[\\s*\\]\\s*)?\\w*values\\w*\\s*(?:\\[\\s*\\])?\\s*=\\s*[\\{\\[]([^}\\]]+)[}\\]]/i)
+    || code.match(/values\\s*=\\s*[\\{\\[]([^}\\]]+)[}\\]]/i);
+  const values = arrayMatch
+    ? (arrayMatch[1].match(/-?\\d+/g) || []).map(Number).slice(0, 40)
+    : [];
+  if (!values.length) return null;
+
+  const lineFor = (pattern, fallback = 1) => {
+    const match = code.match(pattern);
+    return match ? code.slice(0, match.index).split('\\n').length : fallback;
+  };
+  const insertLine = lineFor(/(?:root\\s*=\\s*)?insert\\s*\\(/i, lineFor(/for\\s*\\(/i, 1));
+  const inorderLine = lineFor(/inorder\\s*\\(/i, insertLine);
+  const preorderLine = lineFor(/preorder\\s*\\(/i, inorderLine);
+  const postorderLine = lineFor(/postorder\\s*\\(/i, preorderLine);
+  const searchLine = lineFor(/search\\s*\\(/i, postorderLine);
+  const nodes = [];
+  const steps = [];
+  let sequence = 1;
+  const snapshot = (activeId, lineNumber, label, explanation, operation, variables = {}) => {
+    const nodeCopies = nodes.map((n) => ({ ...n }));
+    steps.push({
+      stepNumber: sequence++, lineNumber, algorithm: 'bst', eventType: operation,
+      operation, explanation, message: label, variables,
+      dataStructureState: {
+        type: 'tree', structureType: 'bst', algorithm: 'bst', nodes: nodeCopies,
+        values: values.slice(), activeIndex: activeId, label, focusInfo: explanation,
+        operation, outputStream: runtimeOutput,
+      },
+      traceKind: 'pattern-model',
+    });
+  };
+  const insertNode = (value, index) => {
+    if (!nodes.length) {
+      nodes.push({ id: 0, val: value, left: null, right: null, parent: null, depth: 0 });
+      snapshot(0, insertLine, `Create root ${value}`, `The first value ${value} becomes the root of the BST.`, 'BST_INSERT', { value, parent: null });
+      return;
+    }
+    let current = 0;
+    while (true) {
+      const node = nodes[current];
+      snapshot(node.id, insertLine, `Compare ${value} with ${node.val}`, `${value} is ${value < node.val ? 'smaller' : value > node.val ? 'greater' : 'equal to'} ${node.val}; follow the corresponding BST branch.`, 'BST_COMPARE', { value, current: node.val, insertIndex: index });
+      const side = value < node.val ? 'left' : 'right';
+      if (value === node.val) {
+        snapshot(node.id, insertLine, `Skip duplicate ${value}`, 'This visual model ignores duplicate keys, matching a common BST insertion rule.', 'BST_DUPLICATE', { value });
+        return;
+      }
+      if (node[side] == null) {
+        const id = nodes.length;
+        node[side] = id;
+        nodes.push({ id, val: value, left: null, right: null, parent: node.id, depth: node.depth + 1 });
+        snapshot(id, insertLine, `Insert ${value} to the ${side}`, `Create node ${value} as the ${side} child of ${node.val}.`, 'BST_INSERT', { value, parent: node.val, side });
+        return;
+      }
+      current = node[side];
+    }
+  };
+  values.forEach(insertNode);
+  const traverse = (order, line) => {
+    const visit = (id) => {
+      if (id == null) return;
+      const node = nodes[id];
+      if (order === 'Preorder') snapshot(id, line, `Preorder visits ${node.val}`, 'Preorder visits the current node before its left and right subtrees.', 'BST_TRAVERSE', { order, value: node.val });
+      visit(node.left);
+      if (order === 'Inorder') snapshot(id, line, `Inorder visits ${node.val}`, 'Inorder visits left subtree, current node, then right subtree. For a BST, values appear sorted.', 'BST_TRAVERSE', { order, value: node.val });
+      visit(node.right);
+      if (order === 'Postorder') snapshot(id, line, `Postorder visits ${node.val}`, 'Postorder visits both children before the current node.', 'BST_TRAVERSE', { order, value: node.val });
+    };
+    visit(0);
+  };
+  if (/inorder\\s*\\(/i.test(code)) traverse('Inorder', inorderLine);
+  if (/preorder\\s*\\(/i.test(code)) traverse('Preorder', preorderLine);
+  if (/postorder\\s*\\(/i.test(code)) traverse('Postorder', postorderLine);
+  const searchMatch = code.match(/search\\s*\\(\\s*root\\s*,\\s*(-?\\d+)/i);
+  if (searchMatch) {
+    const target = Number(searchMatch[1]);
+    let current = 0;
+    while (current != null && nodes[current]) {
+      const node = nodes[current];
+      snapshot(node.id, searchLine, `Search compares ${target} with ${node.val}`, target === node.val ? `Target ${target} found at this node.` : `${target} is ${target < node.val ? 'smaller' : 'greater'} than ${node.val}; move to the ${target < node.val ? 'left' : 'right'} child.`, 'BST_SEARCH', { target, current: node.val, found: target === node.val });
+      if (target === node.val) break;
+      current = target < node.val ? node.left : node.right;
+    }
+  }
+  snapshot(null, searchLine, 'BST operations complete', 'The tree structure is complete. Step through the timeline to inspect insertions and traversals.', 'BST_COMPLETE');
+  return steps;
+}
+
 export default function Visualizer({ initialConcept, initialOpenStriver = false, universalOnly = false }) {
   const { isBright } = useTheme();
 
@@ -575,6 +675,11 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
       if (universalOnly) {
         // Only expose a modeled DSA trace when the backend reports an explicit
         // supported pattern. Generic source-derived steps are not runtime traces.
+        const bstPatternTrace = buildBstPatternTrace(code, actualOutput);
+        if (bstPatternTrace) {
+          visualTrace = bstPatternTrace;
+          setTraceNotice('BST pattern model • Tree insertions, traversal visits and search are inferred from source; program output/status are real.');
+        } else {
         visualTrace = execution.steps.map((step, index) => {
           const lineNumber = step.lineNumber || step.line || null;
           const variables = step.variables || step.dataStructureState?.variables || {};
@@ -631,6 +736,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             : visualTrace.length
               ? 'Source-model 3D view • Program output/status are real; intermediate states are inferred from source and are not exact runtime snapshots.'
               : `Program ran successfully. ${execution.traceReason || 'No source-level events were available to visualize.'}`);
+        }
       } else {
         const visualProblem = activeStriverProblem || selectedSample;
         visualTrace = attachRuntimeOutput(
