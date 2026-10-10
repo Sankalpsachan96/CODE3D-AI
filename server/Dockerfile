@@ -6,6 +6,7 @@ RUN apt-get update && \
         openjdk-17-jdk \
         g++ \
         gcc \
+        gdb \
         python3 \
         python3-pip \
         bubblewrap \

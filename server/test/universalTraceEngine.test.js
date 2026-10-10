@@ -244,6 +244,20 @@ test('captured Python runtime snapshots take priority over source heuristics', (
   assert.deepEqual(result.events[0].callStack, ['factorial', 'factorial']);
 });
 
+test('runtime snapshots captured before a thrown error remain exact and are marked stopped at error', () => {
+  const result = universalTrace.generateTrace('let value = 3;\nthrow new Error("boom");', 'javascript', {
+    success: false,
+    error: 'Error: boom',
+    runtimeTrace: [
+      { step: 1, line: 1, event: 'runtime_line', variables: { value: 3 } },
+      { step: 2, line: 2, event: 'runtime_line', variables: { value: 3 } },
+    ],
+  });
+  assert.equal(result.runtimeInstrumented, true);
+  assert.equal(result.stoppedAtError, true);
+  assert.deepEqual(result.events.map((event) => event.line), [1, 2]);
+});
+
 
 test('captured runtime object pointers become connected 3D nodes', () => {
   const result = universalTrace.generateTrace('class Node: pass', 'python', {

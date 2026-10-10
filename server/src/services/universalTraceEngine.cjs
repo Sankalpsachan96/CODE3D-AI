@@ -3008,24 +3008,6 @@ function generateTrace(
     Runtime errors MUST bypass synthetic
     specialized traces.
   */
-  if (
-    executionResult &&
-    executionResult.error
-  ) {
-    const errorTrace =
-      generateGenericRuntimeTrace(
-        code,
-        normalizedLanguage,
-        executionResult
-      );
-
-    return {
-      ...errorTrace,
-      supported: true,
-      stoppedAtError: true,
-    };
-  }
-
   // Prefer captured runtime snapshots over source-derived guesses when available.
   if (Array.isArray(executionResult.runtimeTrace) && executionResult.runtimeTrace.length) {
     const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index) => {
@@ -3117,7 +3099,11 @@ function generateTrace(
         message: snapshot.message || 'Runtime snapshot',
       });
     });
-    return { supported: true, generic: false, runtimeInstrumented: true, algorithm: 'runtime_execution', dataStructure: events[0]?.dataStructure || 'variables', stoppedAtError: false, events };
+    return { supported: true, generic: false, runtimeInstrumented: true, algorithm: 'runtime_execution', dataStructure: events[0]?.dataStructure || 'variables', stoppedAtError: Boolean(executionResult.error), events };
+  }
+  if (executionResult && executionResult.error) {
+    const errorTrace = generateGenericRuntimeTrace(code, normalizedLanguage, executionResult);
+    return { ...errorTrace, supported: true, stoppedAtError: true };
   }
   /*
     Existing source-level
