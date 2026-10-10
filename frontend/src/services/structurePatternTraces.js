@@ -29,7 +29,7 @@ function parseGraphSource(source) {
   let parsedLiteral = false;
 
   // Python/JavaScript adjacency dictionaries and nested adjacency arrays.
-  const literalMatch = code.match(/\b(?:graph|adjacencyList|adjList|adjacency_list|adjacencyMatrix|adjacency_matrix)\b(?:\s*\[[^\]]*\])?\s*=\s*([\[{])/i);
+  const literalMatch = code.match(/\b(?:graph|adj|adjacency|adjacencyList|adjList|adjacency_list|adjacencyMatrix|adjacency_matrix)\b(?:\s*\[[^\]]*\])?\s*=\s*([\[{])/i);
   if (literalMatch) {
     const start = literalMatch.index + literalMatch[0].lastIndexOf(literalMatch[1]);
     const opener = code[start];
