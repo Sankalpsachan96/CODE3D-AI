@@ -351,7 +351,7 @@ export function buildTreePatternTrace(source, runtimeOutput = []) {
   };
 
   // Support constructor-based nodes and C helper factories such as struct Node* root = createNode(1).
-  const allocations = /\b([\w.]+)\s*=\s*(?:createNode|new\s+Node|new\s+TreeNode|Node|TreeNode)\s*\(\s*([^,)]+)[^)]*\)/gi;
+  const allocations = /(?<!->)(?<!\.)\b([\w.]+)\s*=\s*(?:createNode|new\s+Node|new\s+TreeNode|Node|TreeNode)\s*\(\s*([^,)]+)[^)]*\)/gi;
   for (const match of code.matchAll(allocations)) addNode(match[1], match[2]);
 
   if (!nodes.length) return null;
