@@ -81,7 +81,7 @@ function parseGraphSource(source) {
 
   // C/C++/Java/JS/Python edge-builder calls such as addEdge(graph, 0, 1),
   // graph.addEdge(0, 1), or add_edge(0, 1).
-  const edgeCall = /(?:\baddEdge|\badd_edge|\baddedge|\.addEdge)\s*\(\s*(?:(?:graph|g|adjacencyList|(?:graph|g|adj|adjacency|adjacencyList|adjList))\s*,\s*)?(-?\d+)\s*,\s*(-?\d+)(?:\s*,\s*(-?\d+(?:\.\d+)?))?\s*\)/gi;
+  const edgeCall = /(?:\baddEdge|\badd_edge|\baddedge|\.addEdge)\s*\(\s*(?:(?:graph|g|adj|adjacency|adjacencyList|adjList)\s*,\s*)?(-?\d+)\s*,\s*(-?\d+)(?:\s*,\s*(-?\d+(?:\.\d+)?))?\s*\)/gi;
   for (const match of code.matchAll(edgeCall)) {
     const from = Number(match[1]), to = Number(match[2]);
     vertices.add(from); vertices.add(to);
@@ -91,7 +91,7 @@ function parseGraphSource(source) {
 
   // C/Java/C++ matrix declarations: int graph[N][N] = {{...}, {...}}.
   if (!parsedLiteral) {
-    const matrixMatch = code.match(/\b(?:graph|adjacencyMatrix|adjacency_matrix)\s*\[\s*\d+\s*\]\s*\[\s*\d+\s*\]\s*=\s*\{([\s\S]*?)\}\s*;/i);
+    const matrixMatch = code.match(/\b(?:graph|adj|adjacencyMatrix|adjacency_matrix)\s*\[\s*\d+\s*\]\s*\[\s*\d+\s*\]\s*=\s*\{([\s\S]*?)\}\s*;/i);
     if (matrixMatch) {
       const rows = [...matrixMatch[1].matchAll(/\{([^{}]+)\}/g)].map((m) => [...m[1].matchAll(/-?\d+/g)].map((n) => Number(n[0])));
       rows.forEach((row, from) => row.forEach((weight, to) => {
