@@ -29,7 +29,7 @@ function parseGraphSource(source) {
   let parsedLiteral = false;
 
   // Python/JavaScript adjacency dictionaries and nested adjacency arrays.
-  const literalMatch = code.match(/\b(?:graph|adj|adjacency|adjacencyList|adjList|adjacency_list|adjacencyMatrix|adjacency_matrix)\b(?:\s*\[[^\]]*\])?\s*=\s*([\[{])/i);
+  const literalMatch = code.match(/\b(?:graph|adj|adjacency|adjacencyList|(?:graph|g|adj|adjacency|adjacencyList|adjList)|adjacency_list|adjacencyMatrix|adjacency_matrix)\b(?:\s*\[[^\]]*\])?\s*=\s*([\[{])/i);
   if (literalMatch) {
     const start = literalMatch.index + literalMatch[0].lastIndexOf(literalMatch[1]);
     const opener = code[start];
@@ -81,7 +81,7 @@ function parseGraphSource(source) {
 
   // C/C++/Java/JS/Python edge-builder calls such as addEdge(graph, 0, 1),
   // graph.addEdge(0, 1), or add_edge(0, 1).
-  const edgeCall = /(?:\baddEdge|\badd_edge|\baddedge|\.addEdge)\s*\(\s*(?:(?:graph|g|adjacencyList|adjList)\s*,\s*)?(-?\d+)\s*,\s*(-?\d+)(?:\s*,\s*(-?\d+(?:\.\d+)?))?\s*\)/gi;
+  const edgeCall = /(?:\baddEdge|\badd_edge|\baddedge|\.addEdge)\s*\(\s*(?:(?:graph|g|adjacencyList|(?:graph|g|adj|adjacency|adjacencyList|adjList))\s*,\s*)?(-?\d+)\s*,\s*(-?\d+)(?:\s*,\s*(-?\d+(?:\.\d+)?))?\s*\)/gi;
   for (const match of code.matchAll(edgeCall)) {
     const from = Number(match[1]), to = Number(match[2]);
     vertices.add(from); vertices.add(to);
