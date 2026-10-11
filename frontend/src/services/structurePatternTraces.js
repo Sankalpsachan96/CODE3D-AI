@@ -328,47 +328,91 @@ export function buildTreePatternTrace(source, runtimeOutput = []) {
   const hasTreeLinks = /(?:->|\.)\s*(?:left|right)\s*=/.test(code);
   const hasNodeType = /\b(?:class|struct)\s+(?:Node|TreeNode)\b|\b(?:Node|TreeNode)\s*\*/i.test(code);
   if (!hasTreeLinks || !hasNodeType || /(?:->|\.)\s*next\s*=/.test(code)) return null;
+
   const nodes = [];
   const byName = new Map();
   const edges = [];
   const steps = [];
   const lineOf = (index) => code.slice(0, index).split(/\r?\n/).length;
-  const allocations = /\b([\w.]+)\s*=\s*(?:new\s+)?(?:Node|TreeNode)\s*\(\s*([^,)]+)[^)]*\)/gi;
-  for (const match of code.matchAll(allocations)) {
-    const name = match[1].replace(/->/g, '.');
-    const raw = match[2].trim();
-    const value = /^['"]/.test(raw) ? raw.slice(1, -1) : (/^-?\d+(?:\.\d+)?$/.test(raw) ? Number(raw) : raw);
-    if (byName.has(name)) continue;
+  const valueFrom = (raw) => {
+    const value = String(raw ?? '').trim();
+    if (/^['"]/.test(value)) return value.slice(1, -1);
+    if (/^-?\d+(?:\.\d+)?$/.test(value)) return Number(value);
+    return value;
+  };
+  const addNode = (name, rawValue) => {
+    const normalized = String(name || '').replace(/->/g, '.');
+    if (normalized && byName.has(normalized)) return byName.get(normalized);
     const id = nodes.length;
-    byName.set(name, id);
-    nodes.push({ id, val: value, value, label: String(value), left: null, right: null, parent: null, depth: 0, name });
-  }
+    const value = valueFrom(rawValue);
+    nodes.push({ id, val: value, value, label: String(value), left: null, right: null, parent: null, depth: 0, name: normalized || ('node' + id) });
+    if (normalized) byName.set(normalized, id);
+    return id;
+  };
+
+  // Support constructor-based nodes and C helper factories such as struct Node* root = createNode(1).
+  const allocations = /\b([\w.]+)\s*=\s*(?:createNode|new\s+Node|new\s+TreeNode|Node|TreeNode)\s*\(\s*([^,)]+)[^)]*\)/gi;
+  for (const match of code.matchAll(allocations)) addNode(match[1], match[2]);
+
   if (!nodes.length) return null;
-  const rootNameMatch = code.match(/\b(?:Node|TreeNode)\s*\*?\s*(\w+)\s*=\s*(?:new\s+)?(?:Node|TreeNode)\s*\(/i);
+  const rootNameMatch = code.match(/(?:struct\s+)?(?:Node|TreeNode)\s*\*?\s*(\w+)\s*=\s*(?:createNode|new\s+Node|new\s+TreeNode|Node|TreeNode)\s*\(/i);
   const rootName = rootNameMatch?.[1];
   const rootId = byName.get(rootName) ?? 0;
+
   const snapshot = (activeIndex, lineNumber, message, operation) => {
     const copy = nodes.map((node) => ({ ...node }));
     steps.push({
       stepNumber: steps.length + 1, lineNumber, algorithm: 'binary_tree', eventType: operation,
       operation, message, explanation: message, variables: { activeIndex },
-      dataStructureState: { type: 'tree', structureType: 'tree', algorithm: 'binary_tree', nodes: copy, edges: edges.map((edge) => ({ ...edge })), values: copy.map((node) => node.val), activeIndex, root: rootId, label: message, focusInfo: 'Tree shape is inferred from explicit node allocations and child links; runtime output/status are real.' },
+      dataStructureState: {
+        type: 'tree', structureType: 'tree', algorithm: 'binary_tree',
+        nodes: copy, edges: edges.map((edge) => ({ ...edge })),
+        values: copy.map((node) => node.val), activeIndex, root: rootId,
+        label: message,
+        focusInfo: 'Tree shape is inferred from explicit node allocations and child links; runtime output/status are real.',
+      },
       traceKind: 'pattern-model', output: runtimeOutput,
     });
   };
-  snapshot(rootId, lineOf(code, 1), `Tree initialized with root ${nodes[rootId].val}`, 'TREE_START');
-  const links = /\b([\w.]+)\s*(?:->|\.)\s*(left|right)\s*=\s*(?:&?\s*)?([\w.]+)\s*;?/gi;
+
+  snapshot(rootId, rootNameMatch ? lineOf(rootNameMatch.index) : 1, 'Tree initialized with root ' + nodes[rootId].val, 'TREE_START');
+
+  // Handle named child links and direct factory assignments such as root->left = createNode(2).
+  const links = /\b([\w.]+)\s*(?:->|\.)\s*(left|right)\s*=\s*(?:createNode\s*\(\s*([^,)]+)[^)]*\)|(?:new\s+)?(?:Node|TreeNode)\s*\(\s*([^,)]+)[^)]*\)|([\w.]+))\s*;?/gi;
   for (const match of code.matchAll(links)) {
     const fromName = match[1].replace(/->/g, '.');
-    const toName = match[3].replace(/->/g, '.');
-    const from = byName.get(fromName), to = byName.get(toName);
-    if (from === undefined || to === undefined || from === to) continue;
+    const from = byName.get(fromName);
+    if (from === undefined) continue;
+    let to;
+    if (match[3] != null || match[4] != null) {
+      to = addNode('', match[3] ?? match[4]);
+    } else {
+      const toName = String(match[5] || '').replace(/->/g, '.');
+      to = byName.get(toName);
+    }
+    if (to === undefined || from === to) continue;
     const side = match[2].toLowerCase();
     nodes[from][side] = to;
     nodes[to].parent = from;
     nodes[to].depth = nodes[from].depth + 1;
     edges.push({ from, to, label: side });
-    snapshot(to, lineOf(match.index), `Connect ${nodes[from].val} → ${side} child ${nodes[to].val}`, 'TREE_LINK');
+    snapshot(to, lineOf(match.index), 'Connect ' + nodes[from].val + ' → ' + side + ' child ' + nodes[to].val, 'TREE_LINK');
+  }
+
+  // Preserve a tree visualizer for recognizable level-order/BFS traversals.
+  if (/\blevelOrder\b|\blevel_order\b|\bBFS\b|\bbreadthFirst\b/i.test(code)) {
+    const queue = [rootId];
+    const seen = new Set();
+    const traversalMatch = code.match(/\blevelOrder\b|\blevel_order\b|\bBFS\b|\bbreadthFirst\b/i);
+    const traversalLine = lineOf(traversalMatch ? traversalMatch.index : 0);
+    while (queue.length) {
+      const id = queue.shift();
+      if (seen.has(id) || !nodes[id]) continue;
+      seen.add(id);
+      snapshot(id, traversalLine, 'Level-order traversal visits ' + nodes[id].val, 'TREE_TRAVERSE');
+      if (nodes[id].left != null) queue.push(nodes[id].left);
+      if (nodes[id].right != null) queue.push(nodes[id].right);
+    }
   }
   return steps;
 }
