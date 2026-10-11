@@ -350,7 +350,21 @@ export function buildTreePatternTrace(source, runtimeOutput = []) {
     return id;
   };
 
-  // Support constructor-based nodes and C helper factories such as struct Node* root = createNode(1).
+  // Resolve expressions such as root, root->left, and root->right->left.
+  const resolveNodePath = (rawPath) => {
+    const parts = String(rawPath || '').split(/\s*(?:->|\.)\s*/).filter(Boolean);
+    if (!parts.length) return undefined;
+    let id = byName.get(parts[0]);
+    if (id === undefined) return undefined;
+    for (const part of parts.slice(1)) {
+      if (part !== 'left' && part !== 'right') return undefined;
+      id = nodes[id]?.[part];
+      if (id == null) return undefined;
+    }
+    return id;
+  };
+
+  // Named allocations: root = createNode(1), leftChild = new Node(2), etc.
   const allocations = /(?<!->)(?<!\.)\b([\w.]+)\s*=\s*(?:createNode|new\s+Node|new\s+TreeNode|Node|TreeNode)\s*\(\s*([^,)]+)[^)]*\)/gi;
   for (const match of code.matchAll(allocations)) addNode(match[1], match[2]);
 
@@ -377,29 +391,36 @@ export function buildTreePatternTrace(source, runtimeOutput = []) {
 
   snapshot(rootId, rootNameMatch ? lineOf(rootNameMatch.index) : 1, 'Tree initialized with root ' + nodes[rootId].val, 'TREE_START');
 
-  // Handle named child links and direct factory assignments such as root->left = createNode(2).
-  const links = /\b([\w.]+)\s*(?:->|\.)\s*(left|right)\s*=\s*(?:createNode\s*\(\s*([^,)]+)[^)]*\)|(?:new\s+)?(?:Node|TreeNode)\s*\(\s*([^,)]+)[^)]*\)|([\w.]+))\s*;?/gi;
+  // Parse both simple and chained LHS paths, e.g. root->left->right = createNode(5).
+  // The parent path is resolved against links already seen, so nested factory
+  // assignments create the correct child of the correct parent.
+  const links = /\b([\w.]+(?:\s*(?:->|\.)\s*\w+)*)\s*(?:->|\.)\s*(left|right)\s*=\s*(?:createNode\s*\(\s*([^,)]+)[^)]*\)|(?:new\s+)?(?:Node|TreeNode)\s*\(\s*([^,)]+)[^)]*\)|([\w.]+))\s*;?/gi;
   for (const match of code.matchAll(links)) {
-    const fromName = match[1].replace(/->/g, '.');
-    const from = byName.get(fromName);
+    const from = resolveNodePath(match[1]);
     if (from === undefined) continue;
     let to;
     if (match[3] != null || match[4] != null) {
       to = addNode('', match[3] ?? match[4]);
     } else {
-      const toName = String(match[5] || '').replace(/->/g, '.');
-      to = byName.get(toName);
+      to = resolveNodePath(match[5]);
     }
     if (to === undefined || from === to) continue;
     const side = match[2].toLowerCase();
+    // Avoid duplicate edges if the source repeats an assignment.
+    const oldChild = nodes[from][side];
+    if (oldChild != null && oldChild !== to) {
+      const oldEdgeIndex = edges.findIndex((edge) => edge.from === from && edge.label === side);
+      if (oldEdgeIndex >= 0) edges.splice(oldEdgeIndex, 1);
+    }
     nodes[from][side] = to;
     nodes[to].parent = from;
     nodes[to].depth = nodes[from].depth + 1;
-    edges.push({ from, to, label: side });
+    if (!edges.some((edge) => edge.from === from && edge.to === to && edge.label === side)) {
+      edges.push({ from, to, label: side });
+    }
     snapshot(to, lineOf(match.index), 'Connect ' + nodes[from].val + ' → ' + side + ' child ' + nodes[to].val, 'TREE_LINK');
   }
 
-  // Preserve a tree visualizer for recognizable level-order/BFS traversals.
   if (/\blevelOrder\b|\blevel_order\b|\bBFS\b|\bbreadthFirst\b/i.test(code)) {
     const queue = [rootId];
     const seen = new Set();
