@@ -421,10 +421,10 @@ export function buildTreePatternTrace(source, runtimeOutput = []) {
     snapshot(to, lineOf(match.index), 'Connect ' + nodes[from].val + ' → ' + side + ' child ' + nodes[to].val, 'TREE_LINK');
   }
 
-  if (/\\blevelOrder\\b|\\blevel_order\\b|\\bBFS\\b|\\bbreadthFirst\\b/i.test(code)) {
+  if (/\blevelOrder\b|\blevel_order\b|\bBFS\b|\bbreadthFirst\b/i.test(code)) {
     const queue = [rootId];
     const seen = new Set();
-    const traversalMatch = code.match(/\\blevelOrder\\b|\\blevel_order\\b|\\bBFS\\b|\\bbreadthFirst\\b/i);
+    const traversalMatch = code.match(/\blevelOrder\b|\blevel_order\b|\bBFS\b|\bbreadthFirst\b/i);
     const traversalLine = lineOf(traversalMatch ? traversalMatch.index : 0);
     while (queue.length) {
       const id = queue.shift();
