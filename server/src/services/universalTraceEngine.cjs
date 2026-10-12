@@ -3249,27 +3249,41 @@ function generateTrace(
     They are used only after the real
     executor reports success.
   */
-  if (detectStack(code) || detectQueue(code) || detectLinkedList(code) ||
-      detectBubbleSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
-      detectBinarySearch(code) || detectLinearSearch(code) || detectArrayTraversal(code)) {
-    const modeledAdapters = [
-      [detectStack, generateStackTrace],
-      [detectQueue, generateQueueTrace],
-      [detectLinkedList, generateLinkedListTrace],
-      [detectBubbleSort, generateBubbleSortTrace],
-      [detectSelectionSort, generateSelectionSortTrace],
-      [detectInsertionSort, generateInsertionSortTrace],
-      [detectBinarySearch, generateBinarySearchTrace],
-      [detectLinearSearch, generateLinearSearchTrace],
-      [detectArrayTraversal, generateArrayTraversalTrace],
-    ];
-    for (const [detect, generate] of modeledAdapters) {
-      if (!detect(code)) continue;
-      const modeledTrace = mapModeledSourceLines(code, generate(code));
-      if (modeledTrace.supported && Array.isArray(modeledTrace.events) && modeledTrace.events.length) return modeledTrace;
-    }
-    // Without captured runtime snapshots, do not invent steps for a named pattern
-    // whose input cannot be reconstructed by its specialized adapter.
+  const modelableStack = detectStack(code) && !/\b(?:nextInt|nextLine|readLine|scanf|cin|input)\b/i.test(code);
+  const modelableQueue = detectQueue(code) && !/\b(?:nextInt|nextLine|readLine|scanf|cin|input)\b/i.test(code);
+  const modelableLinkedList = detectLinkedList(code) && hasLiteralNodeAllocations;
+  const modelableArrayAlgorithm = hasLiteralArray && (
+    detectBubbleSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
+    detectBinarySearch(code) || detectLinearSearch(code) || detectArrayTraversal(code)
+  );
+  const hasNamedButUnmodelableAdapter =
+    (detectStack(code) && !modelableStack) ||
+    (detectQueue(code) && !modelableQueue) ||
+    (detectLinkedList(code) && !modelableLinkedList) ||
+    ((detectBubbleSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
+      detectBinarySearch(code) || detectLinearSearch(code) || detectArrayTraversal(code)) && !modelableArrayAlgorithm);
+
+  const modeledAdapters = [
+    [modelableStack, generateStackTrace],
+    [modelableQueue, generateQueueTrace],
+    [modelableLinkedList, generateLinkedListTrace],
+    [modelableArrayAlgorithm && detectBubbleSort(code), generateBubbleSortTrace],
+    [modelableArrayAlgorithm && detectSelectionSort(code), generateSelectionSortTrace],
+    [modelableArrayAlgorithm && detectInsertionSort(code), generateInsertionSortTrace],
+    [modelableArrayAlgorithm && detectBinarySearch(code), generateBinarySearchTrace],
+    [modelableArrayAlgorithm && detectLinearSearch(code), generateLinearSearchTrace],
+    [modelableArrayAlgorithm && detectArrayTraversal(code), generateArrayTraversalTrace],
+  ];
+
+  for (const [canModel, generate] of modeledAdapters) {
+    if (!canModel) continue;
+    const modeledTrace = mapModeledSourceLines(code, generate(code));
+    if (modeledTrace.supported && Array.isArray(modeledTrace.events) && modeledTrace.events.length) return modeledTrace;
+  }
+
+  if (hasNamedButUnmodelableAdapter) {
+    // When runtime snapshots are unavailable, avoid pretending an identifier read from
+    // stdin or a dynamic node value is a literal. Report the trace as unsupported.
     return unsupported(inferAlgorithm(code), inferDataStructure(code, inferAlgorithm(code)));
   }
 
