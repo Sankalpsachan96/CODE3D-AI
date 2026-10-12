@@ -12,7 +12,7 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('CODE3D AI Caught Rendering Error:', error, errorInfo);
+    console.error('Code Vision caught a rendering error:', error, errorInfo);
     this.setState({ errorInfo });
   }
 
@@ -77,7 +77,7 @@ export default class ErrorBoundary extends React.Component {
             </div>
 
             <p className="text-[10px] text-slate-500 font-mono pt-1">
-              CODE3D AI • Spatial AST Execution Platform
+              Code Vision • Spatial AST Execution Platform
             </p>
           </div>
         </div>

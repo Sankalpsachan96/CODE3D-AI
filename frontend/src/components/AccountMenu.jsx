@@ -12,7 +12,7 @@ export default function AccountMenu({ onClose }) {
   if (!isAuthenticated) {
     return (
       <div className="account-menu">
-        <div className="account-menu-head"><strong>CODE3D AI</strong><span>Your workspace starts here.</span></div>
+        <div className="account-menu-head"><strong>Code Vision</strong><span>Your workspace starts here.</span></div>
         <button onClick={() => action(() => openLoginModal('login'))}><LogIn size={15} /> Sign in</button>
         <button onClick={() => action(() => openRegisterModal())}><UserRound size={15} /> Create account</button>
       </div>

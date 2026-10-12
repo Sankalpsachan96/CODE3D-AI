@@ -111,7 +111,7 @@ export default function HomeDashboard() {
                 }`}
               >
                 <Activity size={13} />
-                CODE3D AI WORKSPACE
+                Code Vision WORKSPACE
               </span>
 
               <span
@@ -365,7 +365,7 @@ export default function HomeDashboard() {
                       : 'text-slate-400'
                   }`}
                 >
-                  Ask Code3D AI to explain, debug or improve your
+                  Ask Code Vision to explain, debug or improve your
                   solution.
                 </p>
               </div>
@@ -389,7 +389,7 @@ export default function HomeDashboard() {
               : 'text-slate-600'
           }`}
         >
-          Code3D AI · Learn. Code. Visualize.
+          Code Vision · Learn. Code. Visualize.
         </div>
       </div>
     </div>

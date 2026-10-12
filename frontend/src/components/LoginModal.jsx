@@ -103,7 +103,7 @@ export default function LoginModal() {
                   isBright ? 'text-slate-900' : 'text-white'
                 }`}
               >
-                {isRegister ? 'Create CODE3D Account' : 'Welcome to CODE3D AI'}
+                {isRegister ? 'Create Code Vision Account' : 'Welcome to Code Vision'}
               </h3>
 
               <p
@@ -260,7 +260,7 @@ export default function LoginModal() {
                   <input
                     type="email"
                     required
-                    placeholder="e.g. himanshu@code3d.edu"
+                    placeholder="e.g. himanshu@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={`w-full border rounded-xl pl-8 pr-3 py-2 text-xs focus:outline-none transition-colors ${

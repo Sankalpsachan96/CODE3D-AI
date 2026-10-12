@@ -103,7 +103,7 @@ export default function Dashboard() {
           <div className="marketing-eyebrow"><span /> AI-POWERED CODE EXECUTION & VISUALIZATION</div>
           <h1>See your code.<br /><em>Understand its execution.</em></h1>
           <p>
-            CODE3D AI turns source code into an interactive execution experience —
+            Code Vision turns source code into an interactive execution experience —
             with step-by-step tracing, 3D data structures and an AI tutor that explains the logic behind every state change.
           </p>
           <div className="marketing-actions">
@@ -126,7 +126,7 @@ export default function Dashboard() {
           <div className="marketing-showcase" ref={showcaseRef}>
             <div className="marketing-window-bar">
               <div className="window-dots"><i /><i /><i /></div>
-              <span>CODE3D AI · EXECUTION STUDIO</span>
+              <span>Code Vision · EXECUTION STUDIO</span>
               <span className="window-live"><b /> LIVE</span>
             </div>
             <video ref={videoRef} src="/showcase.mp4" autoPlay muted loop playsInline preload="auto" />
@@ -179,14 +179,14 @@ export default function Dashboard() {
           <span className="marketing-label">BUILT FOR DEVELOPERS & DSA LEARNERS</span>
           <h2>Stop guessing what your code is doing.</h2>
           <p>Open the studio, run a program and step inside its execution.</p>
-          <button className="marketing-btn marketing-btn-primary" onClick={enterStudio}>Enter CODE3D AI <ArrowRight size={16} /></button>
+          <button className="marketing-btn marketing-btn-primary" onClick={enterStudio}>Enter Code Vision <ArrowRight size={16} /></button>
         </div>
       </section>
 
       <footer className="marketing-footer">
-        <div><strong>CODE<span>3D</span> AI</strong><small>Interactive code execution, visualization and AI learning.</small></div>
+        <div><strong>Code Vision</strong><small>Interactive code execution, visualization and AI learning.</small></div>
         <div><button onClick={enterStudio}>Code Studio</button><button onClick={enterDsa}>DSA Hub</button></div>
-        <span>© 2026 CODE3D AI</span>
+        <span>© 2026 Code Vision</span>
       </footer>
     </div>
   );
