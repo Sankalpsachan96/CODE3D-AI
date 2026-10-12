@@ -95,7 +95,7 @@ export default function FlashcardsPage({ onSelectConcept }) {
   return <div style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(22px,4vw,48px) clamp(16px,3vw,32px) 64px', color: text }}>
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 30, padding: '8px 2px 18px', borderBottom: '1px solid ' + border }}>
       <div style={{ width: 58, height: 58, flexShrink: 0, borderRadius: 19, display: 'grid', placeItems: 'center', color: '#fff', background: 'linear-gradient(135deg,#fb923c 0%,#f97316 48%,#c2410c 100%)', boxShadow: '0 12px 30px #f9731638' }}><Layers size={22} /></div>
-      <div style={{ flex: 1 }}><div style={{ fontSize: 12, color: accent, fontWeight: 800, letterSpacing: 1.5 }}>CODE3D AI · ACTIVE RECALL</div><h1 style={{ fontSize: 'clamp(28px,3.2vw,38px)', lineHeight: 1.08, letterSpacing: '-1.2px', margin: '5px 0 8px', fontWeight: 850 }}>AI Flashcards</h1><p style={{ color: muted, margin: 0, fontSize: 13 }}>Flip it. Recall it. Master DSA.</p></div>
+      <div style={{ flex: 1 }}><div style={{ fontSize: 12, color: accent, fontWeight: 800, letterSpacing: 1.5 }}>CODE VISION · ACTIVE RECALL</div><h1 style={{ fontSize: 'clamp(28px,3.2vw,38px)', lineHeight: 1.08, letterSpacing: '-1.2px', margin: '5px 0 8px', fontWeight: 850 }}>AI Flashcards</h1><p style={{ color: muted, margin: 0, fontSize: 13 }}>Flip it. Recall it. Master DSA.</p></div>
       {phase !== 'pick' && <button aria-label="Choose another topic" onClick={() => { setPhase('pick'); setFlipped(false); }} style={{ ...buttonStyle('transparent', text), borderColor: border, padding: 10 }}><ArrowLeft size={17} /></button>}
     </div>
 
