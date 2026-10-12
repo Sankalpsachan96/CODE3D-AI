@@ -673,6 +673,7 @@ function generateBinarySearchTrace(code) {
       high,
       mid,
       index: mid,
+      indices: [mid],
       value: arr[mid],
       values: [arr[mid], target],
       comparison: target === null ? "unknown" : arr[mid] === target ? "equal" : arr[mid] < target ? "less" : "greater",
