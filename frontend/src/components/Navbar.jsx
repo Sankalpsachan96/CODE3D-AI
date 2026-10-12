@@ -141,7 +141,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
       <button
         className="app-brand"
         onClick={() => go('/')}
-        aria-label="CODE3D AI Home"
+        aria-label="Code Vision Home"
       >
         <span className="app-brand-mark">
           <span />
