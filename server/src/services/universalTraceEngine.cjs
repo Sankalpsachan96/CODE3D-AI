@@ -1649,11 +1649,17 @@ function inferDataStructure(
   if (
     [
       "bubble_sort", "selection_sort", "insertion_sort", "merge_sort", "quick_sort", "heap_sort",
-      "linear_search", "binary_search", "two_pointer", "sliding_window", "cycle_detection", "array",
+      "linear_search", "binary_search", "two_pointer", "sliding_window", "array",
     ].includes(algorithm)
   ) {
     if (algorithm === "heap_sort") return "heap";
-    if (algorithm === "cycle_detection" && /\b(?:next|linked\s*list)\b|->\s*next/.test(String(code || "").toLowerCase())) return "linked_list";
+    return "array";
+  }
+
+  if (algorithm === "cycle_detection") {
+    const source = String(code || "").toLowerCase();
+    if (/\b(?:next|linked\s*list)\b|->\s*next/.test(source)) return "linked_list";
+    if (/\b(?:graph|adjacency|dfs|bfs)\b/.test(source)) return "graph";
     return "array";
   }
 
