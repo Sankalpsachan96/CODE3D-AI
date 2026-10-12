@@ -58,7 +58,7 @@ export default function AiAssistantModal({ isOpen, onClose, code, currentLineNum
             </div>
             <div>
               <h2 className={`text-sm font-bold flex items-center gap-2 ${isBright ? 'text-slate-900' : 'text-white'}`}>
-                CODE3D AI Tutor <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono border ${
+                Code Vision AI Tutor <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono border ${
                   isBright
                     ? 'bg-cyan-100 text-cyan-800 border-cyan-300'
                     : 'bg-cyan-950 text-cyan-400 border-cyan-800/60'
