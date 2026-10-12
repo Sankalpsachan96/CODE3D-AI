@@ -559,3 +559,33 @@ queue.shift();`, 'queue_operations', 'queue', [20]],
     }
   }
 });
+
+
+test('recognized binary search keeps semantic comparison and range steps when runtime snapshots exist', () => {
+  const code = `const values = [10, 20, 30, 40];
+const target = 30;
+let low = 0;
+let high = values.length - 1;
+while (low <= high) {
+  const mid = Math.floor((low + high) / 2);
+  if (values[mid] === target) break;
+  if (values[mid] < target) low = mid + 1;
+  else high = mid - 1;
+}
+console.log(values);`;
+  const result = universalTrace.generateTrace(code, 'javascript', {
+    success: true,
+    output: '[10, 20, 30, 40]',
+    runtimeTrace: [
+      { step: 1, line: 1, event: 'runtime_line', variables: { values: [10, 20, 30, 40], target: 30, low: 0, high: 3 } },
+      { step: 2, line: 5, event: 'runtime_line', variables: { values: [10, 20, 30, 40], target: 30, low: 0, high: 3, mid: 1 } },
+      { step: 3, line: 6, event: 'runtime_line', variables: { values: [10, 20, 30, 40], target: 30, low: 0, high: 3, mid: 1 } },
+    ],
+  });
+
+  assert.equal(result.algorithm, 'binary_search');
+  assert.notEqual(result.runtimeInstrumented, true);
+  assert.ok(result.events.some((event) => event.type === 'range'));
+  assert.ok(result.events.some((event) => event.type === 'move_right'));
+  assert.ok(result.events.some((event) => event.type === 'found'));
+});
