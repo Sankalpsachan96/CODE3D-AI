@@ -244,6 +244,97 @@ test('captured Python runtime snapshots take priority over source heuristics', (
   assert.deepEqual(result.events[0].callStack, ['factorial', 'factorial']);
 });
 
+test('generic runtime traces expose indexed comparisons as semantic 3D events', () => {
+  const result = universalTrace.generateTrace('values = [4, 2]\nif values[0] > values[1]:\n    print("swap")', 'python', {
+    success: true,
+    output: 'swap',
+    runtimeTrace: [
+      { step: 1, line: 1, event: 'runtime_line', variables: { values: [4, 2] } },
+      { step: 2, line: 2, event: 'runtime_line', variables: { values: [4, 2] } },
+      { step: 3, line: 3, event: 'runtime_line', variables: { values: [4, 2] } },
+    ],
+  });
+
+  const comparison = result.events.find((event) => event.type === 'compare');
+  assert.ok(comparison, 'the if-condition should be represented as a comparison');
+  assert.deepEqual(comparison.comparedIndices, [0, 1]);
+  assert.deepEqual(comparison.comparedValues, [4, 2]);
+  assert.match(comparison.message, /Compare 4 at index 0 with 2 at index 1/);
+});
+
+test('recognized selection sort traces retain iteration events with runtime snapshots in every supported language', () => {
+  const cases = [
+    ['javascript', `const values = [3, 1, 2];
+// selection sort
+for (let i = 0; i < values.length - 1; i++) {
+  let minIndex = i;
+  for (let j = i + 1; j < values.length; j++) {
+    if (values[j] < values[minIndex]) minIndex = j;
+  }
+  if (minIndex !== i) [values[i], values[minIndex]] = [values[minIndex], values[i]];
+}
+console.log(values);`],
+    ['python', `values = [3, 1, 2]
+# selection sort
+for i in range(len(values) - 1):
+    minIndex = i
+    for j in range(i + 1, len(values)):
+        if values[j] < values[minIndex]:
+            minIndex = j
+    if minIndex != i:
+        values[i], values[minIndex] = values[minIndex], values[i]
+print(values)`],
+    ['java', `int[] values = {3, 1, 2};
+// selection sort
+for (int i = 0; i < values.length - 1; i++) {
+  int minIndex = i;
+  for (int j = i + 1; j < values.length; j++) {
+    if (values[j] < values[minIndex]) minIndex = j;
+  }
+  if (minIndex != i) { int temp = values[i]; values[i] = values[minIndex]; values[minIndex] = temp; }
+}
+System.out.println(java.util.Arrays.toString(values));`],
+    ['cpp', `int values[] = {3, 1, 2};
+// selection sort
+for (int i = 0; i < 2; ++i) {
+  int minIndex = i;
+  for (int j = i + 1; j < 3; ++j) {
+    if (values[j] < values[minIndex]) minIndex = j;
+  }
+  if (minIndex != i) std::swap(values[i], values[minIndex]);
+}
+std::cout << values[0];`],
+    ['c', `int values[] = {3, 1, 2};
+/* selection sort */
+for (int i = 0; i < 2; ++i) {
+  int minIndex = i;
+  for (int j = i + 1; j < 3; ++j) {
+    if (values[j] < values[minIndex]) minIndex = j;
+  }
+  if (minIndex != i) { int temp = values[i]; values[i] = values[minIndex]; values[minIndex] = temp; }
+}
+printf("%d", values[0]);`],
+  ];
+
+  for (const [language, code] of cases) {
+    const result = universalTrace.generateTrace(code, language, {
+      success: true,
+      output: 'sorted',
+      runtimeTrace: [
+        { step: 1, line: 1, event: 'runtime_line', variables: { values: [3, 1, 2] } },
+        { step: 2, line: 5, event: 'runtime_line', variables: { values: [3, 1, 2], i: 0, j: 1, minIndex: 0 } },
+      ],
+    });
+
+    assert.equal(result.algorithm, 'selection_sort', language);
+    assert.equal(result.runtimeInstrumented, undefined, language);
+    assert.ok(result.events.some((event) => event.type === 'compare'), language);
+    assert.ok(result.events.some((event) => event.type === 'select'), language);
+    assert.ok(result.events.some((event) => event.type === 'swap'), language);
+    assert.deepEqual(result.events.at(-1).array, [1, 2, 3], language);
+  }
+});
+
 test('runtime snapshots captured before a thrown error remain exact and are marked stopped at error', () => {
   const result = universalTrace.generateTrace('let value = 3;\nthrow new Error("boom");', 'javascript', {
     success: false,
