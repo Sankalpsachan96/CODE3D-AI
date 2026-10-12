@@ -1524,6 +1524,19 @@ function inferAlgorithm(code) {
     return "shortest_path";
   }
 
+  if (/merge\s*sort|mergesort|merge_sort/.test(lower)) return "merge_sort";
+  if (/quick\s*sort|quicksort|quick_sort/.test(lower)) return "quick_sort";
+  if (/heap\s*sort|heapsort|heap_sort/.test(lower)) return "heap_sort";
+  if (/\b(?:heap|heapify|priority_queue|priority queue)\b/.test(lower)) return "heap_operations";
+  if (/\b(?:trie|prefix tree)\b/.test(lower)) return "trie";
+  if (/topological\s*sort|kahn(?:'s)?\s+algorithm/.test(lower)) return "topological_sort";
+  if (/union[-_ ]?find|disjoint[-_ ]?set|\bdsu\b|unionbyrank|unionbysize/.test(lower)) return "union_find";
+  if (/cycle\s*detection|detectcycle|floyd(?:'s)?\s+cycle|fast\s*\w*\s*=.*slow/.test(lower)) return "cycle_detection";
+  if (/sliding\s*window|window\s*sum|window\s*size/.test(lower)) return "sliding_window";
+  if (/two[-_ ]?pointer|two\s+pointer|left\s*<\s*right|left\s*<\s*r\b/.test(lower)) return "two_pointer";
+  if (/monotonic\s+stack|next\s+greater|next\s+smaller|largest\s+rectangle/.test(lower)) return "monotonic_stack";
+  if (/\b(?:unordered_map|hashmap|hash_map|hash table|frequency map|dictionary)\b/.test(lower)) return "hash_table";
+
   if (
     /knapsack|dynamic\s+programming|\bdp\b/.test(
       lower
@@ -1635,16 +1648,20 @@ function inferDataStructure(
 
   if (
     [
-      "bubble_sort",
-      "selection_sort",
-      "insertion_sort",
-      "linear_search",
-      "binary_search",
-      "array",
+      "bubble_sort", "selection_sort", "insertion_sort", "merge_sort", "quick_sort", "heap_sort",
+      "linear_search", "binary_search", "two_pointer", "sliding_window", "cycle_detection", "array",
     ].includes(algorithm)
   ) {
+    if (algorithm === "heap_sort") return "heap";
+    if (algorithm === "cycle_detection" && /\b(?:next|linked\s*list)\b|->\s*next/.test(String(code || "").toLowerCase())) return "linked_list";
     return "array";
   }
+
+  if (algorithm === "heap_operations") return "heap";
+  if (algorithm === "trie") return "trie";
+  if (["topological_sort", "union_find"].includes(algorithm)) return "graph";
+  if (algorithm === "monotonic_stack") return "stack";
+  if (algorithm === "hash_table") return "hash-table";
 
   if (
     algorithm === "bfs" ||
