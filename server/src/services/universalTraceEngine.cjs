@@ -3245,29 +3245,31 @@ function generateTrace(
     They are used only after the real
     executor reports success.
   */
-  if (detectStack(code)) return mapModeledSourceLines(code, generateStackTrace(code));
-
-  if (detectQueue(code)) return mapModeledSourceLines(code, generateQueueTrace(code));
-
-  if (detectLinkedList(code)) return mapModeledSourceLines(code, generateLinkedListTrace(code));
-
-  if (detectBubbleSort(code)) {
-    return generateBubbleSortTrace(
-      code
-    );
+  if (detectStack(code) || detectQueue(code) || detectLinkedList(code) ||
+      detectBubbleSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
+      detectBinarySearch(code) || detectLinearSearch(code) || detectArrayTraversal(code)) {
+    const modeledAdapters = [
+      [detectStack, generateStackTrace],
+      [detectQueue, generateQueueTrace],
+      [detectLinkedList, generateLinkedListTrace],
+      [detectBubbleSort, generateBubbleSortTrace],
+      [detectSelectionSort, generateSelectionSortTrace],
+      [detectInsertionSort, generateInsertionSortTrace],
+      [detectBinarySearch, generateBinarySearchTrace],
+      [detectLinearSearch, generateLinearSearchTrace],
+      [detectArrayTraversal, generateArrayTraversalTrace],
+    ];
+    for (const [detect, generate] of modeledAdapters) {
+      if (!detect(code)) continue;
+      const modeledTrace = mapModeledSourceLines(code, generate(code));
+      if (modeledTrace.supported && Array.isArray(modeledTrace.events) && modeledTrace.events.length) return modeledTrace;
+    }
+    // A recognizer can match an algorithm name even when its adapter cannot safely
+    // reconstruct source input (for example, arrays read from stdin). Use the generic
+    // or runtime trace rather than returning an empty supported trace.
   }
 
-  if (detectSelectionSort(code)) return mapModeledSourceLines(code, generateSelectionSortTrace(code));
-
-  if (detectInsertionSort(code)) return mapModeledSourceLines(code, generateInsertionSortTrace(code));
-
-  if (detectBinarySearch(code)) return mapModeledSourceLines(code, generateBinarySearchTrace(code));
-
-  if (detectLinearSearch(code)) return mapModeledSourceLines(code, generateLinearSearchTrace(code));
-
-  if (detectArrayTraversal(code)) return mapModeledSourceLines(code, generateArrayTraversalTrace(code));
-
-  /*
+    /*
     UNIVERSAL FALLBACK:
     Any other program still receives
     visualization events.
