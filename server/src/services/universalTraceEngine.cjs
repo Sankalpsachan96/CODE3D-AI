@@ -3392,7 +3392,7 @@ function generateTrace(
     (detectStack(code) && !modelableStack) ||
     (detectQueue(code) && !modelableQueue) ||
     (detectLinkedList(code) && !modelableLinkedList) ||
-    ((detectBubbleSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
+    ((detectBubbleSort(code) || detectMergeSort(code) || detectQuickSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
       detectBinarySearch(code) || detectLinearSearch(code) || detectArrayTraversal(code)) && !modelableArrayAlgorithm);
 
   const modeledAdapters = [
