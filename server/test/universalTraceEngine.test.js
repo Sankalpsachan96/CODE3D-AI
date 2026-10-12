@@ -586,7 +586,7 @@ console.log(values);`;
   assert.equal(result.algorithm, 'binary_search');
   assert.notEqual(result.runtimeInstrumented, true);
   assert.ok(result.events.some((event) => event.type === 'range'));
-  assert.ok(result.events.some((event) => event.type === 'compare' && event.algorithm === 'binary_search'));
+  assert.ok(result.events.some((event) => event.type === 'compare' && event.algorithm === 'binary_search' && event.indices?.length === 1));
   assert.ok(result.events.some((event) => event.type === 'move_right'));
   assert.ok(result.events.some((event) => event.type === 'found'));
 });
