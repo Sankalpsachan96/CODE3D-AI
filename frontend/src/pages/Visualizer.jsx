@@ -744,6 +744,23 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             : (semanticStructureTypes.has(sourceType) ? sourceType : (sourceType || structureType || 'array'));
           const stepEventType = String(step.eventType || step.type || step.event || step.operation || '').toLowerCase();
           const stepIndices = Array.isArray(step.indices) ? step.indices.filter(Number.isInteger) : [];
+          const inferredActiveIndex = step.index
+            ?? (Array.isArray(step.indices) ? step.indices[0] : null)
+            ?? step.innerIndex
+            ?? step.outerIndex
+            ?? sourceState.activeIndex
+            ?? (Number.isInteger(variables.i) ? variables.i
+              : Number.isInteger(variables.index) ? variables.index
+                : Number.isInteger(variables.idx) ? variables.idx
+                  : Number.isInteger(variables.j) ? variables.j
+                    : null);
+          const reportedMessage = step.message || step.explanation || step.operation || step.event || 'Source-level step';
+          const stepMessage = /array initialized/i.test(String(reportedMessage))
+            && stepEventType === 'visit'
+            && Number.isInteger(inferredActiveIndex)
+            && Array.isArray(arrayEntry?.[1])
+            ? `Visit index ${inferredActiveIndex} containing ${arrayEntry[1][inferredActiveIndex]}.`
+            : reportedMessage;
           const sourcePointers = sourceState.pointers && typeof sourceState.pointers === 'object' ? sourceState.pointers : {};
           const dataStructureState = {
             ...sourceState,
@@ -766,13 +783,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             outputStream: actualOutput,
             values: arrayEntry?.[1] || step.values || step.array || sourceState.values || sourceState.array || (structureType === 'stack' ? step.stack : undefined) || (structureType === 'queue' ? step.queue : undefined) || [],
             arrayName: arrayEntry?.[0] || sourceState.arrayName || null,
-            activeIndex: step.index ?? (Array.isArray(step.indices) ? step.indices[0] : null) ?? step.innerIndex ?? step.outerIndex ?? sourceState.activeIndex ?? (
-              Number.isInteger(variables.i) ? variables.i
-                : Number.isInteger(variables.index) ? variables.index
-                  : Number.isInteger(variables.idx) ? variables.idx
-                    : Number.isInteger(variables.j) ? variables.j
-                      : null
-            ),
+            activeIndex: inferredActiveIndex,
             // The 3D sorting/searching scenes consume explicit comparison and swap indices.
             // Preserve these semantic signals from trace events instead of only changing the
             // array values, which made a comparison appear to jump directly to the swap.
@@ -802,15 +813,15 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
               ...(stepEventType.includes('found') && Number.isInteger(step.index) ? { [step.index]: 'FOUND' } : {}),
             },
             activeVariable: step.resultName || step.changedVariable || sourceState.activeVariable || sourceState.calculationInfo?.targetVar || null,
-            label: step.message || step.explanation || step.operation || step.event || 'Source-level step',
-            focusInfo: step.code || step.explanation || step.message || 'Modeled from source structure; not runtime instrumentation.',
+            label: stepMessage,
+            focusInfo: step.code || stepMessage || 'Modeled from source structure; not runtime instrumentation.',
           };
           return {
             ...step,
             stepNumber: step.stepNumber || step.step || index + 1,
             lineNumber,
             variables,
-            explanation: step.explanation || step.message || step.code || 'Source-level execution event.',
+            explanation: stepMessage || step.code || 'Source-level execution event.',
             dataStructureState,
             eventType: step.eventType || step.type || step.event || step.operation || 'CODE_STEP',
             traceKind: isGenericModel ? 'source-model' : 'pattern-model',

@@ -46,7 +46,7 @@ export default function VariableInspector({ variables = {}, scope = 'main', chan
 
       {entries.length === 0 ? (
         <div className="py-4 text-center text-slate-500 text-xs italic">
-          No active variables in current frame.
+          No variable snapshot was captured for this step.
         </div>
       ) : (
         <div className="space-y-1.5 font-mono text-xs">
