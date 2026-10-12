@@ -103,7 +103,7 @@ export default function LoginModal() {
                   isBright ? 'text-slate-900' : 'text-white'
                 }`}
               >
-                {isRegister ? 'Create CODE3D Account' : 'Welcome to CODE3D AI'}
+                {isRegister ? 'Create Code Vision Account' : 'Welcome to Code Vision'}
               </h3>
 
               <p
