@@ -609,6 +609,20 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                     : Number.isInteger(variables.j) ? variables.j
                       : null
             ),
+            // Preserve semantic operation indices for the universal 3D renderer.
+            // Without these, a comparison step only highlights one cell and a
+            // swap can look like an unexplained instantaneous value change.
+            comparedIndices: step.comparedIndices || (['compare', 'comparison'].includes(String(step.type || step.event || '').toLowerCase()) && Array.isArray(step.indices) ? step.indices : sourceState.comparedIndices || []),
+            swappedIndices: step.swappedIndices || (['swap', 'swapped'].includes(String(step.type || step.event || '').toLowerCase()) && Array.isArray(step.indices) ? step.indices : sourceState.swappedIndices || []),
+            pointers: step.pointers || sourceState.pointers || {
+              ...(Number.isInteger(variables.i) ? { i: variables.i } : {}),
+              ...(Number.isInteger(variables.j) ? { j: variables.j } : {}),
+              ...(Number.isInteger(variables.low) ? { low: variables.low } : {}),
+              ...(Number.isInteger(variables.mid) ? { mid: variables.mid } : {}),
+              ...(Number.isInteger(variables.high) ? { high: variables.high } : {}),
+              ...(Number.isInteger(variables.minIndex) ? { minIndex: variables.minIndex } : {}),
+            },
+            eventType: step.type || step.event || step.operation || sourceState.eventType || null,
             activeVariable: step.resultName || step.changedVariable || sourceState.activeVariable || sourceState.calculationInfo?.targetVar || null,
             label: step.message || step.explanation || step.operation || step.event || 'Source-level step',
             focusInfo: step.code || step.explanation || step.message || 'Modeled from source structure; not runtime instrumentation.',
