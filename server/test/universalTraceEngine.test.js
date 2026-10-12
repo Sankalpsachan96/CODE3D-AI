@@ -136,7 +136,12 @@ queue<int> pending;
 pending.push(0);
 while (!pending.empty()) { /* breadth first */ }
 `;
-  const result = universalTrace.generateTrace(code, 'cpp', { success: true, output: '0 1 2 3' });
+  const result = universalTrace.generateTrace(code, 'cpp', {
+    success: true,
+    output: '0 1 2 3',
+    runtimeTrace: [{ step: 1, line: 1, event: 'runtime_line', variables: { graph: [[1, 2], [0, 3], [0, 3], [1, 2]], queue: [0] } }],
+  });
+  assert.notEqual(result.runtimeInstrumented, true);
   assert.equal(result.algorithm, 'bfs');
   assert.equal(result.dataStructure, 'graph');
   assert.ok(result.events.every((event) => Number.isInteger(event.line) && event.line > 0));
@@ -160,7 +165,12 @@ Node* left = new Node(4);
 Node* right = new Node(12);
 root->left = left;
 root->right = right;`;
-  const result = universalTrace.generateTrace(code, 'cpp', { success: true, output: '4 8 12' });
+  const result = universalTrace.generateTrace(code, 'cpp', {
+    success: true,
+    output: '4 8 12',
+    runtimeTrace: [{ step: 1, line: 1, event: 'runtime_line', variables: { root: { value: 8, left: { value: 4 }, right: { value: 12 } } } }],
+  });
+  assert.notEqual(result.runtimeInstrumented, true);
   assert.equal(result.algorithm, 'tree');
   assert.equal(result.dataStructure, 'tree');
   assert.deepEqual(result.events.at(-1).nodes.map((node) => node.value), [8, 4, 12]);
@@ -556,6 +566,97 @@ queue.shift();`, 'queue_operations', 'queue', [20]],
     const lines = code.split(/\r?\n/);
     for (const event of result.events) {
       assert.ok(Number.isInteger(event.line) && event.line >= 1 && event.line <= lines.length, `${name} ${event.type} should map into the source`);
+    }
+  }
+});
+
+
+test('recognized binary search keeps semantic comparison and range steps when runtime snapshots exist', () => {
+  const code = `const values = [10, 20, 30, 40];
+const target = 30;
+let low = 0;
+let high = values.length - 1;
+while (low <= high) {
+  const mid = Math.floor((low + high) / 2);
+  if (values[mid] === target) break;
+  if (values[mid] < target) low = mid + 1;
+  else high = mid - 1;
+}
+console.log(values);`;
+  const result = universalTrace.generateTrace(code, 'javascript', {
+    success: true,
+    output: '[10, 20, 30, 40]',
+    runtimeTrace: [
+      { step: 1, line: 1, event: 'runtime_line', variables: { values: [10, 20, 30, 40], target: 30, low: 0, high: 3 } },
+      { step: 2, line: 5, event: 'runtime_line', variables: { values: [10, 20, 30, 40], target: 30, low: 0, high: 3, mid: 1 } },
+      { step: 3, line: 6, event: 'runtime_line', variables: { values: [10, 20, 30, 40], target: 30, low: 0, high: 3, mid: 1 } },
+    ],
+  });
+
+  assert.equal(result.algorithm, 'binary_search');
+  assert.notEqual(result.runtimeInstrumented, true);
+  assert.ok(result.events.some((event) => event.type === 'range'));
+  assert.ok(result.events.some((event) => event.type === 'compare' && event.algorithm === 'binary_search' && event.indices?.length === 1));
+  assert.ok(result.events.some((event) => event.type === 'move_right'));
+  assert.ok(result.events.some((event) => event.type === 'found'));
+});
+
+test('linear search exposes both selected index and explicit comparison for each inspected value', () => {
+  const code = `const values = [7, 12, 19];\nconst target = 19;\nfor (let i = 0; i < values.length; i++) {\n  if (values[i] === target) break;\n}`;
+  const result = universalTrace.generateTrace(code, 'javascript', { success: true, output: '' });
+  assert.equal(result.algorithm, 'linear_search');
+  assert.deepEqual(result.events.filter((event) => event.type === 'compare').map((event) => [event.index, event.value, event.target, event.matched]), [
+    [0, 7, 19, false],
+    [1, 12, 19, false],
+    [2, 19, 19, true],
+  ]);
+});
+
+
+test('universal trace inference routes additional DSA families to matching scene types', () => {
+  const cases = [
+    ['const values = [3, 1, 2]; // merge sort', 'merge_sort', 'array'],
+    ['const values = [3, 1, 2]; // quick sort', 'quick_sort', 'array'],
+    ['const values = [3, 1, 2]; // heap sort', 'heap_sort', 'heap'],
+    ['// trie prefix tree', 'trie', 'trie'],
+    ['// topological sort', 'topological_sort', 'graph'],
+    ['// union find DSU', 'union_find', 'graph'],
+    ['// sliding window', 'sliding_window', 'array'],
+    ['// two pointer', 'two_pointer', 'array'],
+    ['// monotonic stack', 'monotonic_stack', 'stack'],
+    ['// hash table', 'hash_table', 'hash-table'],
+  ];
+
+  for (const [code, algorithm, dataStructure] of cases) {
+    const result = universalTrace.generateTrace(code, 'javascript', { success: true, output: '' });
+    assert.equal(result.algorithm, algorithm, code);
+    assert.equal(result.dataStructure, dataStructure, code);
+    assert.equal(result.supported, true, code);
+  }
+});
+
+
+test('merge, quick and heap sort traces expose comparisons and intermediate writes/swaps in all five languages', () => {
+  const languages = [
+    ['c', 'int values[4] = {4, 1, 3, 2};'],
+    ['cpp', 'int values[] = {4, 1, 3, 2};'],
+    ['java', 'int[] values = {4, 1, 3, 2};'],
+    ['javascript', 'const values = [4, 1, 3, 2];'],
+    ['python', 'values = [4, 1, 3, 2]'],
+  ];
+
+  for (const [language, declaration] of languages) {
+    for (const item of [
+      { algorithm: 'merge_sort', code: declaration + (language === 'python' ? ' # merge sort' : ' // merge sort'), expected: [1, 2, 3, 4], expectedEvent: 'insert' },
+      { algorithm: 'quick_sort', code: declaration + (language === 'python' ? ' # quick sort' : ' // quick sort'), expected: [1, 2, 3, 4], expectedEvent: 'swap' },
+      { algorithm: 'heap_sort', code: declaration + (language === 'python' ? ' # heap sort' : ' // heap sort'), expected: [1, 2, 3, 4], expectedEvent: 'swap' },
+    ]) {
+      const result = universalTrace.generateTrace(item.code, language, { success: true, output: '' });
+      assert.equal(result.algorithm, item.algorithm, language + ' ' + item.algorithm);
+      assert.equal(result.supported, true, language + ' ' + item.algorithm);
+      assert.ok(result.events.some((event) => event.type === 'compare'), language + ' ' + item.algorithm + ' comparisons');
+      assert.ok(result.events.some((event) => event.type === item.expectedEvent), language + ' ' + item.algorithm + ' mutations');
+      assert.deepEqual(result.events.at(-1).array, item.expected, language + ' ' + item.algorithm + ' final state');
     }
   }
 });

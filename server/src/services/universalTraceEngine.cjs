@@ -479,6 +479,175 @@ function generateInsertionSortTrace(code) {
   };
 }
 
+function detectMergeSort(code) {
+  return /merge\s*sort|mergesort|merge_sort/i.test(String(code || ""));
+}
+
+function generateMergeSortTrace(code) {
+  const info = getPrimaryArray(code);
+  if (!info) return unsupported("merge_sort", "array");
+  const arr = [...info.values];
+  const events = [];
+  let step = 1;
+  const emit = (type, data) => events.push(createEvent(step++, type, {
+    algorithm: "merge_sort", dataStructure: "array", array: [...arr], arrayName: info.name, ...data,
+  }));
+  emit("initial_state", { message: "Array initialized for merge sort." });
+  const merge = (left, middle, right) => {
+    const leftValues = arr.slice(left, middle + 1);
+    const rightValues = arr.slice(middle + 1, right + 1);
+    let i = 0, j = 0, k = left;
+    while (i < leftValues.length && j < rightValues.length && events.length < 480) {
+      emit("compare", {
+        indices: [left + i, middle + 1 + j],
+        values: [leftValues[i], rightValues[j]],
+        message: "Compare " + leftValues[i] + " and " + rightValues[j] + " while merging.",
+      });
+      const value = leftValues[i] <= rightValues[j] ? leftValues[i++] : rightValues[j++];
+      arr[k] = value;
+      emit("insert", { index: k, indices: [k], value, message: "Write " + value + " at index " + k + "." });
+      k++;
+    }
+    while (i < leftValues.length && events.length < 480) {
+      const value = leftValues[i++];
+      arr[k] = value;
+      emit("insert", { index: k, indices: [k], value, message: "Copy remaining value " + value + " to index " + k + "." });
+      k++;
+    }
+    while (j < rightValues.length && events.length < 480) {
+      const value = rightValues[j++];
+      arr[k] = value;
+      emit("insert", { index: k, indices: [k], value, message: "Copy remaining value " + value + " to index " + k + "." });
+      k++;
+    }
+  };
+  const sort = (left, right) => {
+    if (left >= right || events.length >= 480) return;
+    const middle = Math.floor((left + right) / 2);
+    emit("range", { low: left, mid: middle, high: right, message: "Split range " + left + "–" + right + " at " + middle + "." });
+    sort(left, middle);
+    sort(middle + 1, right);
+    merge(left, middle, right);
+  };
+  sort(0, arr.length - 1);
+  emit("complete", { message: "Merge sort completed.", sortedIndices: arr.map((_, index) => index) });
+  return { supported: true, algorithm: "merge_sort", dataStructure: "array", stoppedAtError: false, events };
+}
+
+function detectHeapSort(code) {
+  return /heap\s*sort|heapsort|heap_sort/i.test(String(code || ""));
+}
+
+function generateHeapSortTrace(code) {
+  const info = getPrimaryArray(code);
+  if (!info) return unsupported("heap_sort", "heap");
+  const arr = [...info.values];
+  const events = [];
+  let step = 1;
+  const emit = (type, data) => events.push(createEvent(step++, type, {
+    algorithm: "heap_sort", dataStructure: "heap", array: [...arr], values: [...arr],
+    arrayName: info.name, heapType: "Max-Heap", ...data,
+  }));
+  emit("initial_state", { message: "Array loaded; build a max heap before extraction." });
+  const swap = (a, b) => {
+    if (a === b) return;
+    const before = [arr[a], arr[b]];
+    [arr[a], arr[b]] = [arr[b], arr[a]];
+    emit("swap", {
+      indices: [a, b], valuesBefore: before, valuesAfter: [arr[a], arr[b]],
+      index: a, parentIndex: a, swappedIndices: [a, b],
+      message: "Swap heap indices " + a + " and " + b + ".",
+    });
+  };
+  const heapify = (size, root) => {
+    if (events.length >= 460) return;
+    let largest = root;
+    const left = root * 2 + 1;
+    const right = root * 2 + 2;
+    if (left < size) {
+      emit("compare", {
+        indices: [root, left], values: [arr[root], arr[left]], index: left, parentIndex: root,
+        comparedIndices: [root, left],
+        message: "Compare parent " + arr[root] + " with left child " + arr[left] + ".",
+      });
+      if (arr[left] > arr[largest]) largest = left;
+    }
+    if (right < size) {
+      emit("compare", {
+        indices: [largest, right], values: [arr[largest], arr[right]], index: right, parentIndex: largest,
+        comparedIndices: [largest, right],
+        message: "Compare current largest " + arr[largest] + " with right child " + arr[right] + ".",
+      });
+      if (arr[right] > arr[largest]) largest = right;
+    }
+    if (largest !== root) {
+      swap(root, largest);
+      heapify(size, largest);
+    }
+  };
+  for (let i = Math.floor(arr.length / 2) - 1; i >= 0; i--) heapify(arr.length, i);
+  emit("range", { low: 0, high: arr.length - 1, message: "Max heap built; repeatedly extract the maximum." });
+  for (let end = arr.length - 1; end > 0 && events.length < 460; end--) {
+    swap(0, end);
+    emit("select", { index: end, value: arr[end], sortedIndices: arr.slice(end).map((_, offset) => end + offset), message: "Move maximum to its final sorted position " + end + "." });
+    heapify(end, 0);
+  }
+  emit("complete", { sortedIndices: arr.map((_, index) => index), message: "Heap sort completed." });
+  return { supported: true, algorithm: "heap_sort", dataStructure: "heap", stoppedAtError: false, events };
+}
+
+function detectQuickSort(code) {
+  return /quick\s*sort|quicksort|quick_sort/i.test(String(code || ""));
+}
+
+function generateQuickSortTrace(code) {
+  const info = getPrimaryArray(code);
+  if (!info) return unsupported("quick_sort", "array");
+  const arr = [...info.values];
+  const events = [];
+  let step = 1;
+  const emit = (type, data) => events.push(createEvent(step++, type, {
+    algorithm: "quick_sort", dataStructure: "array", array: [...arr], arrayName: info.name, ...data,
+  }));
+  emit("initial_state", { message: "Array initialized for quick sort." });
+  const swap = (a, b) => {
+    if (a === b) return;
+    const before = [arr[a], arr[b]];
+    [arr[a], arr[b]] = [arr[b], arr[a]];
+    emit("swap", {
+      indices: [a, b], valuesBefore: before, valuesAfter: [arr[a], arr[b]],
+      message: "Swap index " + a + " and index " + b + ".",
+    });
+  };
+  const partition = (low, high) => {
+    const pivot = arr[high];
+    emit("select", { index: high, pivot: high, value: pivot, message: "Choose " + pivot + " at index " + high + " as pivot." });
+    let i = low - 1;
+    for (let j = low; j < high && events.length < 480; j++) {
+      emit("compare", {
+        indices: [j, high], values: [arr[j], pivot], pivot: high,
+        message: "Compare " + arr[j] + " at index " + j + " with pivot " + pivot + ".",
+      });
+      if (arr[j] <= pivot) {
+        i++;
+        swap(i, j);
+      }
+    }
+    swap(i + 1, high);
+    return i + 1;
+  };
+  const sort = (low, high) => {
+    if (low >= high || events.length >= 480) return;
+    emit("range", { low, high, message: "Partition range " + low + "–" + high + "." });
+    const pivotIndex = partition(low, high);
+    sort(low, pivotIndex - 1);
+    sort(pivotIndex + 1, high);
+  };
+  sort(0, arr.length - 1);
+  emit("complete", { message: "Quick sort completed.", sortedIndices: arr.map((_, index) => index) });
+  return { supported: true, algorithm: "quick_sort", dataStructure: "array", stoppedAtError: false, events };
+}
+
 /* =========================================================
    SEARCH + ARRAY TRAVERSAL
 ========================================================= */
@@ -547,6 +716,20 @@ function generateLinearSearchTrace(code) {
       message: `Check index ${i}.`,
     }));
 
+    events.push(createEvent(step++, "compare", {
+      algorithm: "linear_search",
+      dataStructure: "array",
+      indices: [i],
+      values: [arr[i], target],
+      index: i,
+      value: arr[i],
+      target,
+      matched: target !== null && arr[i] === target,
+      array: [...arr],
+      message: target === null
+        ? `Inspect value ${arr[i]} at index ${i}; target could not be inferred from source.`
+        : `Compare ${arr[i]} at index ${i} with target ${target}.`,
+    }));
     if (target !== null && arr[i] === target) {
       foundIndex = i;
 
@@ -649,6 +832,26 @@ function generateBinarySearchTrace(code) {
       message:
         `Checking range ${low} to ${high}. Middle index is ${mid}.`,
     }));
+
+    events.push(createEvent(step++, "compare", {
+      algorithm: "binary_search",
+      dataStructure: "array",
+      array: [...arr],
+      target,
+      low,
+      high,
+      mid,
+      index: mid,
+      indices: [mid],
+      value: arr[mid],
+      values: [arr[mid], target],
+      comparison: target === null ? "unknown" : arr[mid] === target ? "equal" : arr[mid] < target ? "less" : "greater",
+      matched: target !== null && arr[mid] === target,
+      message: target === null
+        ? `Inspect middle index ${mid} (value ${arr[mid]}); target could not be inferred.`
+        : `Compare middle value ${arr[mid]} at index ${mid} with target ${target}.`,
+    }));
+    if (target === null) break;
 
     if (target !== null && arr[mid] === target) {
       found = true;
@@ -1490,6 +1693,19 @@ function inferAlgorithm(code) {
     return "shortest_path";
   }
 
+  if (/merge\s*sort|mergesort|merge_sort/.test(lower)) return "merge_sort";
+  if (/quick\s*sort|quicksort|quick_sort/.test(lower)) return "quick_sort";
+  if (/heap\s*sort|heapsort|heap_sort/.test(lower)) return "heap_sort";
+  if (/\b(?:heap|heapify|priority_queue|priority queue)\b/.test(lower)) return "heap_operations";
+  if (/\b(?:trie|prefix tree)\b/.test(lower)) return "trie";
+  if (/topological\s*sort|kahn(?:'s)?\s+algorithm/.test(lower)) return "topological_sort";
+  if (/union[-_ ]?find|disjoint[-_ ]?set|\bdsu\b|unionbyrank|unionbysize/.test(lower)) return "union_find";
+  if (/cycle\s*detection|detectcycle|floyd(?:'s)?\s+cycle|fast\s*\w*\s*=.*slow/.test(lower)) return "cycle_detection";
+  if (/sliding\s*window|window\s*sum|window\s*size/.test(lower)) return "sliding_window";
+  if (/two[-_ ]?pointer|two\s+pointer|left\s*<\s*right|left\s*<\s*r\b/.test(lower)) return "two_pointer";
+  if (/monotonic\s+stack|next\s+greater|next\s+smaller|largest\s+rectangle/.test(lower)) return "monotonic_stack";
+  if (/\b(?:unordered_map|hashmap|hash_map|hash table|frequency map|dictionary)\b/.test(lower)) return "hash_table";
+
   if (
     /knapsack|dynamic\s+programming|\bdp\b/.test(
       lower
@@ -1601,16 +1817,26 @@ function inferDataStructure(
 
   if (
     [
-      "bubble_sort",
-      "selection_sort",
-      "insertion_sort",
-      "linear_search",
-      "binary_search",
-      "array",
+      "bubble_sort", "selection_sort", "insertion_sort", "merge_sort", "quick_sort", "heap_sort",
+      "linear_search", "binary_search", "two_pointer", "sliding_window", "array",
     ].includes(algorithm)
   ) {
+    if (algorithm === "heap_sort") return "heap";
     return "array";
   }
+
+  if (algorithm === "cycle_detection") {
+    const source = String(code || "").toLowerCase();
+    if (/\b(?:next|linked\s*list)\b|->\s*next/.test(source)) return "linked_list";
+    if (/\b(?:graph|adjacency|dfs|bfs)\b/.test(source)) return "graph";
+    return "array";
+  }
+
+  if (algorithm === "heap_operations") return "heap";
+  if (algorithm === "trie") return "trie";
+  if (["topological_sort", "union_find"].includes(algorithm)) return "graph";
+  if (algorithm === "monotonic_stack") return "stack";
+  if (algorithm === "hash_table") return "hash-table";
 
   if (
     algorithm === "bfs" ||
@@ -3009,7 +3235,35 @@ function generateTrace(
     specialized traces.
   */
   // Prefer captured runtime snapshots over source-derived guesses when available.
-  if (Array.isArray(executionResult.runtimeTrace) && executionResult.runtimeTrace.length) {
+  // Prefer semantic DSA adapters when we recognize an algorithm. Raw runtime snapshots
+  // are still the fallback for arbitrary code, but they do not reliably encode compare,
+  // pointer/range, enqueue/dequeue, or swap intent; using them first makes playback jump
+  // directly between states and hides the iteration that students need to see.
+  const hasLiteralArray = getPrimaryArray(code) !== null;
+  const hasLiteralGraph = Boolean(parseLiteralGraph(code));
+  const hasLiteralNodeAllocations = /new\s+Node\s*\(\s*[-+]?\d+/i.test(code);
+  const hasDedicatedDSAAdapter =
+    (hasLiteralArray && (
+      detectBubbleSort(code) ||
+      detectHeapSort(code) ||
+      detectMergeSort(code) ||
+      detectQuickSort(code) ||
+      detectSelectionSort(code) ||
+      detectInsertionSort(code) ||
+      detectBinarySearch(code) ||
+      detectLinearSearch(code) ||
+      detectArrayTraversal(code)
+    )) ||
+    ((detectStack(code) || detectQueue(code)) && !/\b(?:nextInt|nextLine|readLine|scanf|cin|input)\b/i.test(code)) ||
+    (detectLinkedList(code) && hasLiteralNodeAllocations) ||
+    (detectGraphTraversal(code) && hasLiteralGraph) ||
+    (detectBinaryTree(code) && hasLiteralNodeAllocations);
+
+  if (
+    Array.isArray(executionResult.runtimeTrace) &&
+    executionResult.runtimeTrace.length &&
+    !hasDedicatedDSAAdapter
+  ) {
     const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index) => {
       const variables = snapshot.variables && typeof snapshot.variables === 'object' ? snapshot.variables : {};
       const arrays = {};
@@ -3190,29 +3444,48 @@ function generateTrace(
     They are used only after the real
     executor reports success.
   */
-  if (detectStack(code)) return mapModeledSourceLines(code, generateStackTrace(code));
+  const modelableStack = detectStack(code) && !/\b(?:nextInt|nextLine|readLine|scanf|cin|input)\b/i.test(code);
+  const modelableQueue = detectQueue(code) && !/\b(?:nextInt|nextLine|readLine|scanf|cin|input)\b/i.test(code);
+  const modelableLinkedList = detectLinkedList(code) && hasLiteralNodeAllocations;
+  const modelableArrayAlgorithm = hasLiteralArray && (
+    detectBubbleSort(code) || detectHeapSort(code) || detectMergeSort(code) || detectQuickSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
+    detectBinarySearch(code) || detectLinearSearch(code) || detectArrayTraversal(code)
+  );
+  const hasNamedButUnmodelableAdapter =
+    (detectStack(code) && !modelableStack) ||
+    (detectQueue(code) && !modelableQueue) ||
+    (detectLinkedList(code) && !modelableLinkedList) ||
+    ((detectBubbleSort(code) || detectHeapSort(code) || detectMergeSort(code) || detectQuickSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
+      detectBinarySearch(code) || detectLinearSearch(code) || detectArrayTraversal(code)) && !modelableArrayAlgorithm);
 
-  if (detectQueue(code)) return mapModeledSourceLines(code, generateQueueTrace(code));
+  const modeledAdapters = [
+    [modelableStack, generateStackTrace],
+    [modelableQueue, generateQueueTrace],
+    [modelableLinkedList, generateLinkedListTrace],
+    [modelableArrayAlgorithm && detectBubbleSort(code), generateBubbleSortTrace],
+    [modelableArrayAlgorithm && detectHeapSort(code), generateHeapSortTrace],
+    [modelableArrayAlgorithm && detectMergeSort(code), generateMergeSortTrace],
+    [modelableArrayAlgorithm && detectQuickSort(code), generateQuickSortTrace],
+    [modelableArrayAlgorithm && detectSelectionSort(code), generateSelectionSortTrace],
+    [modelableArrayAlgorithm && detectInsertionSort(code), generateInsertionSortTrace],
+    [modelableArrayAlgorithm && detectBinarySearch(code), generateBinarySearchTrace],
+    [modelableArrayAlgorithm && detectLinearSearch(code), generateLinearSearchTrace],
+    [modelableArrayAlgorithm && detectArrayTraversal(code), generateArrayTraversalTrace],
+  ];
 
-  if (detectLinkedList(code)) return mapModeledSourceLines(code, generateLinkedListTrace(code));
-
-  if (detectBubbleSort(code)) {
-    return generateBubbleSortTrace(
-      code
-    );
+  for (const [canModel, generate] of modeledAdapters) {
+    if (!canModel) continue;
+    const modeledTrace = mapModeledSourceLines(code, generate(code));
+    if (modeledTrace.supported && Array.isArray(modeledTrace.events) && modeledTrace.events.length) return modeledTrace;
   }
 
-  if (detectSelectionSort(code)) return mapModeledSourceLines(code, generateSelectionSortTrace(code));
+  if (hasNamedButUnmodelableAdapter) {
+    // When runtime snapshots are unavailable, avoid pretending an identifier read from
+    // stdin or a dynamic node value is a literal. Report the trace as unsupported.
+    return unsupported(inferAlgorithm(code), inferDataStructure(code, inferAlgorithm(code)));
+  }
 
-  if (detectInsertionSort(code)) return mapModeledSourceLines(code, generateInsertionSortTrace(code));
-
-  if (detectBinarySearch(code)) return mapModeledSourceLines(code, generateBinarySearchTrace(code));
-
-  if (detectLinearSearch(code)) return mapModeledSourceLines(code, generateLinearSearchTrace(code));
-
-  if (detectArrayTraversal(code)) return mapModeledSourceLines(code, generateArrayTraversalTrace(code));
-
-  /*
+    /*
     UNIVERSAL FALLBACK:
     Any other program still receives
     visualization events.
