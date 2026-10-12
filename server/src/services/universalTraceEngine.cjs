@@ -547,6 +547,20 @@ function generateLinearSearchTrace(code) {
       message: `Check index ${i}.`,
     }));
 
+    events.push(createEvent(step++, "compare", {
+      algorithm: "linear_search",
+      dataStructure: "array",
+      indices: [i],
+      values: [arr[i], target],
+      index: i,
+      value: arr[i],
+      target,
+      matched: target !== null && arr[i] === target,
+      array: [...arr],
+      message: target === null
+        ? `Inspect value ${arr[i]} at index ${i}; target could not be inferred from source.`
+        : `Compare ${arr[i]}} at index ${i} with target ${target}.`,
+    }));
     if (target !== null && arr[i] === target) {
       foundIndex = i;
 
@@ -650,6 +664,23 @@ function generateBinarySearchTrace(code) {
         `Checking range ${low} to ${high}. Middle index is ${mid}.`,
     }));
 
+    events.push(createEvent(step++, "compare", {
+      algorithm: "binary_search",
+      dataStructure: "array",
+      array: [...arr],
+      target,
+      low,
+      high,
+      mid,
+      index: mid,
+      value: arr[mid],
+      values: [arr[mid], target],
+      comparison: target === null ? "unknown" : arr[mid] === target ? "equal" : arr[mid] < target ? "less" : "greater",
+      matched: target !== null && arr[mid] === target,
+      message: target === null
+        ? `Inspect middle index ${mid} (value ${arr[mid]}); target could not be inferred.`
+        : `Compare middle value ${arr[mid]} at index ${mid} with target ${target}.`,
+    }));
     if (target !== null && arr[mid] === target) {
       found = true;
       foundIndex = mid;
