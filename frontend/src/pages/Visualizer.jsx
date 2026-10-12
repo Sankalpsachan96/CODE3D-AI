@@ -783,6 +783,8 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
               ? step.swappedIndices
               : (stepEventType.includes('swap') ? stepIndices : (sourceState.swappedIndices || [])),
             sortedIndices: Array.isArray(step.sortedIndices) ? step.sortedIndices : (sourceState.sortedIndices || []),
+            parentIndex: Number.isInteger(step.parentIndex) ? step.parentIndex : (sourceState.parentIndex ?? null),
+            heapType: step.heapType || sourceState.heapType || 'Min-Heap',
             pointers: {
               ...sourcePointers,
               ...(Number.isInteger(step.low ?? variables.low) ? { low: step.low ?? variables.low } : {}),
