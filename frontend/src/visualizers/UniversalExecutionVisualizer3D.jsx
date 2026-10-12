@@ -232,6 +232,9 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         : Array.isArray(dataStructureState.queue) ? dataStructureState.queue : [];
   const suppliedArrays = Object.entries(dataStructureState.arrays || {})
     .filter(([, value]) => Array.isArray(value));
+  const comparedIndices = Array.isArray(dataStructureState.comparedIndices) ? dataStructureState.comparedIndices : [];
+  const swappedIndices = Array.isArray(dataStructureState.swappedIndices) ? dataStructureState.swappedIndices : [];
+  const pointers = dataStructureState.pointers && typeof dataStructureState.pointers === 'object' ? dataStructureState.pointers : {};
   // Linked-list snapshots already have node/edge geometry. Rendering their
   // values again as memory cells duplicates every item and causes overlap.
   const isLinkedListScene = ['linked-list', 'linkedlist', 'linkedlist-visualization'].includes(structureType);
@@ -416,24 +419,34 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
             </Text>
             {visibleValues.map((value, index) => {
               const active = activeIndex === index;
+              const compared = comparedIndices.includes(index);
+              const swapped = swappedIndices.includes(index);
+              const pointerLabels = Object.entries(pointers)
+                .filter(([, pointerIndex]) => pointerIndex === index)
+                .map(([name]) => name.toUpperCase());
               const height = typeof value === 'number' ? Math.max(0.45, Math.min(1.7, Math.abs(value) / 25 + 0.45)) : 0.65;
-              const color = active ? '#fbbf24' : '#0891b2';
+              const color = swapped ? '#10b981' : compared ? '#f59e0b' : active ? '#fbbf24' : '#0891b2';
               return (
                 <group key={`${arrayName}-${index}`} position={vertical ? [0, index * 0.9, 0] : [index * cellSpacing, 0, 0]}>
                   <mesh position={[0, height / 2, 0]}>
                     <boxGeometry args={[0.88, height, 0.82]} />
-                    <meshStandardMaterial color={color} emissive={active ? '#d97706' : '#0e7490'} emissiveIntensity={active ? 1.2 : 0.35} metalness={0.45} roughness={0.25} />
+                    <meshStandardMaterial color={color} emissive={swapped ? '#059669' : compared ? '#d97706' : active ? '#d97706' : '#0e7490'} emissiveIntensity={swapped || compared || active ? 1.2 : 0.35} metalness={0.45} roughness={0.25} />
                   </mesh>
                   <lineSegments position={[0, height / 2, 0]}>
                     <edgesGeometry args={[new THREE.BoxGeometry(0.9, height + 0.02, 0.84)]} />
-                    <lineBasicMaterial color={active ? '#fef08a' : '#67e8f9'} />
+                    <lineBasicMaterial color={swapped ? '#6ee7b7' : compared ? '#fde68a' : active ? '#fef08a' : '#67e8f9'} />
                   </lineSegments>
                   <Text position={[0, height + 0.22, 0]} fontSize={0.17} color={active ? '#fef08a' : '#e2e8f0'} anchorX="center" anchorY="middle" fontWeight="bold">
                     {String(value)}
                   </Text>
-                  <Text position={[0, -0.2, 0]} fontSize={0.13} color={active ? '#fbbf24' : '#94a3b8'} anchorX="center" anchorY="middle">
+                  <Text position={[0, -0.2, 0]} fontSize={0.13} color={swapped ? '#6ee7b7' : compared ? '#fde68a' : active ? '#fbbf24' : '#94a3b8'} anchorX="center" anchorY="middle">
                     {`[${index}]`}
                   </Text>
+                  {(compared || swapped || pointerLabels.length > 0) && (
+                    <Text position={[0, -0.42, 0]} fontSize={0.105} color={swapped ? '#6ee7b7' : compared ? '#fde68a' : '#67e8f9'} anchorX="center" anchorY="middle" fontWeight="bold">
+                      {swapped ? 'SWAP' : compared ? 'COMPARE' : pointerLabels.join('/')}
+                    </Text>
+                  )}
                 </group>
               );
             })}
