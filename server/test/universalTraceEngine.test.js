@@ -636,28 +636,26 @@ test('universal trace inference routes additional DSA families to matching scene
 });
 
 
-test('merge sort and quick sort traces expose comparisons and intermediate writes/swaps', () => {
-  const cases = [
-    {
-      algorithm: 'merge_sort',
-      code: 'int values[] = {4, 1, 3, 2}; // merge sort',
-      expected: [1, 2, 3, 4],
-      expectedEvent: 'insert',
-    },
-    {
-      algorithm: 'quick_sort',
-      code: 'int values[] = {4, 1, 3, 2}; // quick sort',
-      expected: [1, 2, 3, 4],
-      expectedEvent: 'swap',
-    },
+test('merge sort and quick sort traces expose comparisons and intermediate writes/swaps in all five languages', () => {
+  const languages = [
+    ['c', 'int values[4] = {4, 1, 3, 2};'],
+    ['cpp', 'int values[] = {4, 1, 3, 2};'],
+    ['java', 'int[] values = {4, 1, 3, 2};'],
+    ['javascript', 'const values = [4, 1, 3, 2];'],
+    ['python', 'values = [4, 1, 3, 2]'],
   ];
 
-  for (const item of cases) {
-    const result = universalTrace.generateTrace(item.code, 'cpp', { success: true, output: '' });
-    assert.equal(result.algorithm, item.algorithm);
-    assert.equal(result.supported, true);
-    assert.ok(result.events.some((event) => event.type === 'compare'), item.algorithm + ' must show comparisons');
-    assert.ok(result.events.some((event) => event.type === item.expectedEvent), item.algorithm + ' must show intermediate mutations');
-    assert.deepEqual(result.events.at(-1).array, item.expected);
+  for (const [language, declaration] of languages) {
+    for (const item of [
+      { algorithm: 'merge_sort', code: declaration + (language === 'python' ? ' # merge sort' : ' // merge sort'), expected: [1, 2, 3, 4], expectedEvent: 'insert' },
+      { algorithm: 'quick_sort', code: declaration + (language === 'python' ? ' # quick sort' : ' // quick sort'), expected: [1, 2, 3, 4], expectedEvent: 'swap' },
+    ]) {
+      const result = universalTrace.generateTrace(item.code, language, { success: true, output: '' });
+      assert.equal(result.algorithm, item.algorithm, language + ' ' + item.algorithm);
+      assert.equal(result.supported, true, language + ' ' + item.algorithm);
+      assert.ok(result.events.some((event) => event.type === 'compare'), language + ' ' + item.algorithm + ' comparisons');
+      assert.ok(result.events.some((event) => event.type === item.expectedEvent), language + ' ' + item.algorithm + ' mutations');
+      assert.deepEqual(result.events.at(-1).array, item.expected, language + ' ' + item.algorithm + ' final state');
+    }
   }
 });
