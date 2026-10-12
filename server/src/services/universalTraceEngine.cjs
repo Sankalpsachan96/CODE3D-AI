@@ -3037,7 +3037,7 @@ function generateTrace(
     (executionResult.error || executionResult.success === false || !hasSpecializedPattern)
   ) {
     const sourceLines = String(code || '').split(/\r?\n/);
-    const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index, snapshots) => {
+    const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index) => {
       const variables = snapshot.variables && typeof snapshot.variables === 'object' ? snapshot.variables : {};
       const sourceLine = Number.isInteger(snapshot.line) ? String(sourceLines[snapshot.line - 1] || '').trim() : '';
       const indexedAccesses = [...sourceLine.matchAll(/([A-Za-z_$][\w$]*)\s*\[\s*([A-Za-z_$][\w$]*|\d+)\s*\]/g)]
