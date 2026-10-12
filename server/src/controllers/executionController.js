@@ -51,6 +51,10 @@ export async function runExecution(req, res) {
         stderr: rawResult.stderr || '',
         language,
         steps: rawSteps.map((event, index) => ({
+          // Preserve semantic trace metadata (indices, pointers, comparisons, swaps, targets)
+          // end-to-end; dropping these fields here made the frontend jump straight to the
+          // post-swap array without showing which values were compared first.
+          ...event,
           step: event.step || index + 1,
           line: event.line ?? rawErrorLine ?? null,
           lineNumber: event.line ?? rawErrorLine ?? null,
