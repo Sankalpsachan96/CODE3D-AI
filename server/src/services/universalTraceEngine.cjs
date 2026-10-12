@@ -3036,8 +3036,32 @@ function generateTrace(
     executionResult.runtimeTrace.length &&
     (executionResult.error || executionResult.success === false || !hasSpecializedPattern)
   ) {
-    const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index) => {
+    const sourceLines = String(code || '').split(/\r?\n/);
+    const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index, snapshots) => {
       const variables = snapshot.variables && typeof snapshot.variables === 'object' ? snapshot.variables : {};
+      const sourceLine = Number.isInteger(snapshot.line) ? String(sourceLines[snapshot.line - 1] || '').trim() : '';
+      const indexedAccesses = [...sourceLine.matchAll(/([A-Za-z_$][\w$]*)\s*\[\s*([A-Za-z_$][\w$]*|\d+)\s*\]/g)]
+        .map((match) => {
+          const rawIndex = match[2];
+          const resolvedIndex = /^\d+$/.test(rawIndex) ? Number(rawIndex) : variables[rawIndex];
+          const values = variables[match[1]];
+          return {
+            name: match[1],
+            index: Number.isInteger(resolvedIndex) ? resolvedIndex : null,
+            value: Array.isArray(values) && Number.isInteger(resolvedIndex) ? values[resolvedIndex] : undefined,
+          };
+        });
+      const hasIndexedComparison = /(?:==|!=|<=|>=|(?<![=!<>])<(?![=>])|(?<![=!<>])>(?![=>]))/.test(sourceLine)
+        && /\b(?:if|while|elif)\b/.test(sourceLine);
+      const comparedAccesses = hasIndexedComparison
+        ? indexedAccesses.filter((access) => Number.isInteger(access.index)).slice(0, 2)
+        : [];
+      const semanticEvent = hasIndexedComparison && comparedAccesses.length >= 2
+        ? 'compare'
+        : (snapshot.event || 'runtime_line');
+      const pointers = Object.fromEntries(['i', 'j', 'k', 'low', 'mid', 'high', 'left', 'right', 'start', 'end', 'minIndex', 'maxIndex', 'index', 'idx']
+        .filter((name) => Number.isInteger(variables[name]))
+        .map((name) => [name, variables[name]]));
       const arrays = {};
       for (const [name, value] of Object.entries(variables)) if (Array.isArray(value)) arrays[name] = value;
       const stackEntry = Object.entries(variables).find(([name, value]) => /stack/i.test(name) && Array.isArray(value));
@@ -3115,14 +3139,20 @@ function generateTrace(
       const structure = stackEntry ? 'stack' : queueEntry ? 'queue' : graphEntry ? 'graph'
         : nodes.length && edges.length ? (hasTreeEdges ? 'tree' : hasPointerEdges ? 'linked_list' : 'graph')
         : primaryArray ? 'array' : 'variables';
-      return createEvent(index + 1, snapshot.event || 'runtime_line', {
+      return createEvent(index + 1, semanticEvent, {
         line: snapshot.line ?? null, algorithm: 'runtime_execution', dataStructure: structure,
         callStack: Array.isArray(snapshot.callStack) ? snapshot.callStack.slice(-24) : [],
-        variables, arrays, nodes, edges,
+        variables, arrays, nodes, edges, pointers,
+        indices: comparedAccesses.map((access) => access.index),
+        comparedIndices: comparedAccesses.map((access) => access.index),
+        activeIndex: comparedAccesses[0]?.index ?? pointers.i ?? pointers.index ?? pointers.idx ?? pointers.j ?? null,
+        comparedValues: comparedAccesses.map((access) => access.value),
         array: primaryArray ? primaryArray[1] : [], arrayName: primaryArray ? primaryArray[0] : null,
         stack: stackEntry ? stackEntry[1] : undefined, queue: queueEntry ? queueEntry[1] : undefined,
         values: stackEntry ? stackEntry[1] : queueEntry ? queueEntry[1] : primaryArray ? primaryArray[1] : [],
-        message: snapshot.message || 'Runtime snapshot',
+        message: hasIndexedComparison && comparedAccesses.length >= 2
+          ? `Compare ${String(comparedAccesses[0].value)} at index ${comparedAccesses[0].index} with ${String(comparedAccesses[1].value)} at index ${comparedAccesses[1].index}.`
+          : snapshot.message || 'Runtime snapshot',
       });
     });
     return { supported: true, generic: false, runtimeInstrumented: true, algorithm: 'runtime_execution', dataStructure: events[0]?.dataStructure || 'variables', stoppedAtError: Boolean(executionResult.error), events };
