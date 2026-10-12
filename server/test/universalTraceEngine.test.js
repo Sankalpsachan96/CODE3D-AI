@@ -611,3 +611,26 @@ test('linear search exposes both selected index and explicit comparison for each
     [2, 19, 19, true],
   ]);
 });
+
+
+test('universal trace inference routes additional DSA families to matching scene types', () => {
+  const cases = [
+    ['// merge sort', 'merge_sort', 'array'],
+    ['// quick sort', 'quick_sort', 'array'],
+    ['// heap sort', 'heap_sort', 'heap'],
+    ['// trie prefix tree', 'trie', 'trie'],
+    ['// topological sort', 'topological_sort', 'graph'],
+    ['// union find DSU', 'union_find', 'graph'],
+    ['// sliding window', 'sliding_window', 'array'],
+    ['// two pointer', 'two_pointer', 'array'],
+    ['// monotonic stack', 'monotonic_stack', 'stack'],
+    ['// hash table', 'hash_table', 'hash-table'],
+  ];
+
+  for (const [code, algorithm, dataStructure] of cases) {
+    const result = universalTrace.generateTrace(code, 'javascript', { success: true, output: '' });
+    assert.equal(result.algorithm, algorithm, code);
+    assert.equal(result.dataStructure, dataStructure, code);
+    assert.equal(result.supported, true, code);
+  }
+});
