@@ -184,7 +184,7 @@ export default function Dashboard() {
       </section>
 
       <footer className="marketing-footer">
-        <div><strong>CODE<span>3D</span> AI</strong><small>Interactive code execution, visualization and AI learning.</small></div>
+        <div><strong>Code Vision</strong><small>Interactive code execution, visualization and AI learning.</small></div>
         <div><button onClick={enterStudio}>Code Studio</button><button onClick={enterDsa}>DSA Hub</button></div>
         <span>© 2026 Code Vision</span>
       </footer>
