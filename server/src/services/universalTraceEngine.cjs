@@ -3049,7 +3049,7 @@ function generateTrace(
   // directly between states and hides the iteration that students need to see.
   const hasLiteralArray = getPrimaryArray(code) !== null;
   const hasLiteralGraph = Boolean(parseLiteralGraph(code));
-  const hasLiteralNodeAllocations = /new\\s+Node\\s*\\(\\s*[-+]?\\d+/i.test(code);
+  const hasLiteralNodeAllocations = /new\s+Node\s*\(\s*[-+]?\d+/i.test(code);
   const hasDedicatedDSAAdapter =
     (hasLiteralArray && (
       detectBubbleSort(code) ||
@@ -3059,7 +3059,7 @@ function generateTrace(
       detectLinearSearch(code) ||
       detectArrayTraversal(code)
     )) ||
-    ((detectStack(code) || detectQueue(code)) && !/\\b(?:nextInt|nextLine|readLine|scanf|cin|input)\\b/i.test(code)) ||
+    ((detectStack(code) || detectQueue(code)) && !/\b(?:nextInt|nextLine|readLine|scanf|cin|input)\b/i.test(code)) ||
     (detectLinkedList(code) && hasLiteralNodeAllocations) ||
     (detectGraphTraversal(code) && hasLiteralGraph) ||
     (detectBinaryTree(code) && hasLiteralNodeAllocations);
