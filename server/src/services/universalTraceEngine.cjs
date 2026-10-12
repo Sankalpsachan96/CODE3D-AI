@@ -3047,18 +3047,22 @@ function generateTrace(
   // are still the fallback for arbitrary code, but they do not reliably encode compare,
   // pointer/range, enqueue/dequeue, or swap intent; using them first makes playback jump
   // directly between states and hides the iteration that students need to see.
+  const hasLiteralArray = getPrimaryArray(code) !== null;
+  const hasLiteralGraph = Boolean(parseLiteralGraph(code));
+  const hasLiteralNodeAllocations = /new\\s+Node\\s*\\(\\s*[-+]?\\d+/i.test(code);
   const hasDedicatedDSAAdapter =
-    detectStack(code) ||
-    detectQueue(code) ||
-    detectLinkedList(code) ||
-    detectBubbleSort(code) ||
-    detectSelectionSort(code) ||
-    detectInsertionSort(code) ||
-    detectBinarySearch(code) ||
-    detectLinearSearch(code) ||
-    detectArrayTraversal(code) ||
-    detectGraphTraversal(code) ||
-    detectBinaryTree(code);
+    (hasLiteralArray && (
+      detectBubbleSort(code) ||
+      detectSelectionSort(code) ||
+      detectInsertionSort(code) ||
+      detectBinarySearch(code) ||
+      detectLinearSearch(code) ||
+      detectArrayTraversal(code)
+    )) ||
+    ((detectStack(code) || detectQueue(code)) && !/\\b(?:nextInt|nextLine|readLine|scanf|cin|input)\\b/i.test(code)) ||
+    (detectLinkedList(code) && hasLiteralNodeAllocations) ||
+    (detectGraphTraversal(code) && hasLiteralGraph) ||
+    (detectBinaryTree(code) && hasLiteralNodeAllocations);
 
   if (
     Array.isArray(executionResult.runtimeTrace) &&
