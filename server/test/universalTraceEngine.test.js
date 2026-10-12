@@ -592,7 +592,7 @@ console.log(values);`;
 });
 
 test('linear search exposes both selected index and explicit comparison for each inspected value', () => {
-  const code = 'const values = [7, 12, 19];\\nconst target = 19;\\nfor (let i = 0; i < values.length; i++) {\\n  if (values[i] === target) break;\\n}';
+  const code = `const values = [7, 12, 19];\nconst target = 19;\nfor (let i = 0; i < values.length; i++) {\n  if (values[i] === target) break;\n}`;
   const result = universalTrace.generateTrace(code, 'javascript', { success: true, output: '' });
   assert.equal(result.algorithm, 'linear_search');
   assert.deepEqual(result.events.filter((event) => event.type === 'compare').map((event) => [event.index, event.value, event.target, event.matched]), [
