@@ -534,6 +534,68 @@ function generateMergeSortTrace(code) {
   return { supported: true, algorithm: "merge_sort", dataStructure: "array", stoppedAtError: false, events };
 }
 
+function detectHeapSort(code) {
+  return /heap\s*sort|heapsort|heap_sort/i.test(String(code || ""));
+}
+
+function generateHeapSortTrace(code) {
+  const info = getPrimaryArray(code);
+  if (!info) return unsupported("heap_sort", "heap");
+  const arr = [...info.values];
+  const events = [];
+  let step = 1;
+  const emit = (type, data) => events.push(createEvent(step++, type, {
+    algorithm: "heap_sort", dataStructure: "heap", array: [...arr], values: [...arr],
+    arrayName: info.name, heapType: "Max-Heap", ...data,
+  }));
+  emit("initial_state", { message: "Array loaded; build a max heap before extraction." });
+  const swap = (a, b) => {
+    if (a === b) return;
+    const before = [arr[a], arr[b]];
+    [arr[a], arr[b]] = [arr[b], arr[a]];
+    emit("swap", {
+      indices: [a, b], valuesBefore: before, valuesAfter: [arr[a], arr[b]],
+      index: a, parentIndex: a, swappedIndices: [a, b],
+      message: "Swap heap indices " + a + " and " + b + ".",
+    });
+  };
+  const heapify = (size, root) => {
+    if (events.length >= 460) return;
+    let largest = root;
+    const left = root * 2 + 1;
+    const right = root * 2 + 2;
+    if (left < size) {
+      emit("compare", {
+        indices: [root, left], values: [arr[root], arr[left]], index: left, parentIndex: root,
+        comparedIndices: [root, left],
+        message: "Compare parent " + arr[root] + " with left child " + arr[left] + ".",
+      });
+      if (arr[left] > arr[largest]) largest = left;
+    }
+    if (right < size) {
+      emit("compare", {
+        indices: [largest, right], values: [arr[largest], arr[right]], index: right, parentIndex: largest,
+        comparedIndices: [largest, right],
+        message: "Compare current largest " + arr[largest] + " with right child " + arr[right] + ".",
+      });
+      if (arr[right] > arr[largest]) largest = right;
+    }
+    if (largest !== root) {
+      swap(root, largest);
+      heapify(size, largest);
+    }
+  };
+  for (let i = Math.floor(arr.length / 2) - 1; i >= 0; i--) heapify(arr.length, i);
+  emit("range", { low: 0, high: arr.length - 1, message: "Max heap built; repeatedly extract the maximum." });
+  for (let end = arr.length - 1; end > 0 && events.length < 460; end--) {
+    swap(0, end);
+    emit("select", { index: end, value: arr[end], sortedIndices: arr.slice(end).map((_, offset) => end + offset), message: "Move maximum to its final sorted position " + end + "." });
+    heapify(end, 0);
+  }
+  emit("complete", { sortedIndices: arr.map((_, index) => index), message: "Heap sort completed." });
+  return { supported: true, algorithm: "heap_sort", dataStructure: "heap", stoppedAtError: false, events };
+}
+
 function detectQuickSort(code) {
   return /quick\s*sort|quicksort|quick_sort/i.test(String(code || ""));
 }
