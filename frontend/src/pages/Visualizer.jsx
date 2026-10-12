@@ -1270,6 +1270,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           >
             <EditorErrorBoundary>
               <CodeEditor
+                key={`universal-editor-${language}`}
                 code={code}
                 onChangeCode={(val) => {
                   setCode(val);

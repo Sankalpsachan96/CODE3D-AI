@@ -758,6 +758,8 @@ export default function CodeEditor({
 
         <Editor
 
+          path={currentLangConfig.fileName}
+
           height="100%"
 
           language={currentLangConfig.monacoLang}
