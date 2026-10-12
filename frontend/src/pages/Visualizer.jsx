@@ -742,6 +742,9 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           const resolvedSceneType = semanticStructureTypes.has(structureType)
             ? structureType
             : (semanticStructureTypes.has(sourceType) ? sourceType : (sourceType || structureType || 'array'));
+          const stepEventType = String(step.eventType || step.type || step.event || step.operation || '').toLowerCase();
+          const stepIndices = Array.isArray(step.indices) ? step.indices.filter(Number.isInteger) : [];
+          const sourcePointers = sourceState.pointers && typeof sourceState.pointers === 'object' ? sourceState.pointers : {};
           const dataStructureState = {
             ...sourceState,
             // The generic trace envelope must not override a concrete DSA type.
@@ -770,6 +773,31 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                     : Number.isInteger(variables.j) ? variables.j
                       : null
             ),
+            // The 3D sorting/searching scenes consume explicit comparison and swap indices.
+            // Preserve these semantic signals from trace events instead of only changing the
+            // array values, which made a comparison appear to jump directly to the swap.
+            comparedIndices: Array.isArray(step.comparedIndices)
+              ? step.comparedIndices
+              : (stepEventType.includes('compare') ? stepIndices : (sourceState.comparedIndices || [])),
+            swappedIndices: Array.isArray(step.swappedIndices)
+              ? step.swappedIndices
+              : (stepEventType.includes('swap') ? stepIndices : (sourceState.swappedIndices || [])),
+            pointers: {
+              ...sourcePointers,
+              ...(Number.isInteger(step.low ?? variables.low) ? { low: step.low ?? variables.low } : {}),
+              ...(Number.isInteger(step.mid ?? variables.mid) ? { mid: step.mid ?? variables.mid } : {}),
+              ...(Number.isInteger(step.high ?? variables.high) ? { high: step.high ?? variables.high } : {}),
+              ...(Number.isInteger(step.pivot) ? { pivot: step.pivot } : {}),
+              ...(Number.isInteger(variables.i) ? { i: variables.i } : {}),
+              ...(Number.isInteger(variables.j) ? { j: variables.j } : {}),
+              ...(Number.isInteger(variables.k) ? { k: variables.k } : {}),
+            },
+            visualStates: {
+              ...(sourceState.visualStates || {}),
+              ...(stepEventType.includes('compare') ? Object.fromEntries(stepIndices.map((index) => [index, 'COMPARE'])) : {}),
+              ...(stepEventType.includes('swap') ? Object.fromEntries(stepIndices.map((index) => [index, 'SWAPPING'])) : {}),
+              ...(stepEventType.includes('found') && Number.isInteger(step.index) ? { [step.index]: 'FOUND' } : {}),
+            },
             activeVariable: step.resultName || step.changedVariable || sourceState.activeVariable || sourceState.calculationInfo?.targetVar || null,
             label: step.message || step.explanation || step.operation || step.event || 'Source-level step',
             focusInfo: step.code || step.explanation || step.message || 'Modeled from source structure; not runtime instrumentation.',
