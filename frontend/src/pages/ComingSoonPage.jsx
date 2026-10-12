@@ -137,7 +137,7 @@ export default function ComingSoonPage() {
 
   const title = isMaintenance ? 'We’ll be back shortly.' : 'Something exciting is being built.';
   const subtitle = isMaintenance
-    ? 'CODE3D-AI is temporarily offline while we improve the platform.'
+    ? 'Code Vision is temporarily offline while we improve the platform.'
     : 'An interactive programming platform where code comes to life in 3D.';
 
   return (
@@ -148,7 +148,7 @@ export default function ComingSoonPage() {
         <div className="cs-brand">
           <div className="cs-brand-mark">C</div>
           <div>
-            <strong>CODE3D-AI</strong>
+            <strong>Code Vision</strong>
             <small>Code • Visualize • Understand</small>
           </div>
         </div>
@@ -205,7 +205,7 @@ export default function ComingSoonPage() {
         </section>
       </main>
 
-      <footer className="cs-footer">CODE3D-AI <span>•</span> Learn by seeing what your code does.</footer>
+      <footer className="cs-footer">Code Vision <span>•</span> Learn by seeing what your code does.</footer>
     </div>
   );
 }
