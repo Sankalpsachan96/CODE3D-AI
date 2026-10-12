@@ -479,6 +479,113 @@ function generateInsertionSortTrace(code) {
   };
 }
 
+function detectMergeSort(code) {
+  return /merge\s*sort|mergesort|merge_sort/i.test(String(code || ""));
+}
+
+function generateMergeSortTrace(code) {
+  const info = getPrimaryArray(code);
+  if (!info) return unsupported("merge_sort", "array");
+  const arr = [...info.values];
+  const events = [];
+  let step = 1;
+  const emit = (type, data) => events.push(createEvent(step++, type, {
+    algorithm: "merge_sort", dataStructure: "array", array: [...arr], arrayName: info.name, ...data,
+  }));
+  emit("initial_state", { message: "Array initialized for merge sort." });
+  const merge = (left, middle, right) => {
+    const leftValues = arr.slice(left, middle + 1);
+    const rightValues = arr.slice(middle + 1, right + 1);
+    let i = 0, j = 0, k = left;
+    while (i < leftValues.length && j < rightValues.length && events.length < 480) {
+      emit("compare", {
+        indices: [left + i, middle + 1 + j],
+        values: [leftValues[i], rightValues[j]],
+        message: "Compare " + leftValues[i] + " and " + rightValues[j] + " while merging.",
+      });
+      const value = leftValues[i] <= rightValues[j] ? leftValues[i++] : rightValues[j++];
+      arr[k] = value;
+      emit("insert", { index: k, indices: [k], value, message: "Write " + value + " at index " + k + "." });
+      k++;
+    }
+    while (i < leftValues.length && events.length < 480) {
+      const value = leftValues[i++];
+      arr[k] = value;
+      emit("insert", { index: k, indices: [k], value, message: "Copy remaining value " + value + " to index " + k + "." });
+      k++;
+    }
+    while (j < rightValues.length && events.length < 480) {
+      const value = rightValues[j++];
+      arr[k] = value;
+      emit("insert", { index: k, indices: [k], value, message: "Copy remaining value " + value + " to index " + k + "." });
+      k++;
+    }
+  };
+  const sort = (left, right) => {
+    if (left >= right || events.length >= 480) return;
+    const middle = Math.floor((left + right) / 2);
+    emit("range", { low: left, mid: middle, high: right, message: "Split range " + left + "–" + right + " at " + middle + "." });
+    sort(left, middle);
+    sort(middle + 1, right);
+    merge(left, middle, right);
+  };
+  sort(0, arr.length - 1);
+  emit("complete", { message: "Merge sort completed.", sortedIndices: arr.map((_, index) => index) });
+  return { supported: true, algorithm: "merge_sort", dataStructure: "array", stoppedAtError: false, events };
+}
+
+function detectQuickSort(code) {
+  return /quick\s*sort|quicksort|quick_sort/i.test(String(code || ""));
+}
+
+function generateQuickSortTrace(code) {
+  const info = getPrimaryArray(code);
+  if (!info) return unsupported("quick_sort", "array");
+  const arr = [...info.values];
+  const events = [];
+  let step = 1;
+  const emit = (type, data) => events.push(createEvent(step++, type, {
+    algorithm: "quick_sort", dataStructure: "array", array: [...arr], arrayName: info.name, ...data,
+  }));
+  emit("initial_state", { message: "Array initialized for quick sort." });
+  const swap = (a, b) => {
+    if (a === b) return;
+    const before = [arr[a], arr[b]];
+    [arr[a], arr[b]] = [arr[b], arr[a]];
+    emit("swap", {
+      indices: [a, b], valuesBefore: before, valuesAfter: [arr[a], arr[b]],
+      message: "Swap index " + a + " and index " + b + ".",
+    });
+  };
+  const partition = (low, high) => {
+    const pivot = arr[high];
+    emit("select", { index: high, pivot: high, value: pivot, message: "Choose " + pivot + " at index " + high + " as pivot." });
+    let i = low - 1;
+    for (let j = low; j < high && events.length < 480; j++) {
+      emit("compare", {
+        indices: [j, high], values: [arr[j], pivot], pivot: high,
+        message: "Compare " + arr[j] + " at index " + j + " with pivot " + pivot + ".",
+      });
+      if (arr[j] <= pivot) {
+        i++;
+        swap(i, j);
+      }
+    }
+    swap(i + 1, high);
+    return i + 1;
+  };
+  const sort = (low, high) => {
+    if (low >= high || events.length >= 480) return;
+    emit("range", { low, high, message: "Partition range " + low + "–" + high + "." });
+    const pivotIndex = partition(low, high);
+    sort(low, pivotIndex - 1);
+    sort(pivotIndex + 1, high);
+  };
+  sort(0, arr.length - 1);
+  emit("complete", { message: "Quick sort completed.", sortedIndices: arr.map((_, index) => index) });
+  return { supported: true, algorithm: "quick_sort", dataStructure: "array", stoppedAtError: false, events };
+}
+
 /* =========================================================
    SEARCH + ARRAY TRAVERSAL
 ========================================================= */
