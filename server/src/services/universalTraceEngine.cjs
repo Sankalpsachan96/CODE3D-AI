@@ -3008,8 +3008,34 @@ function generateTrace(
     Runtime errors MUST bypass synthetic
     specialized traces.
   */
-  // Prefer captured runtime snapshots over source-derived guesses when available.
-  if (Array.isArray(executionResult.runtimeTrace) && executionResult.runtimeTrace.length) {
+  /*
+    For recognized DSA patterns, the deterministic adapter expands loop
+    iterations into semantic events (compare/select/swap/visit/enqueue, etc.).
+    A raw runtime-line snapshot stream only captures changing program state;
+    it does not describe the operation that caused that state, so the 3D scene
+    can appear to jump straight to a swap. Prefer the adapter after successful
+    execution for patterns it can model. Keep runtime snapshots authoritative
+    for errors and for algorithms without a specialized adapter.
+  */
+  const hasSpecializedPattern = [
+    detectGraphTraversal,
+    detectBinaryTree,
+    detectStack,
+    detectQueue,
+    detectLinkedList,
+    detectBubbleSort,
+    detectSelectionSort,
+    detectInsertionSort,
+    detectBinarySearch,
+    detectLinearSearch,
+    detectArrayTraversal,
+  ].some((detector) => detector(code));
+
+  if (
+    Array.isArray(executionResult.runtimeTrace) &&
+    executionResult.runtimeTrace.length &&
+    (executionResult.error || executionResult.success === false || !hasSpecializedPattern)
+  ) {
     const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index) => {
       const variables = snapshot.variables && typeof snapshot.variables === 'object' ? snapshot.variables : {};
       const arrays = {};
