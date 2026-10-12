@@ -3183,6 +3183,8 @@ function generateTrace(
   const hasDedicatedDSAAdapter =
     (hasLiteralArray && (
       detectBubbleSort(code) ||
+      detectMergeSort(code) ||
+      detectQuickSort(code) ||
       detectSelectionSort(code) ||
       detectInsertionSort(code) ||
       detectBinarySearch(code) ||
@@ -3383,7 +3385,7 @@ function generateTrace(
   const modelableQueue = detectQueue(code) && !/\b(?:nextInt|nextLine|readLine|scanf|cin|input)\b/i.test(code);
   const modelableLinkedList = detectLinkedList(code) && hasLiteralNodeAllocations;
   const modelableArrayAlgorithm = hasLiteralArray && (
-    detectBubbleSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
+    detectBubbleSort(code) || detectMergeSort(code) || detectQuickSort(code) || detectSelectionSort(code) || detectInsertionSort(code) ||
     detectBinarySearch(code) || detectLinearSearch(code) || detectArrayTraversal(code)
   );
   const hasNamedButUnmodelableAdapter =
@@ -3398,6 +3400,8 @@ function generateTrace(
     [modelableQueue, generateQueueTrace],
     [modelableLinkedList, generateLinkedListTrace],
     [modelableArrayAlgorithm && detectBubbleSort(code), generateBubbleSortTrace],
+    [modelableArrayAlgorithm && detectMergeSort(code), generateMergeSortTrace],
+    [modelableArrayAlgorithm && detectQuickSort(code), generateQuickSortTrace],
     [modelableArrayAlgorithm && detectSelectionSort(code), generateSelectionSortTrace],
     [modelableArrayAlgorithm && detectInsertionSort(code), generateInsertionSortTrace],
     [modelableArrayAlgorithm && detectBinarySearch(code), generateBinarySearchTrace],
