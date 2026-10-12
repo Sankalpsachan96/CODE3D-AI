@@ -85,7 +85,7 @@ export default function AuthGate() {
           </div>
           <div>
             <h1 className={`text-xs sm:text-sm font-bold tracking-wider ${isBright ? 'text-slate-900' : 'text-white'}`}>
-              CODE3D <span className="text-cyan-500">AI</span>
+              Code <span className="text-cyan-500">Vision</span>
             </h1>
             <p className={`text-[9px] sm:text-[10px] font-mono ${isBright ? 'text-slate-500' : 'text-slate-500'}`}>
               Algorithm &amp; AST 3D Visualizer
@@ -138,7 +138,7 @@ export default function AuthGate() {
           </h2>
 
           <p className={`text-sm max-w-xl leading-relaxed ${isBright ? 'text-slate-600' : 'text-slate-400'}`}>
-            CODE3D AI compiles and steps through <span className={`font-semibold ${isBright ? 'text-slate-900' : 'text-slate-200'}`}>Java, Python, C, C++, and JavaScript</span> programs into interactive 3D WebGL scenes with automated error diagnosis and AST memory traces.
+            Code Vision compiles and steps through <span className={`font-semibold ${isBright ? 'text-slate-900' : 'text-slate-200'}`}>Java, Python, C, C++, and JavaScript</span> programs into interactive 3D WebGL scenes with automated error diagnosis and AST memory traces.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
@@ -350,7 +350,7 @@ export default function AuthGate() {
       <footer className={`relative z-10 w-full py-3 px-6 text-center text-[11px] font-mono border-t ${
         isBright ? 'border-slate-200 text-slate-500' : 'border-slate-900 text-slate-600'
       }`}>
-        CODE3D AI • Powered by Spring Boot 3.2, Three.js &amp; Neon Cloud PostgreSQL
+        Code Vision • Powered by Spring Boot 3.2, Three.js &amp; Neon Cloud PostgreSQL
       </footer>
     </div>
   );
