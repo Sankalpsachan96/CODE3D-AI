@@ -136,7 +136,12 @@ queue<int> pending;
 pending.push(0);
 while (!pending.empty()) { /* breadth first */ }
 `;
-  const result = universalTrace.generateTrace(code, 'cpp', { success: true, output: '0 1 2 3' });
+  const result = universalTrace.generateTrace(code, 'cpp', {
+    success: true,
+    output: '0 1 2 3',
+    runtimeTrace: [{ step: 1, line: 1, event: 'runtime_line', variables: { graph: [[1, 2], [0, 3], [0, 3], [1, 2]], queue: [0] } }],
+  });
+  assert.notEqual(result.runtimeInstrumented, true);
   assert.equal(result.algorithm, 'bfs');
   assert.equal(result.dataStructure, 'graph');
   assert.ok(result.events.every((event) => Number.isInteger(event.line) && event.line > 0));
@@ -160,7 +165,12 @@ Node* left = new Node(4);
 Node* right = new Node(12);
 root->left = left;
 root->right = right;`;
-  const result = universalTrace.generateTrace(code, 'cpp', { success: true, output: '4 8 12' });
+  const result = universalTrace.generateTrace(code, 'cpp', {
+    success: true,
+    output: '4 8 12',
+    runtimeTrace: [{ step: 1, line: 1, event: 'runtime_line', variables: { root: { value: 8, left: { value: 4 }, right: { value: 12 } } } }],
+  });
+  assert.notEqual(result.runtimeInstrumented, true);
   assert.equal(result.algorithm, 'tree');
   assert.equal(result.dataStructure, 'tree');
   assert.deepEqual(result.events.at(-1).nodes.map((node) => node.value), [8, 4, 12]);
