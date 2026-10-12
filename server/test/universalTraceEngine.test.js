@@ -617,7 +617,7 @@ test('universal trace inference routes additional DSA families to matching scene
   const cases = [
     ['const values = [3, 1, 2]; // merge sort', 'merge_sort', 'array'],
     ['const values = [3, 1, 2]; // quick sort', 'quick_sort', 'array'],
-    ['// heap sort', 'heap_sort', 'heap'],
+    ['const values = [3, 1, 2]; // heap sort', 'heap_sort', 'heap'],
     ['// trie prefix tree', 'trie', 'trie'],
     ['// topological sort', 'topological_sort', 'graph'],
     ['// union find DSU', 'union_find', 'graph'],
