@@ -681,6 +681,8 @@ function generateBinarySearchTrace(code) {
         ? `Inspect middle index ${mid} (value ${arr[mid]}); target could not be inferred.`
         : `Compare middle value ${arr[mid]} at index ${mid} with target ${target}.`,
     }));
+    if (target === null) break;
+
     if (target !== null && arr[mid] === target) {
       found = true;
       foundIndex = mid;
