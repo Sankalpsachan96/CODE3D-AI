@@ -3009,7 +3009,26 @@ function generateTrace(
     specialized traces.
   */
   // Prefer captured runtime snapshots over source-derived guesses when available.
-  if (Array.isArray(executionResult.runtimeTrace) && executionResult.runtimeTrace.length) {
+  // Prefer semantic DSA adapters when we recognize an algorithm. Raw runtime snapshots
+  // are still the fallback for arbitrary code, but they do not reliably encode compare,
+  // pointer/range, enqueue/dequeue, or swap intent; using them first makes playback jump
+  // directly between states and hides the iteration that students need to see.
+  const hasDedicatedDSAAdapter =
+    detectStack(code) ||
+    detectQueue(code) ||
+    detectLinkedList(code) ||
+    detectBubbleSort(code) ||
+    detectSelectionSort(code) ||
+    detectInsertionSort(code) ||
+    detectBinarySearch(code) ||
+    detectLinearSearch(code) ||
+    detectArrayTraversal(code);
+
+  if (
+    Array.isArray(executionResult.runtimeTrace) &&
+    executionResult.runtimeTrace.length &&
+    !hasDedicatedDSAAdapter
+  ) {
     const events = executionResult.runtimeTrace.slice(0, 500).map((snapshot, index) => {
       const variables = snapshot.variables && typeof snapshot.variables === 'object' ? snapshot.variables : {};
       const arrays = {};
