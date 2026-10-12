@@ -3268,9 +3268,9 @@ function generateTrace(
       const modeledTrace = mapModeledSourceLines(code, generate(code));
       if (modeledTrace.supported && Array.isArray(modeledTrace.events) && modeledTrace.events.length) return modeledTrace;
     }
-    // A recognizer can match an algorithm name even when its adapter cannot safely
-    // reconstruct source input (for example, arrays read from stdin). Use the generic
-    // or runtime trace rather than returning an empty supported trace.
+    // Without captured runtime snapshots, do not invent steps for a named pattern
+    // whose input cannot be reconstructed by its specialized adapter.
+    return unsupported(inferAlgorithm(code), inferDataStructure(code, inferAlgorithm(code)));
   }
 
     /*
