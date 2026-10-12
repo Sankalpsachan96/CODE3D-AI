@@ -586,6 +586,18 @@ console.log(values);`;
   assert.equal(result.algorithm, 'binary_search');
   assert.notEqual(result.runtimeInstrumented, true);
   assert.ok(result.events.some((event) => event.type === 'range'));
+  assert.ok(result.events.some((event) => event.type === 'compare' && event.algorithm === 'binary_search'));
   assert.ok(result.events.some((event) => event.type === 'move_right'));
   assert.ok(result.events.some((event) => event.type === 'found'));
+});
+
+test('linear search exposes both selected index and explicit comparison for each inspected value', () => {
+  const code = 'const values = [7, 12, 19];\\nconst target = 19;\\nfor (let i = 0; i < values.length; i++) {\\n  if (values[i] === target) break;\\n}';
+  const result = universalTrace.generateTrace(code, 'javascript', { success: true, output: '' });
+  assert.equal(result.algorithm, 'linear_search');
+  assert.deepEqual(result.events.filter((event) => event.type === 'compare').map((event) => [event.index, event.value, event.target, event.matched]), [
+    [0, 7, 19, false],
+    [1, 12, 19, false],
+    [2, 19, 19, true],
+  ]);
 });
