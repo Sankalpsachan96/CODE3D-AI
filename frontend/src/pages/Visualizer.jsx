@@ -782,6 +782,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             swappedIndices: Array.isArray(step.swappedIndices)
               ? step.swappedIndices
               : (stepEventType.includes('swap') ? stepIndices : (sourceState.swappedIndices || [])),
+            sortedIndices: Array.isArray(step.sortedIndices) ? step.sortedIndices : (sourceState.sortedIndices || []),
             pointers: {
               ...sourcePointers,
               ...(Number.isInteger(step.low ?? variables.low) ? { low: step.low ?? variables.low } : {}),
