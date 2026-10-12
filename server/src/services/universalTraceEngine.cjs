@@ -3056,7 +3056,9 @@ function generateTrace(
     detectInsertionSort(code) ||
     detectBinarySearch(code) ||
     detectLinearSearch(code) ||
-    detectArrayTraversal(code);
+    detectArrayTraversal(code) ||
+    detectGraphTraversal(code) ||
+    detectBinaryTree(code);
 
   if (
     Array.isArray(executionResult.runtimeTrace) &&
