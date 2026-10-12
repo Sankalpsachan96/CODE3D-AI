@@ -244,6 +244,35 @@ test('captured Python runtime snapshots take priority over source heuristics', (
   assert.deepEqual(result.events[0].callStack, ['factorial', 'factorial']);
 });
 
+test('recognized sorting patterns retain compare/select/swap steps when runtime snapshots exist', () => {
+  const code = `const values = [3, 1, 2];
+// selection sort
+for (let i = 0; i < values.length - 1; i++) {
+  let minIndex = i;
+  for (let j = i + 1; j < values.length; j++) {
+    if (values[j] < values[minIndex]) minIndex = j;
+  }
+  if (minIndex !== i) [values[i], values[minIndex]] = [values[minIndex], values[i]];
+}
+console.log(values);`;
+  const result = universalTrace.generateTrace(code, 'javascript', {
+    success: true,
+    output: '[1, 2, 3]',
+    runtimeTrace: [
+      { step: 1, line: 1, event: 'runtime_line', variables: { values: [3, 1, 2] } },
+      { step: 2, line: 5, event: 'runtime_line', variables: { values: [3, 1, 2], i: 0, j: 1, minIndex: 0 } },
+      { step: 3, line: 7, event: 'runtime_line', variables: { values: [1, 3, 2], i: 0, minIndex: 1 } },
+    ],
+  });
+
+  assert.equal(result.algorithm, 'selection_sort');
+  assert.equal(result.runtimeInstrumented, undefined);
+  assert.ok(result.events.some((event) => event.type === 'compare'));
+  assert.ok(result.events.some((event) => event.type === 'select'));
+  assert.ok(result.events.some((event) => event.type === 'swap'));
+  assert.deepEqual(result.events.at(-1).array, [1, 2, 3]);
+});
+
 test('runtime snapshots captured before a thrown error remain exact and are marked stopped at error', () => {
   const result = universalTrace.generateTrace('let value = 3;\nthrow new Error("boom");', 'javascript', {
     success: false,
