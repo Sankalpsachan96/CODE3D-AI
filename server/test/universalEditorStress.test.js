@@ -1,5 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import universalExecutor from '../src/services/universalExecutor.cjs';
 
 const expected = Array.from({ length: 256 }, (_, index) => index).join(',');
@@ -135,6 +139,59 @@ test('Universal editor stress: large merge-sort programs execute in every availa
       assert.ok(result.runtimeTrace.length <= 121, item.language + ' trace must respect the 120-step cap plus marker');
       assert.ok(Number.isFinite(result.executionTime) && result.executionTime >= 0, 'execution time should be reported');
     });
+  }
+});
+
+
+test('Trusted large-code fixtures compile and produce exact output on CI hosts', () => {
+  // This fallback validates the large fixture programs themselves when CI
+  // cannot run Bubblewrap/Judge0. It is NOT a substitute for isolated executor
+  // integration tests, which remain conditional on a real sandbox/provider.
+  const available = {
+    javascript: [process.execPath, []],
+    python: ['python3', ['--version']],
+    c: ['gcc', ['--version']],
+    cpp: ['g++', ['--version']],
+    java: ['javac', ['-version']]
+  };
+  const probe = (command, args) => spawnSync(command, args, { encoding: 'utf8', timeout: 5000 });
+  const enabled = Object.fromEntries(Object.entries(available).map(([language, [command, args]]) => {
+    const result = probe(command, args);
+    return [language, !result.error && result.status === 0];
+  }));
+  for (const item of implementations) {
+    if (!enabled[item.language]) {
+      test('trusted fixture ' + item.language + ' runtime unavailable', { skip: true }, () => {});
+      continue;
+    }
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'code3d-large-fixture-'));
+    try {
+      const fileNames = { javascript: 'main.js', python: 'main.py', c: 'main.c', cpp: 'main.cpp', java: 'Main.java' };
+      const sourcePath = path.join(directory, fileNames[item.language]);
+      fs.writeFileSync(sourcePath, item.code, 'utf8');
+      const run = (command, args) => {
+        const result = spawnSync(command, args, { cwd: directory, encoding: 'utf8', timeout: 15000, maxBuffer: 1024 * 1024 });
+        assert.ifError(result.error);
+        assert.equal(result.status, 0, result.stderr || result.stdout || (command + ' exited ' + result.status));
+        return result.stdout;
+      };
+      if (item.language === 'javascript') {
+        assert.equal(run(process.execPath, [sourcePath]).trim(), expected);
+      } else if (item.language === 'python') {
+        assert.equal(run('python3', [sourcePath]).trim(), expected);
+      } else if (item.language === 'java') {
+        run('javac', ['Main.java']);
+        assert.equal(run('java', ['Main']).trim(), expected);
+      } else if (item.language === 'c') {
+        run('gcc', ['-O2', 'main.c', '-o', 'main']);
+        assert.equal(run('./main', []).trim(), expected);
+      } else if (item.language === 'cpp') {
+        run('g++', ['-std=c++20', '-O2', 'main.cpp', '-o', 'main']);
+        assert.equal(run('./main', []).trim(), expected);
+      }
+    } finally {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
   }
 });
 
