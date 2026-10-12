@@ -636,7 +636,7 @@ test('universal trace inference routes additional DSA families to matching scene
 });
 
 
-test('merge sort and quick sort traces expose comparisons and intermediate writes/swaps in all five languages', () => {
+test('merge, quick and heap sort traces expose comparisons and intermediate writes/swaps in all five languages', () => {
   const languages = [
     ['c', 'int values[4] = {4, 1, 3, 2};'],
     ['cpp', 'int values[] = {4, 1, 3, 2};'],
@@ -649,6 +649,7 @@ test('merge sort and quick sort traces expose comparisons and intermediate write
     for (const item of [
       { algorithm: 'merge_sort', code: declaration + (language === 'python' ? ' # merge sort' : ' // merge sort'), expected: [1, 2, 3, 4], expectedEvent: 'insert' },
       { algorithm: 'quick_sort', code: declaration + (language === 'python' ? ' # quick sort' : ' // quick sort'), expected: [1, 2, 3, 4], expectedEvent: 'swap' },
+      { algorithm: 'heap_sort', code: declaration + (language === 'python' ? ' # heap sort' : ' // heap sort'), expected: [1, 2, 3, 4], expectedEvent: 'swap' },
     ]) {
       const result = universalTrace.generateTrace(item.code, language, { success: true, output: '' });
       assert.equal(result.algorithm, item.algorithm, language + ' ' + item.algorithm);
