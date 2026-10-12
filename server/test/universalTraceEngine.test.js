@@ -244,6 +244,24 @@ test('captured Python runtime snapshots take priority over source heuristics', (
   assert.deepEqual(result.events[0].callStack, ['factorial', 'factorial']);
 });
 
+test('generic runtime traces expose indexed comparisons as semantic 3D events', () => {
+  const result = universalTrace.generateTrace('values = [4, 2]\nif values[0] > values[1]:\n    print("swap")', 'python', {
+    success: true,
+    output: 'swap',
+    runtimeTrace: [
+      { step: 1, line: 1, event: 'runtime_line', variables: { values: [4, 2] } },
+      { step: 2, line: 2, event: 'runtime_line', variables: { values: [4, 2] } },
+      { step: 3, line: 3, event: 'runtime_line', variables: { values: [4, 2] } },
+    ],
+  });
+
+  const comparison = result.events.find((event) => event.type === 'compare');
+  assert.ok(comparison, 'the if-condition should be represented as a comparison');
+  assert.deepEqual(comparison.comparedIndices, [0, 1]);
+  assert.deepEqual(comparison.comparedValues, [4, 2]);
+  assert.match(comparison.message, /Compare 4 at index 0 with 2 at index 1/);
+});
+
 test('recognized selection sort traces retain iteration events with runtime snapshots in every supported language', () => {
   const cases = [
     ['javascript', `const values = [3, 1, 2];
