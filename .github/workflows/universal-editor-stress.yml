@@ -1,0 +1,36 @@
+name: Universal editor stress tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "server/**"
+      - ".github/workflows/universal-editor-stress.yml"
+  push:
+    branches:
+      - "fix/universal-editor-*"
+      - "test/universal-editor-*"
+    paths:
+      - "server/**"
+      - ".github/workflows/universal-editor-stress.yml"
+
+jobs:
+  stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Run backend and universal editor stress tests
+        run: npm test
