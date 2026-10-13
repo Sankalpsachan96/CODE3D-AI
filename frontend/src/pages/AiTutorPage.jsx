@@ -824,7 +824,7 @@ export default function AiTutorPage() {
                         <div className="message-label">
                           {message.role === 'user'
                             ? 'You'
-                            : 'Code3D AI'}
+                            : 'Code Vision 3D'}
                         </div>
 
                         <div className="message-content">
@@ -845,7 +845,7 @@ export default function AiTutorPage() {
                     <div className="chat-message ai-message">
 
                       <div className="message-label">
-                        Code3D AI
+                        Code Vision 3D
                       </div>
 
                       <div className="message-content thinking-message">

@@ -30,7 +30,7 @@ function PlatformGate({ children }) {
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="route-loading">Loading CODE3D AI…</div>;
+  if (loading) return <div className="route-loading">Loading Code Vision 3D…</div>;
 if (!isAuthenticated) return <Navigate to="/" replace />;  return children;
 }
 

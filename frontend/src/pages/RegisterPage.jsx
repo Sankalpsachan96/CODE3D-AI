@@ -63,7 +63,7 @@ export default function RegisterPage() {
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight">Create an Account</h1>
           <p className={`text-xs ${isBright ? 'text-slate-500' : 'text-slate-400'}`}>
-            Join CODE3D-AI to visualize algorithms, solve DSA problems, and track real cloud progress.
+            Join Code Vision 3D to visualize algorithms, solve DSA problems, and track real cloud progress.
           </p>
         </div>
 

@@ -141,14 +141,14 @@ export default function Navbar({ activeTab, setActiveTab }) {
       <button
         className="app-brand"
         onClick={() => go('/')}
-        aria-label="CODE3D AI Home"
+        aria-label="Code Vision 3D Home"
       >
         <span className="app-brand-mark">
           <span />
         </span>
 
         <span className="app-brand-name">
-          CODE<span>3D</span><b>AI</b>
+          CODE <span>VISION</span><b>3D</b>
         </span>
       </button>
 
