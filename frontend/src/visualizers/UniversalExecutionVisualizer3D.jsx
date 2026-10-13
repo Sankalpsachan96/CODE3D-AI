@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Text, Float } from '@react-three/drei';
 import * as THREE from 'three';
+import { getArrayCellState } from './arrayCellState.js';
 
 /**
  * Pulsing Halo Ring for the currently active variable in execution
@@ -406,7 +407,6 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
         const cellSpacing = 1.12;
         const visibleValues = values;
         const rowWidth = Math.max(0, (visibleValues.length - 1) * cellSpacing);
-        const activeIndex = Number.isInteger(dataStructureState.activeIndex) ? dataStructureState.activeIndex : null;
         const rowZ = 0.45 + arrayIndex * 1.25;
         const vertical = ['stack', 'linked-list', 'linkedlist', 'linkedlist-visualization'].includes(structureType);
         return (
@@ -415,23 +415,34 @@ export default function UniversalExecutionVisualizer3D({ dataStructureState }) {
               {`${arrayName} • ${values.length} items • ${structureType.toUpperCase()}`}
             </Text>
             {visibleValues.map((value, index) => {
-              const active = activeIndex === index;
+              const cellState = getArrayCellState(dataStructureState, index);
               const height = typeof value === 'number' ? Math.max(0.45, Math.min(1.7, Math.abs(value) / 25 + 0.45)) : 0.65;
-              const color = active ? '#fbbf24' : '#0891b2';
+              const color = cellState.swapping ? '#fb7185'
+                : cellState.comparing ? '#a78bfa'
+                  : cellState.active ? '#fbbf24'
+                    : cellState.sorted ? '#22c55e' : '#0891b2';
+              const emissive = cellState.swapping ? '#e11d48'
+                : cellState.comparing ? '#7c3aed'
+                  : cellState.active ? '#d97706'
+                    : cellState.sorted ? '#15803d' : '#0e7490';
+              const edgeColor = cellState.swapping ? '#fecdd3'
+                : cellState.comparing ? '#ddd6fe'
+                  : cellState.active ? '#fef08a'
+                    : cellState.sorted ? '#bbf7d0' : '#67e8f9';
               return (
                 <group key={`${arrayName}-${index}`} position={vertical ? [0, index * 0.9, 0] : [index * cellSpacing, 0, 0]}>
                   <mesh position={[0, height / 2, 0]}>
                     <boxGeometry args={[0.88, height, 0.82]} />
-                    <meshStandardMaterial color={color} emissive={active ? '#d97706' : '#0e7490'} emissiveIntensity={active ? 1.2 : 0.35} metalness={0.45} roughness={0.25} />
+                    <meshStandardMaterial color={color} emissive={emissive} emissiveIntensity={cellState.swapping || cellState.comparing ? 1.5 : cellState.active ? 1.2 : 0.35} metalness={0.45} roughness={0.25} />
                   </mesh>
                   <lineSegments position={[0, height / 2, 0]}>
                     <edgesGeometry args={[new THREE.BoxGeometry(0.9, height + 0.02, 0.84)]} />
-                    <lineBasicMaterial color={active ? '#fef08a' : '#67e8f9'} />
+                    <lineBasicMaterial color={edgeColor} />
                   </lineSegments>
-                  <Text position={[0, height + 0.22, 0]} fontSize={0.17} color={active ? '#fef08a' : '#e2e8f0'} anchorX="center" anchorY="middle" fontWeight="bold">
+                  <Text position={[0, height + 0.22, 0]} fontSize={0.17} color={edgeColor} anchorX="center" anchorY="middle" fontWeight="bold">
                     {String(value)}
                   </Text>
-                  <Text position={[0, -0.2, 0]} fontSize={0.13} color={active ? '#fbbf24' : '#94a3b8'} anchorX="center" anchorY="middle">
+                  <Text position={[0, -0.2, 0]} fontSize={0.13} color={cellState.active ? '#fbbf24' : cellState.comparing ? '#c4b5fd' : cellState.swapping ? '#fda4af' : cellState.sorted ? '#86efac' : '#94a3b8'} anchorX="center" anchorY="middle">
                     {`[${index}]`}
                   </Text>
                 </group>
