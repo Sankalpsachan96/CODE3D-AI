@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import CodeEditor from '../components/CodeEditor';
+import ExecutionNarration from '../components/ExecutionNarration';
 import StatePanel from '../components/StatePanel';
 import OutputConsole from '../components/OutputConsole';
 import Timeline from '../components/Timeline';
@@ -1461,6 +1462,12 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           </div>
         </div>
       </div>
+      <ExecutionNarration
+        step={currentStep}
+        stepIndex={currentStepIndex}
+        language={language}
+        isBright={isBright}
+      />
       {/* Program State + Output: fixed workspace with independent scrolling */}
       {!isFull3DView && (
         <div className={`shrink-0 h-[220px] min-h-[190px] max-h-[32vh] border-t overflow-hidden ${
