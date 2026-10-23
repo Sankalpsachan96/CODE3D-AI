@@ -27,7 +27,7 @@ export default function ExecutionNarration({ step, stepIndex = 0, language = 'ja
     if (lastSpokenStep.current === key) return;
     lastSpokenStep.current = key;
     narration.speak(summary, { lang: narration.voiceLanguage });
-  }, [narration.enabled, narration.voiceLanguage, narration.rate, stepIndex, line, text, summary]);
+  }, [narration.enabled, narration.voiceLanguage, narration.rate, narration.speak, stepIndex, line, text, summary]);
 
   useEffect(() => {
     if (!narration.enabled) lastSpokenStep.current = null;
