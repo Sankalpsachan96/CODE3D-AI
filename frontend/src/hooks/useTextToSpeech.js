@@ -23,8 +23,6 @@ export function useTextToSpeech() {
     );
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return undefined;
     const synth = window.speechSynthesis;
-    const onEnd = () => { setSpeaking(false); setPaused(false); };
-    synth.addEventListener?.('voiceschanged', () => {});
     return () => {
       generation.current += 1;
       synth.cancel();
