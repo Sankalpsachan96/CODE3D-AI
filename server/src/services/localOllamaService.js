@@ -2,8 +2,8 @@ const DEFAULT_OLLAMA_URL = 'http://127.0.0.1:11434';
 const ALLOWED_OLLAMA_MODELS = new Set([
   'qwen2.5:3b-instruct',
   'qwen2.5:3b',
-  'qwen2.5:4b-instruct',
-  'qwen2.5:4b',
+  'qwen3:4b-instruct',
+  'qwen3:4b',
 ]);
 
 function clean(value, limit = 12000) {
