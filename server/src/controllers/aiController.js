@@ -1,4 +1,5 @@
 import { askCodeTutor } from '../services/aiTutorService.js';
+import { askLocalOllama } from '../services/localOllamaService.js';
 
 export async function explainContext(req, res) {
   try {
@@ -52,7 +53,7 @@ export async function explainContext(req, res) {
       });
     }
 
-    const response = await askCodeTutor({
+    const tutorRequest = {
       action,
       code,
       language,
@@ -67,10 +68,15 @@ export async function explainContext(req, res) {
       history,
       requestedLanguage,
       questionCount,
-    });
+    };
+    const provider = String(process.env.AI_PROVIDER || 'groq').trim().toLowerCase();
+    const response = provider === 'ollama'
+      ? await askLocalOllama(tutorRequest)
+      : await askCodeTutor(tutorRequest);
 
     return res.json({
       success: true,
+      provider: response.provider || 'groq',
       action,
       stepNumber,
       ...response,
