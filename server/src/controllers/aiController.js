@@ -1,4 +1,5 @@
 import { askCodeTutor } from '../services/aiTutorService.js';
+import { askLocalOllama } from '../services/localOllamaService.js';
 
 export async function explainContext(req, res) {
   try {
@@ -52,7 +53,7 @@ export async function explainContext(req, res) {
       });
     }
 
-    const response = await askCodeTutor({
+    const tutorRequest = {
       action,
       code,
       language,
@@ -67,17 +68,23 @@ export async function explainContext(req, res) {
       history,
       requestedLanguage,
       questionCount,
-    });
+    };
+    const provider = String(process.env.AI_PROVIDER || 'groq').trim().toLowerCase();
+    const response = provider === 'ollama'
+      ? await askLocalOllama(tutorRequest)
+      : await askCodeTutor(tutorRequest);
 
     return res.json({
       success: true,
+      provider: response.provider || 'groq',
       action,
       stepNumber,
       ...response,
     });
   } catch (err) {
-    if (err.code === 'AI_NOT_CONFIGURED') {
-      return res.status(503).json({
+    if (err.code === 'AI_NOT_CONFIGURED' || err.code === 'OLLAMA_UNAVAILABLE' ||
+        err.code === 'OLLAMA_MODEL_NOT_ALLOWED' || err.code === 'OLLAMA_REQUEST_FAILED') {
+      return res.status(err.code === 'OLLAMA_UNAVAILABLE' ? 503 : (err.status || 503)).json({
         success: false,
         error: { code: err.code, message: err.message },
       });
