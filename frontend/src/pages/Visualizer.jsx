@@ -1369,7 +1369,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 </SceneContainer>
               </VisualizerErrorBoundary>
             </div>
-            <ExecutionNarration step={currentStep} stepIndex={currentStepIndex} isBright={isBright} />
+            <ExecutionNarration step={currentStep} stepIndex={currentStepIndex} isBright={isBright} code={code} language={language === "hi" ? "hi-IN" : "en-US"} />
             {/* Playback controls belong to the 3D block */}
             <div className={`shrink-0 min-w-0 h-11 border-t px-2 flex items-center gap-1.5 overflow-hidden ${
               isBright ? 'bg-white border-slate-200' : 'bg-[#0b0f19] border-slate-800/80'
