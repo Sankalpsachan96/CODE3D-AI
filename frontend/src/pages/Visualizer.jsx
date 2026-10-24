@@ -14,6 +14,7 @@ import CompareModeModal from '../components/CompareModeModal';
 import InputGenerator from '../components/InputGenerator';
 import { ALGORITHM_CATALOG, generateAlgorithmSteps } from '../algorithms/index';
 import { useExecutionTimeline } from '../hooks/useExecutionTimeline';
+import ExecutionNarration from '../components/ExecutionNarration';
 import { getExecutionTrace, extractNumbersFromCode, alignTraceLinesWithSource } from '../services/executionSimulator';
 import { validateSourceCode } from '../services/codeValidator';
 import { DEFAULT_JAVA_CODE, SAMPLE_PROGRAMS, LANGUAGE_DEFAULTS, CURRICULUM_CATEGORIES } from '../utils/sampleCodes';
@@ -1368,6 +1369,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
                 </SceneContainer>
               </VisualizerErrorBoundary>
             </div>
+            <ExecutionNarration step={currentStep} stepIndex={currentStepIndex} isBright={isBright} />
             {/* Playback controls belong to the 3D block */}
             <div className={`shrink-0 min-w-0 h-11 border-t px-2 flex items-center gap-1.5 overflow-hidden ${
               isBright ? 'bg-white border-slate-200' : 'bg-[#0b0f19] border-slate-800/80'
