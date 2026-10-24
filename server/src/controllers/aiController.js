@@ -82,8 +82,9 @@ export async function explainContext(req, res) {
       ...response,
     });
   } catch (err) {
-    if (err.code === 'AI_NOT_CONFIGURED') {
-      return res.status(503).json({
+    if (err.code === 'AI_NOT_CONFIGURED' || err.code === 'OLLAMA_UNAVAILABLE' ||
+        err.code === 'OLLAMA_MODEL_NOT_ALLOWED' || err.code === 'OLLAMA_REQUEST_FAILED') {
+      return res.status(err.code === 'OLLAMA_UNAVAILABLE' ? 503 : (err.status || 503)).json({
         success: false,
         error: { code: err.code, message: err.message },
       });
