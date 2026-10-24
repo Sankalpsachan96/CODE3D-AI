@@ -15,7 +15,7 @@ The narration controls are placed above the 3D execution playback bar. Turn voic
    ```
    For a computer with more available memory, compare:
    ```bash
-   ollama pull qwen2.5:4b-instruct
+   ollama pull qwen3:4b-instruct
    ```
 3. Copy the values from `server/.env.ollama.example` to `server/.env` or set them in your environment.
 4. Restart the backend after setting `AI_PROVIDER=ollama`.
