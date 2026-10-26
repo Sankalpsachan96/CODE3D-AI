@@ -60,13 +60,12 @@ export function useTextToSpeech() {
     const language = options.lang || voiceLanguage;
     utterance.lang = language;
     utterance.rate = Math.max(0.7, Math.min(1.3, Number(options.rate ?? rate) || 1));
+    const languageVoice = voices.find((voice) => voice.lang?.toLowerCase() === language.toLowerCase()) ||
+      voices.find((voice) => voice.lang?.toLowerCase().startsWith(language.slice(0, 2).toLowerCase()));
     const selectedVoice = voices.find((voice) => voice.name === (options.voiceName || voiceName));
-    if (selectedVoice) utterance.voice = selectedVoice;
-    else {
-      const languageVoice = voices.find((voice) => voice.lang?.toLowerCase() === language.toLowerCase()) ||
-        voices.find((voice) => voice.lang?.toLowerCase().startsWith(language.slice(0, 2).toLowerCase()));
-      if (languageVoice) utterance.voice = languageVoice;
-    }
+    // Never keep speaking English with an English voice after Hindi/Hinglish is selected.
+    if (selectedVoice && selectedVoice.lang?.toLowerCase().startsWith(language.slice(0, 2).toLowerCase())) utterance.voice = selectedVoice;
+    else if (languageVoice) utterance.voice = languageVoice;
     utterance.onstart = () => {
       if (generation.current === requestId) { setSpeaking(true); setPaused(false); }
     };
