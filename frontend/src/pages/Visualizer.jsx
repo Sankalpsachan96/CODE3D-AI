@@ -1273,7 +1273,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         </div>
       )}
       {/* Main Studio: only Code + 3D */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
+      <div className="relative flex-1 min-h-0 flex flex-col md:flex-row overflow-hidden">
         {/* Code */}
         {!isFull3DView && (
           <div
