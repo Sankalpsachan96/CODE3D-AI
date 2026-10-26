@@ -100,11 +100,11 @@ export default function ExecutionNarration({ step, stepIndex = 0, isBright = fal
               <option value="hi-IN">Hindi</option><option value="hi-Latn">Hinglish</option>
             </select>
           </label>
-          {narration.voices.length > 0 && (
+          {narration.voices.filter((voice) => voice.lang?.toLowerCase().startsWith(narration.voiceLanguage.slice(0, 2).toLowerCase())).length > 0 && (
             <label className="flex flex-col gap-1.5 text-xs"><span className="opacity-70">Installed voice</span>
               <select className={`h-9 w-full rounded-lg border px-2.5 ${shell}`} value={narration.voiceName}
                 onChange={(event) => narration.setVoiceName(event.target.value)} aria-label="Installed browser voice">
-                {narration.voices.map((voice) => <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>)}
+                {narration.voices.filter((voice) => voice.lang?.toLowerCase().startsWith(narration.voiceLanguage.slice(0, 2).toLowerCase())).map((voice) => <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>)}
               </select>
             </label>
           )}
