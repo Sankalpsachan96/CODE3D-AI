@@ -1907,3 +1907,18 @@ button, input, textarea, select { font-family: inherit; }
 .marketing-light .marketing-footer button:hover {
   color: #d85b08;
 }
+
+/* Responsive Code Vision workspace: keep controls reachable at normal zoom. */
+.visualizer-workspace,
+.visualizer-workspace * { min-width: 0; }
+@media (max-width: 767px) {
+  html, body, #root { min-height: 100%; }
+  .app-main { min-height: calc(100dvh - 62px); }
+  /* Keep the mobile editor drawer inside the workspace instead of replacing the 3D scene. */
+  .max-md\\:absolute { position: absolute; }
+  .max-md\\:inset-y-0 { top: 0; bottom: 0; }
+  .max-md\\:left-0 { left: 0; }
+}
+@media (max-height: 760px) and (min-width: 768px) {
+  .app-main { min-height: calc(100dvh - 62px); }
+}
