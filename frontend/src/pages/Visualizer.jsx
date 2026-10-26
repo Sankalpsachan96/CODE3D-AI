@@ -1277,7 +1277,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
         {/* Code */}
         {!isFull3DView && (
           <div
-            className={`${mobileTab === 'code' ? 'block' : 'hidden'} md:block h-full overflow-hidden shrink-0`}
+            className={`${mobileTab === 'code' ? 'block' : 'hidden'} md:block h-full overflow-hidden shrink-0 max-md:absolute max-md:inset-y-0 max-md:left-0 max-md:z-40 max-md:!w-[88vw] max-md:max-w-[420px] max-md:shadow-2xl`}
             style={{ width: `${editorWidthPercent}%` }}
           >
             <EditorErrorBoundary>
@@ -1339,7 +1339,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
           </div>
         )}
         {/* 3D */}
-        <div className={`${mobileTab === '3d' ? 'flex' : 'hidden'} md:flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden`}>
+        <div className="flex flex-1 min-w-0 min-h-0 flex-col overflow-hidden">
           {/* 3D canvas + controls live together */}
           <div className="flex-1 min-h-0 relative flex flex-col overflow-hidden">
             {universalOnly && traceNotice && (
@@ -1371,7 +1371,7 @@ export default function Visualizer({ initialConcept, initialOpenStriver = false,
             </div>
             <ExecutionNarration step={currentStep} stepIndex={currentStepIndex} isBright={isBright} code={code} language={language === "hi" ? "hi-IN" : "en-US"} />
             {/* Playback controls belong to the 3D block */}
-            <div className={`shrink-0 min-w-0 h-11 border-t px-2 flex items-center gap-1.5 overflow-hidden ${
+            <div className={`shrink-0 min-w-0 min-h-11 border-t px-2 flex flex-wrap sm:flex-nowrap items-center gap-1.5 overflow-x-auto overflow-y-visible ${
               isBright ? 'bg-white border-slate-200' : 'bg-[#0b0f19] border-slate-800/80'
             }`}>
               <button
