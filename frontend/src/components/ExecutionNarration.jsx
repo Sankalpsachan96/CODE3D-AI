@@ -6,53 +6,35 @@ import { useTextToSpeech } from '../hooks/useTextToSpeech';
 function explainSourceLine(sourceLine, language, step) {
   const line = String(sourceLine || '').trim().replace(/\/\/.*/, '').trim();
   const hindi = language === 'hi-IN';
+  const hinglish = language === 'hi-Latn';
+  const choose = (hi, roman, en) => hindi ? hi : hinglish ? roman : en;
   const event = String(step?.eventType || '').toUpperCase();
-  if (!line) return hindi
-    ? (step?.explanation || 'Is execution step ke liye source line available nahi hai.')
-    : (step?.explanation || 'No source line is available for this execution step.');
+  if (!line) return choose('इस execution step के लिए source line उपलब्ध नहीं है।', 'Is execution step ke liye source line available nahi hai.', step?.explanation || 'No source line is available for this execution step.');
 
   const match = (pattern) => pattern.test(line);
   let explanation = '';
   if (/ARRAY_CREATION/.test(event) || match(/\b(?:int|long|float|double|String|boolean|var)\s*\[\s*\]|\b\w+\s*\[\s*\]\s*\w+\s*=/)) {
-    explanation = hindi
-      ? 'Is line par array declare aur initialize ho raha hai. Isme diye gaye elements memory mein store hote hain.'
-      : 'This line declares and initializes an array, storing the listed elements for later access.';
+    explanation = choose('इस लाइन में array बनाया जा रहा है। इसमें दिए गए elements आगे इस्तेमाल करने के लिए store होते हैं।', 'Is line mein array banaya ja raha hai. Iske elements aage use karne ke liye store hote hain.', 'This line declares and initializes an array, storing the listed elements for later access.');
   } else if (/LOOP_INIT|LOOP_INCREMENT|CONDITION_CHECK/.test(event) || match(/\bfor\s*\(|\bwhile\s*\(/)) {
-    explanation = hindi
-      ? 'Yeh loop ki line hai. Initialization counter ko set karta hai, condition decide karti hai ki loop chalega ya nahi, aur increment har iteration ke baad counter update karta hai.'
-      : 'This is a loop statement. Initialization sets the counter, the condition decides whether it continues, and the increment updates the counter after each iteration.';
+    explanation = choose('यह loop है। Condition तय करती है कि loop चलेगा या रुकेगा। हर चक्कर के बाद counter update होता है।', 'Yeh loop hai. Condition decide karti hai ki loop chalega ya rukega. Har round ke baad counter update hota hai.', 'This is a loop statement. Initialization sets the counter, the condition decides whether it continues, and the increment updates the counter after each iteration.');
   } else if (/ARRAY_ACCESS/.test(event) || match(/\b(?:System\.out\.(?:println|print)|console\.log|print\s*\()/)) {
-    explanation = hindi
-      ? 'Is line par current value access ya print ho rahi hai. Loop ke andar hone par yeh har iteration mein current element ke saath chal sakti hai.'
-      : 'This line accesses or prints the current value. If it is inside a loop, it can run once for each iteration.';
+    explanation = choose('इस लाइन में current value पढ़ी या print की जा रही है। Loop के अंदर हो तो यह हर चक्कर में चल सकती है।', 'Is line mein current value read ya print ho rahi hai. Loop ke andar ho to yeh har round mein chal sakti hai.', 'This line accesses or prints the current value. If it is inside a loop, it can run once for each iteration.');
   } else if (match(/^\s*if\s*\(|^\s*else\b|^\s*switch\s*\(/)) {
-    explanation = hindi
-      ? 'Yeh conditional statement hai. Program condition check karke decide karta hai ki kaunsa code block execute hoga.'
-      : 'This is a conditional statement. The program checks the condition to decide which block should execute.';
+    explanation = choose('यह condition है। Program condition जाँचकर तय करता है कि कौन-सा code चलाना है।', 'Yeh condition hai. Program check karta hai ki kaunsa code chalana hai.', 'This is a conditional statement. The program checks the condition to decide which block should execute.');
   } else if (match(/\+\+|--|\+=|-=|\*=|\/=|(?<![=!<>])=(?!=)/)) {
-    explanation = hindi
-      ? 'Is line par variable ki value update ya assign ho rahi hai. Right side ki value calculate karke variable mein rakhi jaati hai.'
-      : 'This line assigns or updates a variable. The right-hand expression is evaluated and stored in the variable.';
+    explanation = choose('इस लाइन में variable की value बदली जा रही है। दाईं तरफ का हिसाब करके result variable में रखा जाता है।', 'Is line mein variable ki value badal rahi hai. Right side ka result variable mein store hota hai.', 'This line assigns or updates a variable. The right-hand expression is evaluated and stored in the variable.');
   } else if (match(/^\s*return\b/)) {
-    explanation = hindi
-      ? 'Return statement function ka result caller ko wapas deta hai aur current function se bahar nikalta hai.'
-      : 'The return statement sends a result back to the caller and exits the current function.';
+    explanation = choose('return statement function का result वापस देता है और function को समाप्त करता है।', 'Return statement function ka result wapas deta hai aur function se bahar nikalta hai.', 'The return statement sends a result back to the caller and exits the current function.');
   } else if (match(/\b(?:public|private|protected|static|void|function|def)\b|\w+\s*\([^;]*\)\s*\{/)) {
-    explanation = hindi
-      ? 'Yeh function ya method ki definition hai. Iske andar likha code function call hone par execute hota hai.'
-      : 'This defines a function or method. The code inside it runs when the function is called.';
+    explanation = choose('यह function की definition है। इसके अंदर का code function call होने पर चलता है।', 'Yeh function ki definition hai. Iske andar ka code function call hone par chalta hai.', 'This defines a function or method. The code inside it runs when the function is called.');
   } else if (match(/\b(?:int|long|float|double|String|boolean|char|var|let|const)\s+\w+/)) {
-    explanation = hindi
-      ? 'Is line par variable declare ho raha hai. Variable program ke dauran value store karne ke liye use hota hai.'
-      : 'This line declares a variable, which stores a value that the program can use later.';
+    explanation = choose('इस लाइन में variable बनाया जा रहा है, जिसमें program की value store होगी।', 'Is line mein variable banaya ja raha hai, jisme program ki value store hogi.', 'This line declares a variable, which stores a value that the program can use later.');
   } else {
-    explanation = hindi
-      ? 'Yeh program ki current source line hai. Iska exact effect neeche diye gaye code aur current execution state par depend karta hai.'
-      : 'This is the current source line. Its exact effect depends on the code shown and the current execution state.';
+    explanation = choose('यह program की current line है। इसका असर code और execution की current स्थिति पर निर्भर करता है।', 'Yeh program ki current line hai. Iska effect code aur current execution state par depend karta hai.', 'This is the current source line. Its exact effect depends on the code shown and the current execution state.');
   }
 
   const detail = step?.currentValue !== undefined && step?.currentValue !== null
-    ? (hindi ? ` Current value: ${String(step.currentValue)}.` : ` Current value: ${String(step.currentValue)}.`)
+    ? choose(` अभी की value ${String(step.currentValue)} है।`, `Abhi ki value ${String(step.currentValue)} hai.`, ` Current value: ${String(step.currentValue)}.`)
     : '';
   return explanation + detail;
 }
@@ -66,8 +48,8 @@ export default function ExecutionNarration({ step, stepIndex = 0, isBright = fal
   const sourceLine = line ? String(code || '').split('\n')[Number(line) - 1] || '' : '';
   const explanation = explainSourceLine(sourceLine, narration.voiceLanguage, step);
   const summary = line
-    ? (narration.voiceLanguage === 'hi-IN' ? `Line ${line}. ${explanation}` : `Line ${line}. ${explanation}`)
-    : (step ? `Step ${stepIndex + 1}. ${step.explanation || step.message || 'Follow the current execution state.'}` : 'Run a program to hear step-by-step narration.');
+    ? (narration.voiceLanguage === 'hi-IN' ? `लाइन ${line}। ${explanation}` : narration.voiceLanguage === 'hi-Latn' ? `Line ${line}. ${explanation}` : `Line ${line}. ${explanation}`)
+    : (step ? (narration.voiceLanguage === 'hi-IN' ? `स्टेप ${stepIndex + 1}। ${explanation}` : narration.voiceLanguage === 'hi-Latn' ? `Step ${stepIndex + 1}. ${explanation}` : `Step ${stepIndex + 1}. ${step.explanation || step.message || 'Follow the current execution state.'}`) : 'Run a program to hear step-by-step narration.');
 
   useEffect(() => {
     if (!narration.enabled || !step || !summary) return;
@@ -92,10 +74,10 @@ export default function ExecutionNarration({ step, stepIndex = 0, isBright = fal
   const button = 'inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold transition hover:border-cyan-500 disabled:cursor-not-allowed disabled:opacity-40';
 
   const popup = open && typeof document !== 'undefined' ? createPortal(
-    <div className="fixed inset-0 z-[10000] flex items-end justify-end p-4 sm:p-6"
+    <div className="fixed inset-0 z-[10000] flex items-end justify-end p-2 sm:p-6"
       onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
       <section role="dialog" aria-modal="true" aria-labelledby="tts-popup-title"
-        className={`mb-16 w-full max-w-sm rounded-xl border p-4 shadow-2xl ${shell}`}>
+        className={`mb-12 max-h-[85dvh] w-full max-w-sm overflow-y-auto rounded-xl border p-4 shadow-2xl sm:mb-16 ${shell}`}>
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {narration.enabled ? <Volume2 size={18} className="text-cyan-500" /> : <VolumeX size={18} />}
@@ -115,14 +97,14 @@ export default function ExecutionNarration({ step, stepIndex = 0, isBright = fal
           <label className="flex flex-col gap-1.5 text-xs"><span className="opacity-70">Spoken language</span>
             <select className={`h-9 w-full rounded-lg border px-2.5 ${shell}`} value={narration.voiceLanguage}
               onChange={(event) => narration.setVoiceLanguage(event.target.value)} aria-label="Narration language">
-              <option value="en-US">English</option><option value="hi-IN">Hindi</option>
+              <option value="hi-IN">Hindi</option><option value="hi-Latn">Hinglish</option>
             </select>
           </label>
-          {narration.voices.length > 0 && (
+          {narration.voices.filter((voice) => voice.lang?.toLowerCase().startsWith(narration.voiceLanguage.slice(0, 2).toLowerCase())).length > 0 && (
             <label className="flex flex-col gap-1.5 text-xs"><span className="opacity-70">Installed voice</span>
               <select className={`h-9 w-full rounded-lg border px-2.5 ${shell}`} value={narration.voiceName}
                 onChange={(event) => narration.setVoiceName(event.target.value)} aria-label="Installed browser voice">
-                {narration.voices.map((voice) => <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>)}
+                {narration.voices.filter((voice) => voice.lang?.toLowerCase().startsWith(narration.voiceLanguage.slice(0, 2).toLowerCase())).map((voice) => <option key={voice.name} value={voice.name}>{voice.name} ({voice.lang})</option>)}
               </select>
             </label>
           )}
