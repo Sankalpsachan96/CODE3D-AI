@@ -6,6 +6,7 @@ import {
   UserRound,
   Code2,
   Layers3,
+  Trophy,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { checkBackendHealth } from '../services/apiService';
@@ -62,6 +63,12 @@ export default function Navbar({ activeTab, setActiveTab }) {
           path: '/dsa',
           label: 'DSA Hub',
           icon: Layers3,
+        },
+        {
+          id: 'arena',
+          path: '/arena',
+          label: 'Challenge Arena',
+          icon: Trophy,
         },
       ]
     : []),
