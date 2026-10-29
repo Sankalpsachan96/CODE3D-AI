@@ -11,6 +11,7 @@ import SettingsPage from './pages/SettingsPage';
 import AiTutorPage from './pages/AiTutorPage';
 import SheetsPage from './pages/SheetsPage';
 import DsaProblemPage from './pages/DsaProblemPage';
+import ChallengeArena from './pages/ChallengeArena';
 import DsaLearningPage from './pages/DsaLearningPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import SavedVisualizationsPage from './pages/SavedVisualizationsPage';
@@ -82,6 +83,7 @@ function MainAppContent() {
           <Route path="/editor" element={<ProtectedRoute><Visualizer key="universal-editor" universalOnly /></ProtectedRoute>} />
           <Route path="/visualize" element={<ProtectedRoute><Visualizer initialConcept={selectedConcept} /></ProtectedRoute>} />
           <Route path="/dsa" element={<ProtectedRoute><DsaHub initialTab="curriculum" onSelectConcept={handleLaunchConcept} /></ProtectedRoute>} />
+          <Route path="/arena" element={<ProtectedRoute><ChallengeArena /></ProtectedRoute>} />
           <Route path="/algorithms" element={<ProtectedRoute><DsaHub initialTab="algorithms" onSelectConcept={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/dsa/:problemSlug" element={<ProtectedRoute><DsaProblemPage onVisualizeProblem={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/ai" element={<ProtectedRoute><AiTutorPage onSendToVisualizer={handleLaunchConcept} /></ProtectedRoute>} />
