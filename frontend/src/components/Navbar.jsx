@@ -7,6 +7,7 @@ import {
   Code2,
   Layers3,
   Trophy,
+  Wrench,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { checkBackendHealth } from '../services/apiService';
@@ -65,10 +66,10 @@ export default function Navbar({ activeTab, setActiveTab }) {
           icon: Layers3,
         },
         {
-          id: 'arena',
-          path: '/arena',
-          label: 'Challenge Arena',
-          icon: Trophy,
+          id: 'predict-repair',
+          path: '/predict-repair',
+          label: 'Predict & Repair',
+          icon: Wrench,
         },
       ]
     : []),
