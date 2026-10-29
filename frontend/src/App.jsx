@@ -83,7 +83,8 @@ function MainAppContent() {
           <Route path="/editor" element={<ProtectedRoute><Visualizer key="universal-editor" universalOnly /></ProtectedRoute>} />
           <Route path="/visualize" element={<ProtectedRoute><Visualizer initialConcept={selectedConcept} /></ProtectedRoute>} />
           <Route path="/dsa" element={<ProtectedRoute><DsaHub initialTab="curriculum" onSelectConcept={handleLaunchConcept} /></ProtectedRoute>} />
-          <Route path="/arena" element={<ProtectedRoute><ChallengeArena /></ProtectedRoute>} />
+          <Route path="/predict-repair" element={<ProtectedRoute><ChallengeArena /></ProtectedRoute>} />
+          <Route path="/arena" element={<Navigate to="/predict-repair" replace />} />
           <Route path="/algorithms" element={<ProtectedRoute><DsaHub initialTab="algorithms" onSelectConcept={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/dsa/:problemSlug" element={<ProtectedRoute><DsaProblemPage onVisualizeProblem={handleLaunchConcept} /></ProtectedRoute>} />
           <Route path="/ai" element={<ProtectedRoute><AiTutorPage onSendToVisualizer={handleLaunchConcept} /></ProtectedRoute>} />
