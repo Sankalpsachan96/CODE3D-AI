@@ -48,6 +48,25 @@ export function buildStarterCode(problem, language = 'java') {
   if (!sourceField || !isProblemLanguageSupported(problem, normalizedLanguage)) return '';
   const source = problem[sourceField];
 
+  if (normalizedLanguage === 'javascript') {
+    return `// ${problem.title}
+function solve() {
+  // Write your solution here
+}
+`;
+  }
+
+  if (normalizedLanguage === 'c') {
+    return `// ${problem.title}
+#include <stdio.h>
+
+int main(void) {
+    // Write your solution here
+    return 0;
+}
+`;
+  }
+
   if (language === 'python') {
     const lines = source.split(/\r?\n/);
     const defIndex = lines.findIndex((line) => /^\s*def\s+/.test(line));
