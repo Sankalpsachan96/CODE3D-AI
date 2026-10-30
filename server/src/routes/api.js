@@ -8,6 +8,7 @@ import * as savedController from '../controllers/savedController.js';
 import * as projectController from '../controllers/projectController.js';
 import * as quizController from '../controllers/quizController.js';
 import * as aiController from '../controllers/aiController.js';
+import * as aiChallengeController from '../controllers/aiChallengeController.js';
 import * as settingsController from '../controllers/settingsController.js';
 import * as dsaController from '../controllers/dsaController.js';
 import * as dashboardController from '../controllers/dashboardController.js';
@@ -49,6 +50,8 @@ router.post('/analyze', optionalAuth, executionController.analyzeCode);
 // AI Tutor
 // ------------------------------------------------------------
 router.post('/ai/explain', optionalAuth, aiController.explainContext);
+router.post('/ai/challenge', optionalAuth, aiChallengeController.generateChallenge);
+router.post('/ai/challenge/grade', optionalAuth, aiChallengeController.gradeRepair);
 
 // ------------------------------------------------------------
 // Execution history
