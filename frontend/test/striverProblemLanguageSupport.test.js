@@ -54,9 +54,7 @@ test('a genuine language-specific implementation is accepted', () => {
 test('generic sum placeholders are not advertised as supported algorithms', () => {
   const placeholder = {
     title: 'Dijkstra',
-    pythonCode: \`class Solution:
-    def shortestPath(self, nums):
-        return sum(nums)\`,
+    pythonCode: 'class Solution:\n    def shortestPath(self, nums):\n        return sum(nums)',
     cppCode: 'class Solution { public: int shortestPath(vector<int>& nums) { return accumulate(nums.begin(), nums.end(), 0); } };',
   };
   assert.deepEqual(getProblemSupportedLanguages(placeholder), []);
