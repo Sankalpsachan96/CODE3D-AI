@@ -12,6 +12,8 @@ function starterFor(problem, language) {
   const sourceField = { java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode' }[language];
   const source = problem[sourceField];
   if (typeof source !== 'string' || !source.trim()) return '';
+  const normalized = source.replace(/\\s+/g, ' ');
+  if (/return\\s+sum\\s*\\(\\s*(?:nums|arr|array|a)\\s*\\)/i.test(normalized) || /accumulate\\s*\\(/i.test(normalized)) return '';
   if (language === 'python') {
     const match = source.match(/^\s*def\s+([A-Za-z_]\w*)\s*\(([^)]*)\)\s*:/m);
     return match ? \`def \${match[1]}(\${match[2]}):\\n    # Write your solution here\\n    pass\\n\` : \`# \${title}\\ndef solve():\\n    # Write your solution here\\n    pass\\n\`;
