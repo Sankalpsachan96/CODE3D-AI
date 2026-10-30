@@ -26,6 +26,15 @@ import {
 const STORAGE_KEY = 'code3d_striver_solved_v1';
 const STATUS_KEY = 'code3d_striver_status_v2';
 
+const hasStriverLanguageSource = (problem, language) => {
+  const field = { java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode' }[language];
+  const source = field ? problem?.[field] : '';
+  const normalized = String(source || '').replace(/\\s+/g, ' ').trim();
+  return Boolean(normalized)
+    && !/return\\s+sum\\s*\\(\\s*(?:nums|arr|array|a)\\s*\\)/i.test(normalized)
+    && !/accumulate\\s*\\(\\s*(?:nums|arr|array)\\.begin\\s*\\(\\s*\\)\\s*,\\s*(?:nums|arr|array)\\.end\\s*\\(\\s*\\)/i.test(normalized);
+};
+
 export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   const { isBright } = useTheme();
 
@@ -574,7 +583,9 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
 
                         <button
                           onClick={() => handleLaunchStriverProblem(p)}
-                          className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-sm transition active:scale-95 cursor-pointer"
+                          disabled={!hasStriverLanguageSource(p, striverLanguage)}
+                          title={!hasStriverLanguageSource(p, striverLanguage) ? `No verified ${striverLanguage.toUpperCase()} source is available for this problem.` : 'Open a clean starter in the editor'}
+                          className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <Zap size={12} className="fill-slate-950" />
                           <span>Visualize 3D</span>
