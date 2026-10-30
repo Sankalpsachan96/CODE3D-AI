@@ -46,6 +46,7 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   const [selectedDay, setSelectedDay] = useState('All Days (180+)');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [striverSearch, setStriverSearch] = useState('');
+  const [striverLanguage, setStriverLanguage] = useState('java');
   const [solvedMap, setSolvedMap] = useState({});
   const [statusMap, setStatusMap] = useState({});
 
@@ -157,6 +158,21 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   }, [selectedDay, selectedDifficulty, striverSearch]);
 
   const handleLaunchStriverProblem = (p) => {
+    const sourceField = { java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode' }[striverLanguage];
+    const source = sourceField ? p[sourceField] : '';
+    const normalized = String(source || '').replace(/\\s+/g, ' ').trim();
+    const isPlaceholder = /return\\s+sum\\s*\\(\\s*(?:nums|arr|array|a)\\s*\\)/i.test(normalized)
+      || /accumulate\\s*\\(\\s*(?:nums|arr|array)\\.begin\\s*\\(\\s*\\)\\s*,\\s*(?:nums|arr|array)\\.end\\s*\\(\\s*\\)/i.test(normalized);
+    if (!source || isPlaceholder) return;
+    const code = striverLanguage === 'python'
+      ? `# ${p.title}\\ndef solve():\\n    # Write your solution here\\n    pass\\n`
+      : striverLanguage === 'javascript'
+        ? `// ${p.title}\\nfunction solve() {\\n  // Write your solution here\\n}\\n`
+        : striverLanguage === 'c'
+          ? `// ${p.title}\\n#include <stdio.h>\\nint main(void) {\\n    // Write your solution here\\n    return 0;\\n}\\n`
+          : striverLanguage === 'cpp'
+            ? `// ${p.title}\\n#include <bits/stdc++.h>\\nusing namespace std;\\nclass Solution { public: /* Write your solution here */ };\\n`
+            : `// ${p.title}\\nclass Solution {\\n    // Write your solution here\\n}\\n`;
     onSelectConcept({
       id: `striver-${p.id}`,
       striverId: p.id,
@@ -171,8 +187,9 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
       spaceComplexity: p.spaceComplexity,
       description: `${p.day}: ${p.title} - ${p.description}`,
       defaultInput: p.defaultInput,
-      code: p.javaCode,
-      language: 'java',
+      code,
+      language: striverLanguage,
+      trace: null,
     });
   };
 
@@ -446,6 +463,12 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
                 ))}
               </div>
 
+              <label className="flex items-center gap-2 text-xs">
+                <span className="opacity-70">Language</span>
+                <select value={striverLanguage} onChange={(e) => setStriverLanguage(e.target.value)} className={`rounded-lg border px-2 py-1.5 ${isBright ? 'bg-slate-50 border-slate-300' : 'bg-slate-950 border-slate-700'}`}>
+                  {['java', 'cpp', 'python', 'javascript', 'c'].map((lang) => <option key={lang} value={lang}>{lang.toUpperCase()}</option>)}
+                </select>
+              </label>
               {/* Search Bar */}
               <div className="relative w-full sm:w-64">
                 <Search size={14} className={`absolute left-3 top-2.5 ${isBright ? 'text-slate-400' : 'text-slate-500'}`} />
