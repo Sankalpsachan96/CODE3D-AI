@@ -71,10 +71,18 @@ export function useTextToSpeech() {
       if (generation.current === requestId) { setSpeaking(true); setPaused(false); }
     };
     utterance.onend = () => {
-      if (generation.current === requestId) { setSpeaking(false); setPaused(false); }
+      if (generation.current === requestId) {
+        setSpeaking(false);
+        setPaused(false);
+        options.onEnd?.();
+      }
     };
     utterance.onerror = () => {
-      if (generation.current === requestId) { setSpeaking(false); setPaused(false); }
+      if (generation.current === requestId) {
+        setSpeaking(false);
+        setPaused(false);
+        options.onEnd?.();
+      }
     };
     synth.speak(utterance);
     return true;
