@@ -14,6 +14,8 @@ export function useTextToSpeech() {
   const [voices, setVoices] = useState([]);
   const [voiceName, setVoiceName] = useState('');
   const generation = useRef(0);
+  const languagePrefix = voiceLanguage.toLowerCase().split('-')[0];
+  const voiceAvailable = voices.some((voice) => voice.lang?.toLowerCase().startsWith(languagePrefix));
 
   useEffect(() => {
     const available = typeof window !== 'undefined' &&
@@ -69,6 +71,8 @@ export function useTextToSpeech() {
     const exactLocaleVoice = matchingVoices.find((voice) => voice.lang?.toLowerCase() === normalizedLanguage);
     const indianLocaleVoice = matchingVoices.find((voice) => voice.lang?.toLowerCase() === (languagePrefix === 'en' ? 'en-in' : 'hi-in'));
     const selectedVoice = explicitVoice || exactLocaleVoice || indianLocaleVoice || matchingVoices[0];
+    // Never let Hindi narration silently fall back to an English voice.
+    if (languagePrefix === 'hi' && !selectedVoice) return false;
     if (selectedVoice) utterance.voice = selectedVoice;
     utterance.onstart = () => {
       if (generation.current === requestId) { setSpeaking(true); setPaused(false); }
@@ -116,7 +120,7 @@ export function useTextToSpeech() {
   }, []);
 
   return {
-    supported, enabled, speaking, paused, voiceLanguage, rate, voices, voiceName,
+    supported, enabled, speaking, paused, voiceLanguage, rate, voices, voiceName, voiceAvailable,
     setVoiceLanguage, setRate, setVoiceName, toggleEnabled, speak, pause, resume, stop,
   };
 }
