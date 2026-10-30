@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { X, Search, Trophy, CheckCircle2, Circle, ChevronRight, ArrowLeft, Play, Clock3, Database, Filter } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { STRIVER_DAYS, STRIVER_PROBLEMS } from '../utils/striverCatalog';
-import { buildStarterCode, buildProblemMeta } from '../utils/striverProblemUtils';
+import { buildStarterCode, buildProblemMeta, isProblemLanguageSupported } from '../utils/striverProblemUtils';
 
 const STATUS_KEY = 'code3d_striver_status_v3';
 
@@ -39,6 +39,7 @@ export default function StriverSheetDrawer({ isOpen, onToggle, onSelectProblem, 
 
   const openProblem = (p) => { setSelectedProblem(p); setShowSolution(false); };
   const solve = (p) => {
+    if (!isProblemLanguageSupported(p, currentLanguage)) return;
     const starterCode = buildStarterCode(p, currentLanguage);
     onSelectProblem({ ...p, starterCode, code: starterCode, language: currentLanguage, ...buildProblemMeta(p) });
     onToggle?.();
@@ -77,7 +78,7 @@ export default function StriverSheetDrawer({ isOpen, onToggle, onSelectProblem, 
             ) : (
               <div className="max-w-4xl mx-auto p-8 space-y-6">
                 <button onClick={()=>setSelectedProblem(null)} className="inline-flex items-center gap-2 text-xs opacity-60 hover:opacity-100"><ArrowLeft size={14}/> Back to problems</button>
-                <div className="flex items-start justify-between gap-5"><div><div className="text-[11px] uppercase tracking-wider text-cyan-500 font-bold">{selectedProblem.day} · {selectedProblem.category}</div><h1 className="text-3xl font-extrabold mt-1">{selectedProblem.title}</h1><div className="flex items-center gap-3 mt-3 text-xs opacity-70"><span className="px-2 py-1 rounded border border-inherit">{selectedProblem.difficulty}</span><span className="flex items-center gap-1"><Clock3 size={13}/>{selectedProblem.timeComplexity}</span><span className="flex items-center gap-1"><Database size={13}/>{selectedProblem.spaceComplexity}</span></div></div><button onClick={()=>solve(selectedProblem)} className="shrink-0 px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg"><Play size={15} fill="currentColor"/> Solve in Editor</button></div>
+                <div className="flex items-start justify-between gap-5"><div><div className="text-[11px] uppercase tracking-wider text-cyan-500 font-bold">{selectedProblem.day} · {selectedProblem.category}</div><h1 className="text-3xl font-extrabold mt-1">{selectedProblem.title}</h1><div className="flex items-center gap-3 mt-3 text-xs opacity-70"><span className="px-2 py-1 rounded border border-inherit">{selectedProblem.difficulty}</span><span className="flex items-center gap-1"><Clock3 size={13}/>{selectedProblem.timeComplexity}</span><span className="flex items-center gap-1"><Database size={13}/>{selectedProblem.spaceComplexity}</span></div></div><button onClick={()=>solve(selectedProblem)} disabled={!isProblemLanguageSupported(selectedProblem, currentLanguage)} title={!isProblemLanguageSupported(selectedProblem, currentLanguage) ? `No verified ${currentLanguage.toUpperCase()} source is available.` : "Solve in Editor"} className="shrink-0 px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-bold text-sm flex items-center gap-2 shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"><Play size={15} fill="currentColor"/> Solve in Editor</button></div>
                 <section className={`rounded-2xl border p-6 ${isBright?'bg-white border-slate-200':'bg-slate-900/50 border-slate-800'}`}><h2 className="font-bold mb-3">Problem</h2><p className="text-sm leading-7 opacity-85">{selectedProblem.description}</p></section>
                 <section className={`rounded-2xl border p-6 ${isBright?'bg-white border-slate-200':'bg-slate-900/50 border-slate-800'}`}><h2 className="font-bold mb-3">Example</h2><div className={`rounded-xl p-4 font-mono text-xs ${isBright?'bg-slate-50':'bg-slate-950'}`}><div className="opacity-50 mb-1">Input</div><div>{selectedProblem.defaultInput || 'No fixed sample input'}</div><div className="opacity-50 mt-4 mb-1">Expected behavior</div><div>Return the correct result for the problem; do not hard-code this example.</div></div></section>
                 <section className={`rounded-2xl border p-6 ${isBright?'bg-white border-slate-200':'bg-slate-900/50 border-slate-800'}`}>
