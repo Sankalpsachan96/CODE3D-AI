@@ -45,6 +45,8 @@ test('a genuine language-specific implementation is accepted', () => {
     cCode: 'int solve(void) { return 1; }',
     javascriptCode: 'function solve() { return 1; }',
   };
-  assert.equal(buildStarterCode(withCAndJs, 'c'), withCAndJs.cCode);
-  assert.equal(buildStarterCode(withCAndJs, 'javascript'), withCAndJs.javascriptCode);
+  assert.match(buildStarterCode(withCAndJs, 'c'), /#include <stdio\.h>/);
+  assert.match(buildStarterCode(withCAndJs, 'javascript'), /function solve\(\)/);
+  assert.notEqual(buildStarterCode(withCAndJs, 'c'), withCAndJs.cCode);
+  assert.notEqual(buildStarterCode(withCAndJs, 'javascript'), withCAndJs.javascriptCode);
 });
