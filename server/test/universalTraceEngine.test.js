@@ -859,3 +859,68 @@ while low <= high:
     assert.deepEqual(result.events.at(-1).array, [5, 10, 15, 20, 25]);
   }
 });
+
+
+test('binary tree node allocation and left/right links produce a 3D tree trace in C++, Java and JavaScript', () => {
+  const cases = [
+    ['cpp', `struct Node { int value; Node* left; Node* right; };
+Node* root = new Node(10);
+Node* left = new Node(5);
+Node* right = new Node(15);
+root->left = left;
+root->right = right;`],
+    ['java', `class Node { int value; Node left; Node right; }
+Node root = new Node(10);
+Node left = new Node(5);
+Node right = new Node(15);
+root.left = left;
+root.right = right;`],
+    ['javascript', `class Node { constructor(value) { this.value = value; this.left = null; this.right = null; } }
+const root = new Node(10);
+const left = new Node(5);
+const right = new Node(15);
+root.left = left;
+root.right = right;`],
+  ];
+
+  for (const [language, code] of cases) {
+    const result = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    assert.equal(result.algorithm, 'tree', `${language} should detect a binary tree`);
+    assert.equal(result.dataStructure, 'tree');
+    assert.equal(result.supported, true);
+    assert.deepEqual(result.events.at(-1).values, [10, 5, 15]);
+    assert.deepEqual(result.events.at(-1).edges.map((edge) => [edge.from, edge.to, edge.label]), [[0, 1, 'left'], [0, 2, 'right']]);
+    const lines = code.split(/\r?\n/);
+    for (const event of result.events) {
+      assert.ok(Number.isInteger(event.line), `${language} ${event.type} should map to a source line`);
+      assert.ok(event.line >= 1 && event.line <= lines.length, `${language} ${event.type} line should be in range`);
+    }
+  }
+});
+
+test('BFS and DFS graph adapters expose visit order and traversal events for Python and JavaScript', () => {
+  const cases = [
+    ['python', `graph = {0: [1, 2], 1: [0, 3], 2: [0, 3], 3: [1, 2]}
+start = 0
+# BFS traversal`, 'bfs', [0, 1, 2, 3]],
+    ['javascript', `const graph = [[1, 2], [0, 3], [0, 3], [1, 2]];
+const start = 0;
+// BFS traversal`, 'bfs', [0, 1, 2, 3]],
+    ['python', `graph = {0: [1, 2], 1: [0, 3], 2: [0, 3], 3: [1, 2]}
+start = 0
+# DFS traversal`, 'dfs', [0, 1, 3, 2]],
+    ['javascript', `const graph = [[1, 2], [0, 3], [0, 3], [1, 2]];
+const start = 0;
+// DFS traversal`, 'dfs', [0, 1, 3, 2]],
+  ];
+
+  for (const [language, code, algorithm, expectedOrder] of cases) {
+    const result = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    assert.equal(result.algorithm, algorithm, `${language} should detect ${algorithm}`);
+    assert.equal(result.dataStructure, 'graph');
+    assert.equal(result.supported, true);
+    assert.deepEqual(result.events.filter((event) => event.type === 'visit').map((event) => event.vertex), expectedOrder);
+    assert.ok(result.events.some((event) => event.type === (algorithm === 'bfs' ? 'enqueue' : 'push')));
+    assert.equal(result.events.at(-1).visited.length, 4);
+  }
+});
