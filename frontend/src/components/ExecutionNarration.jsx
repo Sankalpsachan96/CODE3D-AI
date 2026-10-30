@@ -4,7 +4,7 @@ import { Volume2, VolumeX, Pause, Play, Square, SkipBack, SkipForward, X } from 
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 
 function explainSourceLine(sourceLine, language, step) {
-  const line = String(sourceLine || '').trim().replace(/\\/\\/.*/, '').trim();
+  const line = String(sourceLine || '').trim().replace(/\/\/.*/, '').trim();
   const hindi = language === 'hi-IN';
   const event = String(step?.eventType || '').toUpperCase();
   if (!line) return step?.explanation || step?.message || (hindi
@@ -13,35 +13,35 @@ function explainSourceLine(sourceLine, language, step) {
 
   const match = (pattern) => pattern.test(line);
   let explanation = '';
-  if (/ARRAY_CREATION/.test(event) || match(/\\b(?:int|long|float|double|String|boolean|var)\\s*\\[\\s*\\]|\\b\\w+\\s*\\[\\s*\\]\\s*\\w+\\s*=/)) {
+  if (/ARRAY_CREATION/.test(event) || match(/\b(?:int|long|float|double|String|boolean|var)\s*\[\s*\]|\b\w+\s*\[\s*\]\s*\w+\s*=/)) {
     explanation = hindi
       ? 'Is line par array declare aur initialize ho raha hai. Isme diye gaye elements memory mein store hote hain.'
       : 'This line declares and initializes an array, storing the listed elements for later access.';
-  } else if (/LOOP_INIT|LOOP_INCREMENT|CONDITION_CHECK/.test(event) || match(/\\bfor\\s*\\(|\\bwhile\\s*\\(/)) {
+  } else if (/LOOP_INIT|LOOP_INCREMENT|CONDITION_CHECK/.test(event) || match(/\bfor\s*\(|\bwhile\s*\(/)) {
     explanation = hindi
       ? 'Yeh loop ki line hai. Initialization counter ko set karta hai, condition decide karti hai ki loop chalega ya nahi, aur increment har iteration ke baad counter update karta hai.'
       : 'This is a loop statement. Initialization sets the counter, the condition decides whether it continues, and the increment updates the counter after each iteration.';
-  } else if (/ARRAY_ACCESS/.test(event) || match(/\\b(?:System\\.out\\.(?:println|print)|console\\.log|print\\s*\\()/)) {
+  } else if (/ARRAY_ACCESS/.test(event) || match(/\b(?:System\.out\.(?:println|print)|console\.log|print\s*\()/)) {
     explanation = hindi
       ? 'Is line par current value access ya print ho rahi hai. Loop ke andar hone par yeh har iteration mein current element ke saath chal sakti hai.'
       : 'This line accesses or prints the current value. If it is inside a loop, it can run once for each iteration.';
-  } else if (match(/^\\s*if\\s*\\(|^\\s*else\\b|^\\s*switch\\s*\\(/)) {
+  } else if (match(/^\s*if\s*\(|^\s*else\b|^\s*switch\s*\(/)) {
     explanation = hindi
       ? 'Yeh conditional statement hai. Program condition check karke decide karta hai ki kaunsa code block execute hoga.'
       : 'This is a conditional statement. The program checks the condition to decide which block should execute.';
-  } else if (match(/\\+\\+|--|\\+=|-=|\\*=|\\/=|(?<![=!<>])=(?!=)/)) {
+  } else if (match(/\+\+|--|\+=|-=|\*=|\/=|(?<![=!<>])=(?!=)/)) {
     explanation = hindi
       ? 'Is line par variable ki value update ya assign ho rahi hai. Right side ki value calculate karke variable mein rakhi jaati hai.'
       : 'This line assigns or updates a variable. The right-hand expression is evaluated and stored in the variable.';
-  } else if (match(/^\\s*return\\b/)) {
+  } else if (match(/^\s*return\b/)) {
     explanation = hindi
       ? 'Return statement function ka result caller ko wapas deta hai aur current function se bahar nikalta hai.'
       : 'The return statement sends a result back to the caller and exits the current function.';
-  } else if (match(/\\b(?:public|private|protected|static|void|function|def)\\b|\\w+\\s*\\([^;]*\\)\\s*\\{/)) {
+  } else if (match(/\b(?:public|private|protected|static|void|function|def)\b|\w+\s*\([^;]*\)\s*\{/)) {
     explanation = hindi
       ? 'Yeh function ya method ki definition hai. Iske andar likha code function call hone par execute hota hai.'
       : 'This defines a function or method. The code inside it runs when the function is called.';
-  } else if (match(/\\b(?:int|long|float|double|String|boolean|char|var|let|const)\\s+\\w+/)) {
+  } else if (match(/\b(?:int|long|float|double|String|boolean|char|var|let|const)\s+\w+/)) {
     explanation = hindi
       ? 'Is line par variable declare ho raha hai. Variable program ke dauran value store karne ke liye use hota hai.'
       : 'This line declares a variable, which stores a value that the program can use later.';
@@ -80,7 +80,7 @@ export default function ExecutionNarration({
   const safeVoiceIndex = trace.length ? Math.min(voiceStepIndex, trace.length - 1) : 0;
   const voiceStep = trace[safeVoiceIndex] || null;
   const line = voiceStep?.lineNumber ?? voiceStep?.line ?? null;
-  const sourceLine = line ? String(code || '').split('\\n')[Number(line) - 1] || '' : '';
+  const sourceLine = line ? String(code || '').split('\n')[Number(line) - 1] || '' : '';
   const spokenLanguage = narration.voiceLanguage;
   const summary = voiceStep
     ? (line
@@ -109,7 +109,7 @@ export default function ExecutionNarration({
       return;
     }
     const activeLine = activeStep.lineNumber ?? activeStep.line ?? null;
-    const activeSource = activeLine ? String(code || '').split('\\n')[Number(activeLine) - 1] || '' : '';
+    const activeSource = activeLine ? String(code || '').split('\n')[Number(activeLine) - 1] || '' : '';
     const text = activeLine
       ? `Line ${activeLine}. ${explainSourceLine(activeSource, spokenLanguage, activeStep)}`
       : `Step ${safeVoiceIndex + 1}. ${activeStep.explanation || activeStep.message || activeStep.dataStructureState?.focusInfo || activeStep.dataStructureState?.label || 'Follow the current execution state.'}`;
