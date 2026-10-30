@@ -94,10 +94,8 @@ export default function ExecutionNarration({
       narration.stop();
       setVoicePlaying(false);
       setVoiceStepIndex(0);
+      return;
     }
-  }, [trace, narration.stop]);
-
-  useEffect(() => {
     if (!narration.enabled) {
       setVoicePlaying(false);
       return;
