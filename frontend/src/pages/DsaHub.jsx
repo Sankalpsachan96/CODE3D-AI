@@ -87,13 +87,11 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
 
   const toggleSolved = (problemId, e) => {
     e.stopPropagation();
-    setStatusMap((prev) => {
-      const nextSolved = prev[problemId]?.status !== 'SOLVED';
-      const updated = { ...prev, [problemId]: { ...prev[problemId], status: nextSolved ? 'SOLVED' : 'ATTEMPTED' } };
-      try { localStorage.setItem(STATUS_KEY, JSON.stringify(updated)); } catch {}
-      setSolvedMap(Object.fromEntries(Object.entries(updated).map(([id, value]) => [id, value?.status === 'SOLVED'])));
-      return updated;
-    });
+    const nextSolved = statusMap[problemId]?.status !== 'SOLVED';
+    const updated = { ...statusMap, [problemId]: { ...statusMap[problemId], status: nextSolved ? 'SOLVED' : 'ATTEMPTED' } };
+    setStatusMap(updated);
+    setSolvedMap(Object.fromEntries(Object.entries(updated).map(([id, value]) => [id, value?.status === 'SOLVED'])));
+    try { localStorage.setItem(STATUS_KEY, JSON.stringify(updated)); } catch {}
   };
 
   const solvedCount = useMemo(() => {
