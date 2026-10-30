@@ -45,7 +45,9 @@ export async function getQuizAttempts(req, res) {
 export async function recordQuizAttempt(req, res) {
   try {
     const userId = req.user.id;
-    const { mode = 'Predict Output', category = 'Arrays', score = 0, totalQuestions = 5, answers = [] } = req.body;
+    const { category = 'Arrays', score = 0, totalQuestions = 5, answers = [] } = req.body;
+    // `mode` is canonical; accept the old alias during migration.
+    const mode = req.body.mode || req.body.quizMode || 'AI';
     const percentage = totalQuestions > 0 ? Number(((score / totalQuestions) * 100).toFixed(2)) : 0;
 
     if (isDbOnline()) {
