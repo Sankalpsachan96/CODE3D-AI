@@ -729,3 +729,133 @@ test('selection and insertion sort produce complete modeled traces in all five e
     }
   }
 });
+
+
+test('array traversal and linear search produce semantic traces in all five editor languages', () => {
+  const cases = [
+    ['c', `int values[4] = {5, 10, 15, 20};
+for (int i = 0; i < 4; i++) {
+  printf("%d", values[i]);
+}
+int target = 15;
+for (int i = 0; i < 4; i++) {
+  if (values[i] == target) break;
+}`],
+    ['cpp', `int values[] = {5, 10, 15, 20};
+for (int i = 0; i < 4; i++) {
+  std::cout << values[i];
+}
+int target = 15;
+for (int i = 0; i < 4; i++) {
+  if (values[i] == target) break;
+}`],
+    ['java', `int[] values = {5, 10, 15, 20};
+for (int i = 0; i < values.length; i++) {
+  System.out.println(values[i]);
+}
+int target = 15;
+for (int i = 0; i < values.length; i++) {
+  if (values[i] == target) break;
+}`],
+    ['javascript', `const values = [5, 10, 15, 20];
+for (let i = 0; i < values.length; i++) {
+  console.log(values[i]);
+}
+const target = 15;
+for (let i = 0; i < values.length; i++) {
+  if (values[i] === target) break;
+}`],
+    ['python', `values = [5, 10, 15, 20]
+for value in values:
+    print(value)
+target = 15
+for i in range(len(values)):
+    if values[i] == target:
+        break`],
+  ];
+
+  for (const [language, code] of cases) {
+    const traversal = universalTrace.generateTrace(code.split(/(?:int target|const target|target =)/)[0], language, { success: true, output: '' });
+    assert.equal(traversal.algorithm, 'array_traversal', `${language} should detect array traversal`);
+    assert.equal(traversal.supported, true, `${language} traversal should be supported`);
+    assert.deepEqual(traversal.events.filter((event) => event.type === 'visit').map((event) => event.value), [5, 10, 15, 20]);
+
+    const search = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    assert.equal(search.algorithm, 'linear_search', `${language} should detect linear search`);
+    assert.equal(search.supported, true, `${language} linear search should be supported`);
+    assert.equal(search.events.find((event) => event.type === 'found')?.index, 2, `${language} should find target at index 2`);
+    assert.deepEqual(search.events.filter((event) => event.type === 'compare').map((event) => event.matched), [false, false, true]);
+    const lines = code.split(/\\r?\\n/);
+    for (const event of search.events) {
+      assert.ok(Number.isInteger(event.line), `${language} ${event.type} should map to a source line`);
+      assert.ok(event.line >= 1 && event.line <= lines.length, `${language} ${event.type} source line should be in range`);
+    }
+  }
+});
+
+test('binary search emits range, comparison and direction events in all five editor languages', () => {
+  const cases = [
+    ['c', `int values[5] = {5, 10, 15, 20, 25};
+int target = 20;
+int low = 0, high = 4;
+while (low <= high) {
+  int mid = (low + high) / 2;
+  if (values[mid] == target) break;
+  if (values[mid] < target) low = mid + 1;
+  else high = mid - 1;
+}
+// binary search`],
+    ['cpp', `int values[] = {5, 10, 15, 20, 25};
+int target = 20;
+int low = 0, high = 4;
+while (low <= high) {
+  int mid = (low + high) / 2;
+  if (values[mid] == target) break;
+  if (values[mid] < target) low = mid + 1;
+  else high = mid - 1;
+}
+// binary search`],
+    ['java', `int[] values = {5, 10, 15, 20, 25};
+int target = 20;
+int low = 0, high = 4;
+while (low <= high) {
+  int mid = (low + high) / 2;
+  if (values[mid] == target) break;
+  if (values[mid] < target) low = mid + 1;
+  else high = mid - 1;
+}
+// binary search`],
+    ['javascript', `const values = [5, 10, 15, 20, 25];
+const target = 20;
+let low = 0, high = 4;
+while (low <= high) {
+  const mid = Math.floor((low + high) / 2);
+  if (values[mid] === target) break;
+  if (values[mid] < target) low = mid + 1;
+  else high = mid - 1;
+}
+// binary search`],
+    ['python', `values = [5, 10, 15, 20, 25]
+target = 20
+low, high = 0, 4
+while low <= high:
+    mid = (low + high) // 2
+    if values[mid] == target:
+        break
+    if values[mid] < target:
+        low = mid + 1
+    else:
+        high = mid - 1
+# binary search`],
+  ];
+
+  for (const [language, code] of cases) {
+    const result = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    assert.equal(result.algorithm, 'binary_search', `${language} should detect binary search`);
+    assert.equal(result.supported, true, `${language} binary search should be supported`);
+    assert.ok(result.events.some((event) => event.type === 'range'), `${language} should expose search ranges`);
+    assert.ok(result.events.some((event) => event.type === 'compare'), `${language} should expose comparisons`);
+    assert.ok(result.events.some((event) => event.type === 'found' && event.index === 3), `${language} should find target at index 3`);
+    assert.deepEqual(result.events.at(-1).array, [5, 10, 15, 20, 25]);
+  }
+});
