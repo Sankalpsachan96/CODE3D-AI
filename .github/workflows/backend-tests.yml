@@ -35,6 +35,10 @@ jobs:
       - name: Run backend tests
         run: npm test
 
+      - name: Build non-root backend container
+        working-directory: .
+        run: docker build -f server/Dockerfile server
+
       - name: Run repository security audit
         working-directory: .
         run: node scripts/security-audit.cjs
