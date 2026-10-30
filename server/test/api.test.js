@@ -183,7 +183,7 @@ test('API Endpoints Test Suite', async (t) => {
   await t.test('POST /api/quiz/attempts saves and retrieves user attempts', async () => {
     const saveRes = await request('/api/quiz/attempts', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${userAToken}` },
+      headers: { Cookie: userACookie },
       body: {
         quizMode: 'find_bug',
         category: 'arrays',
@@ -196,7 +196,7 @@ test('API Endpoints Test Suite', async (t) => {
     assert.strictEqual(saveRes.data.success, true);
 
     const getRes = await request('/api/quiz/attempts', {
-      headers: { Authorization: `Bearer ${userAToken}` },
+      headers: { Cookie: userACookie },
     });
     assert.strictEqual(getRes.status, 200);
     assert.ok(getRes.data.attempts.length >= 1);
@@ -205,7 +205,7 @@ test('API Endpoints Test Suite', async (t) => {
   await t.test('POST /api/auth/logout invalidates session', async () => {
     const logoutRes = await request('/api/auth/logout', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${userAToken}` },
+      headers: { Cookie: userACookie },
     });
     assert.strictEqual(logoutRes.status, 200);
     assert.strictEqual(logoutRes.data.success, true);
