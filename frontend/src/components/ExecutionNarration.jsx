@@ -79,7 +79,7 @@ export default function ExecutionNarration({
   trace = [],
   isBright = false,
   code = '',
-  language = 'en-US',
+  language = 'en-IN',
 }) {
   const narration = useTextToSpeech();
   const [open, setOpen] = useState(false);
@@ -94,7 +94,7 @@ export default function ExecutionNarration({
   const summary = voiceStep
     ? (line
       ? `Line ${line}. ${explainSourceLine(sourceLine, spokenLanguage, voiceStep)}`
-      : `Step ${safeVoiceIndex + 1}. ${voiceStep.explanation || voiceStep.message || voiceStep.dataStructureState?.focusInfo || voiceStep.dataStructureState?.label || 'Follow the current execution state.'}`)
+      : `${spokenLanguage === 'hi-IN' ? 'चरण' : 'Step'} ${safeVoiceIndex + 1}. ${explainSourceLine('', spokenLanguage, voiceStep)}`)
     : 'Run a program to hear step-by-step narration.';
 
   useEffect(() => {
@@ -119,7 +119,7 @@ export default function ExecutionNarration({
     const activeSource = activeLine ? String(code || '').split('\n')[Number(activeLine) - 1] || '' : '';
     const text = activeLine
       ? `Line ${activeLine}. ${explainSourceLine(activeSource, spokenLanguage, activeStep)}`
-      : `Step ${safeVoiceIndex + 1}. ${activeStep.explanation || activeStep.message || activeStep.dataStructureState?.focusInfo || activeStep.dataStructureState?.label || 'Follow the current execution state.'}`;
+      : `${spokenLanguage === 'hi-IN' ? 'चरण' : 'Step'} ${safeVoiceIndex + 1}. ${explainSourceLine('', spokenLanguage, activeStep)}`;
     narration.speak(text, {
       lang: spokenLanguage,
       onEnd: () => {
