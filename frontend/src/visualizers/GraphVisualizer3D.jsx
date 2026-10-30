@@ -62,20 +62,12 @@ export default function GraphVisualizer3D({ dataStructureState }) {
   } = dataStructureState || {};
   const activeIndex = stateActiveIndex ?? currentVertex ?? current ?? node;
 
-  // Some source-model traces identify a graph traversal (queue/stack/visited)
-  // but omit its topology. Recover the canonical 5-node graph only in that case;
-  // never replace explicit nodes or edges supplied by an actual trace.
-  const hasTraversalContext = Array.isArray(queue) || Array.isArray(stack) ||
-    Array.isArray(visited) || (traversal && typeof traversal === 'object') ||
-    String(dataStructureState?.type || '').toLowerCase() === 'graph';
-  const inferredNodes = hasTraversalContext
-    ? Array.from({ length: 5 }, (_, id) => ({ id, value: id, val: 'V' + id, label: 'V' + id }))
-    : [];
+  // A graph scene must be backed by actual topology in the trace.
   const sourceNodes = Array.isArray(stateNodes) && stateNodes.length
     ? stateNodes
     : (Array.isArray(values) && values.length
       ? values.map((value, id) => ({ id, value, val: value, label: String(value) }))
-      : inferredNodes);
+      : []);
   const vertexIds = sourceNodes.map((node, index) => node?.id ?? node?.value ?? node?.val ?? index);
   const idToIndex = new Map(vertexIds.map((id, index) => [String(id), index]));
   const numVertices = sourceNodes.length;
@@ -98,17 +90,7 @@ export default function GraphVisualizer3D({ dataStructureState }) {
     const numeric = Number(raw);
     return Number.isInteger(numeric) && numeric >= 0 && numeric < numVertices ? numeric : -1;
   };
-  const inferredEdges = [
-    { source: 0, target: 1 },
-    { source: 0, target: 2 },
-    { source: 1, target: 3 },
-    { source: 1, target: 4 },
-    { source: 2, target: 4 },
-    { source: 3, target: 4 },
-  ];
-  const edgesToRender = Array.isArray(stateEdges) && stateEdges.length
-    ? stateEdges
-    : (hasTraversalContext && sourceNodes.length === 5 ? inferredEdges : []);
+  const edgesToRender = Array.isArray(stateEdges) ? stateEdges : [];
   const edges = edgesToRender.map((edge) => {
     const from = Array.isArray(edge) ? edge[0] : (edge.from ?? edge.source ?? edge.u);
     const to = Array.isArray(edge) ? edge[1] : (edge.to ?? edge.target ?? edge.v);
