@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bot, BookOpen, BrainCircuit, Clock3, History, Layers, LogIn, LogOut, PlaySquare, Settings, Trophy, UserRound } from 'lucide-react';
+import { Bot, BookOpen, BrainCircuit, Clock3, History, Layers, LogIn, LogOut, PlaySquare, Settings, Trophy, UserRound, Wrench } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function AccountMenu({ onClose }) {
@@ -28,6 +28,7 @@ export default function AccountMenu({ onClose }) {
       <div className="account-menu-label">Workspace</div>
       <button onClick={() => navigate('/editor')}><PlaySquare size={15} /> Code Editor <kbd>⌘1</kbd></button>
       <button onClick={() => go('/dsa')}><BookOpen size={15} /> DSA Hub</button>
+      <button onClick={() => go('/predict-repair')}><Wrench size={15} /> Predict & Repair</button>
       <button onClick={() => go('/ai')}><Bot size={15} /> AI Tutor</button>
       <button onClick={() => go('/quiz')}><Trophy size={15} /> Quiz Arena</button>
       <button onClick={() => go('/dsa-learning')}><BookOpen size={15} /> DSA Learning</button>
