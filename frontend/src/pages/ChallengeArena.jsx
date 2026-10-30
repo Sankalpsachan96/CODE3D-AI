@@ -47,7 +47,7 @@ export default function ChallengeArena() {
         setRecentTitles((prev) => [next.title, ...prev].slice(0, 8));
       })
       .catch((err) => {
-        if (active) setError(err.message || 'AI challenge generation failed.');
+        if (active) setError(err.message || 'Challenge generation failed.');
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
@@ -77,7 +77,7 @@ export default function ChallengeArena() {
         setCompleted((v) => v + 1);
       } else setStreak(0);
     } catch (err) {
-      setError(err.message || 'AI could not grade this repair.');
+      setError(err.message || 'Could not grade this repair.');
     } finally {
       setGrading(false);
     }
@@ -101,7 +101,7 @@ export default function ChallengeArena() {
       @media(max-width:760px){.arena-grid{grid-template-columns:1fr}.arena-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
     `}</style>
     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap', marginBottom: 24 }}>
-      <div><div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--c3d-cyan)', fontSize: 12, fontWeight: 800, letterSpacing: 1.5 }}><Sparkles size={15}/> CODE VISION 3D / AI PREDICT & REPAIR</div><h1 style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1, margin: '10px 0' }}>Predict <span style={{ color: 'var(--c3d-orange)' }}>& Repair</span></h1><p style={{ ...muted, maxWidth: 660, margin: 0 }}>Fresh DSA challenges across five programming languages.</p></div>
+      <div><div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--c3d-cyan)', fontSize: 12, fontWeight: 800, letterSpacing: 1.5 }}><Sparkles size={15}/> CODE VISION 3D / PREDICT & REPAIR</div><h1 style={{ fontSize: 'clamp(28px,4vw,42px)', lineHeight: 1.1, margin: '10px 0' }}>Predict <span style={{ color: 'var(--c3d-orange)' }}>& Repair</span></h1><p style={{ ...muted, maxWidth: 660, margin: 0 }}>Fresh DSA challenges across five programming languages.</p></div>
       <button style={btn} onClick={reset} title="Reset score and progress"><RotateCcw size={16}/> Reset progress</button>
     </div>
     <div className="arena-stats" style={{ marginBottom: 18 }}>
@@ -119,7 +119,7 @@ export default function ChallengeArena() {
         <div style={{ marginTop: 20, padding: 12, borderRadius: 10, background: 'var(--c3d-surface-2)', fontSize: 12, ...muted, lineHeight: 1.6 }}><Lightbulb size={16} style={{ verticalAlign: 'middle', color: 'var(--c3d-orange)', marginRight: 6 }}/><strong style={{ color: 'var(--c3d-text)' }}>Learning tip</strong><p style={{ margin: '6px 0 0' }}>Trace each operation carefully. A fresh challenge is created when you switch language, difficulty or mode.</p></div>
       </aside>
       <section style={panel}>
-        {loading ? <div style={{ minHeight: 300, display: 'grid', placeItems: 'center', textAlign: 'center' }}><div><RefreshCw size={28} className="spin" style={{ color: 'var(--c3d-orange)' }}/><h3>Generating a fresh challenge…</h3><p style={muted}>Creating a unique {language.toUpperCase()} {mode === 'predict' ? 'prediction' : 'repair'} problem.</p></div></div> : error && !challenge ? <div role="alert" style={{ padding: 18, borderRadius: 12, background: 'var(--c3d-surface-2)' }}><strong>Could not load an AI challenge</strong><p style={muted}>{error}</p><button style={primary} onClick={nextChallenge}><RefreshCw size={15}/> Try again</button></div> : challenge && <>
+        {loading ? <div style={{ minHeight: 300, display: 'grid', placeItems: 'center', textAlign: 'center' }}><div><RefreshCw size={28} className="spin" style={{ color: 'var(--c3d-orange)' }}/><h3>Generating a fresh challenge…</h3><p style={muted}>Creating a unique {language.toUpperCase()} {mode === 'predict' ? 'prediction' : 'repair'} problem.</p></div></div> : error && !challenge ? <div role="alert" style={{ padding: 18, borderRadius: 12, background: 'var(--c3d-surface-2)' }}><strong>Could not load a challenge</strong><p style={muted}>{error}</p><button style={primary} onClick={nextChallenge}><RefreshCw size={15}/> Try again</button></div> : challenge && <>
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: 18 }}><div><div style={{ fontSize: 11, color: 'var(--c3d-cyan)', fontWeight: 800, letterSpacing: 1 }}>{mode === 'predict' ? 'PREDICT & TRACE' : 'REPAIR LAB'} · <span style={muted}>{challenge.difficulty} · {challenge.topic} · {language.toUpperCase()}</span></div><h2 style={{ fontSize: 23, margin: '8px 0' }}>{challenge.title}</h2><p style={{ ...muted, margin: 0 }}>{mode === 'predict' ? 'Read the code and select its exact output.' : challenge.prompt}</p></div><span style={{ color: 'var(--c3d-orange)' }}>{mode === 'predict' ? <Code2 size={24}/> : <Wrench size={24}/>}</span></div>
           <div style={{ border: '1px solid var(--c3d-border)', borderRadius: 12, overflow: 'hidden', marginBottom: 18 }}><div style={{ padding: '9px 14px', background: 'var(--c3d-surface-2)', display: 'flex', justifyContent: 'space-between', fontSize: 11, ...muted }}><span>challenge.{({ c: 'c', cpp: 'cpp', java: 'java', javascript: 'js', python: 'py' })[language]}</span><span>{language.toUpperCase()}</span></div>{mode === 'predict' ? <pre className="arena-code" style={{ margin: 0, borderRadius: 0 }}>{challenge.code.split('\n').map((line, i) => String(i + 1).padStart(2, ' ') + '  ' + line).join('\n')}</pre> : <textarea aria-label="Edit code to repair" spellCheck="false" value={repairCode} onChange={(e) => { setRepairCode(e.target.value); setRepairResult(null); }} className="arena-code" style={{ display: 'block', width: '100%', minHeight: 220, resize: 'vertical', border: 0, borderRadius: 0, boxSizing: 'border-box' }}/>}</div>
           {mode === 'predict' ? <>
