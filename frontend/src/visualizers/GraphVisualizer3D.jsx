@@ -62,20 +62,13 @@ export default function GraphVisualizer3D({ dataStructureState }) {
   } = dataStructureState || {};
   const activeIndex = stateActiveIndex ?? currentVertex ?? current ?? node;
 
-  // Some source-model traces identify a graph traversal (queue/stack/visited)
-  // but omit its topology. Recover the canonical 5-node graph only in that case;
-  // never replace explicit nodes or edges supplied by an actual trace.
-  const hasTraversalContext = Array.isArray(queue) || Array.isArray(stack) ||
-    Array.isArray(visited) || (traversal && typeof traversal === 'object') ||
-    String(dataStructureState?.type || '').toLowerCase() === 'graph';
-  const inferredNodes = hasTraversalContext
-    ? Array.from({ length: 5 }, (_, id) => ({ id, value: id, val: 'V' + id, label: 'V' + id }))
-    : [];
+  // Render only vertices supplied by the trace. Traversal metadata alone
+  // must never be used to fabricate a graph topology.
   const sourceNodes = Array.isArray(stateNodes) && stateNodes.length
     ? stateNodes
     : (Array.isArray(values) && values.length
       ? values.map((value, id) => ({ id, value, val: value, label: String(value) }))
-      : inferredNodes);
+      : []);
   const vertexIds = sourceNodes.map((node, index) => node?.id ?? node?.value ?? node?.val ?? index);
   const idToIndex = new Map(vertexIds.map((id, index) => [String(id), index]));
   const numVertices = sourceNodes.length;
@@ -98,17 +91,9 @@ export default function GraphVisualizer3D({ dataStructureState }) {
     const numeric = Number(raw);
     return Number.isInteger(numeric) && numeric >= 0 && numeric < numVertices ? numeric : -1;
   };
-  const inferredEdges = [
-    { source: 0, target: 1 },
-    { source: 0, target: 2 },
-    { source: 1, target: 3 },
-    { source: 1, target: 4 },
-    { source: 2, target: 4 },
-    { source: 3, target: 4 },
-  ];
-  const edgesToRender = Array.isArray(stateEdges) && stateEdges.length
-    ? stateEdges
-    : (hasTraversalContext && sourceNodes.length === 5 ? inferredEdges : []);
+  // Missing edges mean the source trace did not provide graph topology.
+  // Do not substitute illustrative edges and present them as executed data.
+  const edgesToRender = Array.isArray(stateEdges) ? stateEdges : [];
   const edges = edgesToRender.map((edge) => {
     const from = Array.isArray(edge) ? edge[0] : (edge.from ?? edge.source ?? edge.u);
     const to = Array.isArray(edge) ? edge[1] : (edge.to ?? edge.target ?? edge.v);
@@ -117,6 +102,16 @@ export default function GraphVisualizer3D({ dataStructureState }) {
 
   return (
     <group position={[0, 0.2, 0]} userData={{ traversal }}>
+      {vertices.length === 0 && (
+        <Text position={[0, 0, 0]} fontSize={0.32} color="#f59e0b" anchorX="center">
+          Graph vertices were not supplied by this trace
+        </Text>
+      )}
+      {vertices.length > 0 && edges.length === 0 && (
+        <Text position={[0, -1.05, 0]} fontSize={0.22} color="#f59e0b" anchorX="center">
+          Edges unavailable — showing supplied vertices only
+        </Text>
+      )}
       {/* 3D Connecting Edges */}
       {edges.map((e, idx) => {
         const v1 = vertices[e.fromIndex];
