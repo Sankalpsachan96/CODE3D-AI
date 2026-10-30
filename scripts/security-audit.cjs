@@ -25,7 +25,7 @@ for (const file of trackedFiles) {
   for (const pattern of secretPatterns) {
     if (pattern.regex.test(content)) issues.push({ file, issue: pattern.name });
   }
-  if (/^\.env(?:\.|$)/.test(path.basename(file)) && !file.endsWith('.env.example')) {
+  if (/^\.env(?:\.|$)/.test(path.basename(file)) && !file.endsWith('.example')) {
     issues.push({ file, issue: 'Environment file is tracked by Git' });
   }
 }
