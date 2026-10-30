@@ -660,3 +660,72 @@ test('merge, quick and heap sort traces expose comparisons and intermediate writ
     }
   }
 });
+
+
+test('selection and insertion sort produce complete modeled traces in all five editor languages', () => {
+  const cases = [
+    ['c', 'int values[4] = {4, 1, 3, 2};', 'c'],
+    ['cpp', 'int values[] = {4, 1, 3, 2};', 'cpp'],
+    ['java', 'int[] values = {4, 1, 3, 2};', 'java'],
+    ['javascript', 'const values = [4, 1, 3, 2];', 'javascript'],
+    ['python', 'values = [4, 1, 3, 2]', 'python'],
+  ];
+
+  for (const [language, declaration, suffix] of cases) {
+    const comment = language === 'python' ? '#' : '//';
+    const selectionCode = [
+      declaration,
+      `${comment} selection sort`,
+      language === 'python'
+        ? 'for i in range(len(values) - 1):'
+        : 'for (int i = 0; i < 3; i++) {',
+      language === 'python' ? '    minIndex = i' : '  int minIndex = i;',
+      language === 'python'
+        ? '    for j in range(i + 1, len(values)):'
+        : '  for (int j = i + 1; j < 4; j++) {',
+      language === 'python'
+        ? '        if values[j] < values[minIndex]: minIndex = j'
+        : '    if (values[j] < values[minIndex]) minIndex = j;',
+      language === 'python' ? '    values[i], values[minIndex] = values[minIndex], values[i]' : '  if (minIndex != i) swap(values[i], values[minIndex]);',
+      ...(language === 'python' ? [] : ['  }', '}']),
+      language === 'python' ? 'print(values)' : 'printf("sorted");',
+    ].join('\\n');
+
+    const insertionCode = [
+      declaration,
+      `${comment} insertion sort`,
+      language === 'python'
+        ? 'for i in range(1, len(values)):'
+        : 'for (int i = 1; i < 4; i++) {',
+      language === 'python' ? '    key = values[i]' : '  int key = values[i];',
+      language === 'python' ? '    j = i - 1' : '  int j = i - 1;',
+      language === 'python'
+        ? '    while j >= 0 and values[j] > key:'
+        : '  while (j >= 0 && values[j] > key) {',
+      language === 'python' ? '        values[j + 1] = values[j]' : '    values[j + 1] = values[j];',
+      language === 'python' ? '        j -= 1' : '    j--;',
+      ...(language === 'python' ? [] : ['  }']),
+      language === 'python' ? '    values[j + 1] = key' : '  values[j + 1] = key;',
+      ...(language === 'python' ? [] : ['}']),
+      language === 'python' ? 'print(values)' : 'printf("sorted");',
+    ].join('\\n');
+
+    for (const [algorithm, code, expectedMutation] of [
+      ['selection_sort', selectionCode, 'swap'],
+      ['insertion_sort', insertionCode, 'shift'],
+    ]) {
+      const result = universalTrace.generateTrace(code, language, { success: true, output: '' });
+      assert.equal(result.algorithm, algorithm, `${suffix} should detect ${algorithm}`);
+      assert.equal(result.supported, true, `${suffix} should support ${algorithm}`);
+      assert.ok(result.events.some((event) => event.type === 'compare'), `${suffix} ${algorithm} should compare values`);
+      assert.ok(result.events.some((event) => event.type === expectedMutation || event.type === 'insert'), `${suffix} ${algorithm} should expose mutations`);
+      assert.deepEqual(result.events.at(-1).array, [1, 2, 3, 4], `${suffix} ${algorithm} should finish sorted`);
+      const sourceLines = code.split(/\\r?\\n/);
+      for (const event of result.events) {
+        assert.ok(Number.isInteger(event.line), `${suffix} ${algorithm} ${event.type} should map to a source line`);
+        assert.ok(event.line >= 1 && event.line <= sourceLines.length, `${suffix} ${algorithm} line should be in range`);
+        assert.ok(sourceLines[event.line - 1].trim(), `${suffix} ${algorithm} line should point to code`);
+      }
+    }
+  }
+});
