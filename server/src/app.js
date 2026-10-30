@@ -22,6 +22,7 @@ app.use(
 // when the Node service runs in Docker with NODE_ENV=production.
 const allowedOrigins = new Set([
   'https://code-3d-ai.vercel.app',
+  'https://code-vision3d.vercel.app',
   'http://localhost:5173',
   'http://localhost:5174',
   'http://127.0.0.1:5173',
