@@ -7,7 +7,7 @@ console.log('Running repository security audit...');
 const trackedFiles = cp.execSync('git ls-files', { encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
 const issues = [];
 const secretPatterns = [
-  { name: 'PostgreSQL URI containing credentials', regex: /postgres(?:ql)?:\/\/[^:\s'"]+:[^@\s'"]+@[^\\s'"]+/i },
+  { name: 'PostgreSQL URI containing credentials', regex: /postgres(?:ql)?:\/\/[^:\s'"]+:[^@\s'"]+@[^\s'"]+/i },
   { name: 'Neon API key', regex: /\bnpg_[a-zA-Z0-9_-]{16,}\b/ },
   { name: 'Hard-coded JWT secret assignment', regex: /\bJWT_SECRET\s*[:=]\s*['"][^'"]{20,}['"]/i },
   { name: 'Hard-coded private key material', regex: /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/ },
@@ -48,9 +48,9 @@ for (const envPath of ['.env', 'server/.env', 'backend/.env']) {
 }
 
 if (issues.length) {
-  console.error(\`Security audit failed with \${issues.length} finding(s):\`);
-  for (const item of issues) console.error(\`- \${item.file}: \${item.issue}\`);
+  console.error(`Security audit failed with ${issues.length} finding(s):`);
+  for (const item of issues) console.error(`- ${item.file}: ${item.issue}`);
   process.exitCode = 1;
 } else {
-  console.log(\`Security audit passed. Scanned \${trackedFiles.length} tracked files and applicable build assets.\`);
+  console.log(`Security audit passed. Scanned ${trackedFiles.length} tracked files and applicable build assets.`);
 }
