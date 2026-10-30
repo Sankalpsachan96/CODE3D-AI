@@ -3,68 +3,7 @@
  */
 
 import { solvePersonalProblem, correctPersonalCode } from './personalProblemSolver.js';
-
-const LIVE_RENDER_URL = 'https://code3d-ai-oscc.onrender.com/api';
-const LOCAL_URL = 'http://localhost:5000/api';
-const CONFIGURED_FALLBACK_URL = import.meta.env?.VITE_FALLBACK_BACKEND_URL || '';
-
-// When accessed from phone, GitHub Pages, or Vercel, always use the live Render backend!
-const isLocalhost =
-  typeof window !== 'undefined' &&
-  (window.location.hostname === 'localhost' ||
-    window.location.hostname === '127.0.0.1');
-
-const BACKEND_BASE_URL =
-  import.meta.env?.VITE_BACKEND_URL ||
-  (isLocalhost ? LOCAL_URL : LIVE_RENDER_URL);
-
-function isSafeFallbackUrl(value) {
-  try {
-    const fallback = new URL(value);
-    const localHttp = fallback.protocol === 'http:' &&
-      ['localhost', '127.0.0.1', '[::1]'].includes(fallback.hostname);
-    return !fallback.username && !fallback.password && (fallback.protocol === 'https:' || localHttp);
-  } catch {
-    return false;
-  }
-}
-
-async function smartFetch(endpoint, options = {}, { allowFallback = true } = {}) {
-  const fetchOpts = {
-    ...options,
-    credentials: 'include',
-  };
-
-  try {
-    const res = await fetch(
-      `${BACKEND_BASE_URL}${endpoint}`,
-      fetchOpts
-    );
-
-    return res;
-  } catch (err) {
-    // Only use a fallback endpoint when the deployment configured one explicitly.
-    if (allowFallback && isSafeFallbackUrl(CONFIGURED_FALLBACK_URL) && CONFIGURED_FALLBACK_URL !== BACKEND_BASE_URL) {
-      try {
-        console.warn(
-          `Backend unreachable at ${BACKEND_BASE_URL}. Trying the explicitly configured fallback...`
-        );
-
-        return await fetch(
-          `${CONFIGURED_FALLBACK_URL.replace(/\/+$/, '')}${endpoint}`,
-          fetchOpts
-        );
-      } catch (fallbackErr) {
-        console.warn(
-          'Configured fallback backend also unreachable:',
-          fallbackErr
-        );
-      }
-    }
-
-    throw err;
-  }
-}
+import { requestApi as smartFetch } from './apiConfig.js';
 
 export async function checkBackendHealth({ allowFallback = true } = {}) {
   try {
@@ -643,7 +582,7 @@ export async function recordQuizHistory({
   totalQuestions = 1,
   accuracy,
   answers = null,
-  quizMode = 'AI'
+  mode = 'AI'
 }) {
   const percentage =
     accuracy !== undefined
@@ -680,7 +619,7 @@ export async function recordQuizHistory({
               'application/json'
           },
           body: JSON.stringify({
-            quizMode,
+            mode,
             category:
               conceptId ||
               'general',
@@ -743,7 +682,7 @@ export async function recordQuizHistory({
 
   localQuizzes.unshift({
     ...quizRecord,
-    quizMode
+    mode
   });
 
   saveLocalQuizzes(
