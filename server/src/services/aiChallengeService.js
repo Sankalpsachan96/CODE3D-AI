@@ -37,6 +37,48 @@ async function askGroq(messages, schema, temperature = 0.8) {
   throw error;
 }
 
+// Restore model-emitted line/tab markers without changing escapes inside strings.
+function normalizeGeneratedCode(source) {
+  const input = String(source || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  let output = '';
+  let quote = null;
+  let escaped = false;
+
+  for (let i = 0; i < input.length; i += 1) {
+    const char = input[i];
+    const next = input[i + 1];
+
+    if (quote) {
+      output += char;
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === quote) quote = null;
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      output += char;
+      continue;
+    }
+
+    if (char === '\\' && next === 'n') {
+      output += '\n';
+      i += 1;
+      continue;
+    }
+    if (char === '\\' && next === 't') {
+      output += '    ';
+      i += 1;
+      continue;
+    }
+
+    output += char;
+  }
+
+  return output.trim();
+}
+
 const schemas = {
   predict: {
     type: 'object',
@@ -69,9 +111,11 @@ export async function generateArenaChallenge({ mode, language, difficulty, previ
     ? 'Create one original code-tracing question. Provide exactly four distinct plausible output choices and the correct choice index. The code must compile/run in the requested language and be deterministic.'
     : 'Create one original debugging exercise. Provide intentionally buggy code, a clear repair instruction, the expected output after a correct repair, a complete correct solutionCode, and a concise explanation. The buggy code must contain a real, fixable logic or syntax bug.';
   const result = await askGroq([
-    { role: 'system', content: `You create rigorous, student-friendly DSA and programming challenges for Code Vision 3D. Return only the requested JSON. Use authentic ${language} syntax, idioms and output conventions. Vary concepts across arrays, strings, stacks, queues, linked lists, recursion, searching, sorting, trees, graphs, hashing, pointers/references, loops and complexity. Avoid repeating recent titles or near-identical problem patterns. Ensure all code is short, self-contained and deterministic. ${task}` },
+    { role: 'system', content: `You create rigorous, student-friendly DSA and programming challenges for Code Vision 3D. Return only the requested JSON. Use authentic ${language} syntax, idioms and output conventions. Vary concepts across arrays, strings, stacks, queues, linked lists, recursion, searching, sorting, trees, graphs, hashing, pointers/references, loops and complexity. Avoid repeating recent titles or near-identical problem patterns. Ensure all code is short, self-contained and deterministic. The code field must contain real line breaks and conventional indentation (4 spaces per block level); never write literal backslash-n or backslash-t separators in place of formatting. Keep each statement on its own line. ${task}` },
     { role: 'user', content: `Mode: ${mode}. Language: ${language}. Difficulty preference: ${difficulty}. Recently used titles to avoid: ${recent.join(' | ') || 'none'}. Generate a fresh challenge now.` },
   ], schema, 0.85);
+  result.code = normalizeGeneratedCode(result.code);
+  if (mode === 'repair') result.solutionCode = normalizeGeneratedCode(result.solutionCode);
   if (mode === 'predict' && (!result.code || result.options?.length !== 4 || !result.options[result.correctIndex])) throw new Error('AI returned an incomplete prediction challenge.');
   if (mode === 'repair' && (!result.code || !result.solutionCode || !result.expectedOutput)) throw new Error('AI returned an incomplete repair challenge.');
   return { ...result, mode, language, id: `ai-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` };
