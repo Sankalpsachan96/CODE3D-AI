@@ -19,25 +19,25 @@ function explainSourceLine(sourceLine, language, step) {
   if (hindi) {
     switch (event) {
       case 'ARRAY_CREATION':
-        return `सबसे पहले ${state.name || variable} नाम का array बनाया गया है। इसमें ${valueText || (Array.isArray(state.values) ? state.values.join(', ') : 'दिए गए')} values रखी गई हैं। यानी आगे program इन्हीं elements को access और process करेगा।`;
+        return `सबसे पहले ${state.name || variable} नाम की सूची बनाई गई है। इसमें ${valueText || (Array.isArray(state.values) ? state.values.join(', ') : 'दी गई')} संख्याएँ या मान रखे गए हैं। आगे प्रोग्राम इन्हीं मानों को एक-एक करके पढ़ेगा और उन पर काम करेगा।`;
       case 'LOOP_INIT':
-        return `अब loop शुरू करने की तैयारी हो रही है। Counter ${variable} की शुरुआती value ${valueText || '0'} रखी गई है। इसी counter से program तय करेगा कि array का कौन-सा index access करना है।`;
+        return `अब बार-बार चलने वाले निर्देश की तैयारी हो रही है। ${variable} नाम के गिनती रखने वाले चर की शुरुआती कीमत ${valueText || 'शून्य'} रखी गई है। इसी गिनती से प्रोग्राम तय करेगा कि सूची में अगला कौन-सा स्थान पढ़ना है।`;
       case 'CONDITION_CHECK':
-        return `अब program check कर रहा है कि ${condition.expression || 'loop की condition'} सही है या नहीं। अभी calculation ${condition.evaluation || 'दिए गए condition'} है, जिसका result ${condition.result ? 'TRUE' : 'FALSE'} आया है। ${condition.result ? 'इसलिए loop के अंदर अगला step execute होगा।' : 'इसलिए loop यहीं रुक जाएगा और control आगे बढ़ेगा।'}`;
+        return `अब प्रोग्राम जाँच रहा है कि ${condition.expression || 'दोहराव जारी रखने की शर्त'} सही है या नहीं। जाँच का नतीजा ${condition.result ? 'सही' : 'गलत'} आया है। ${condition.result ? 'इसलिए निर्देशों का अगला समूह चलेगा और प्रोग्राम अगला काम करेगा।' : 'इसलिए दोहराव यहीं समाप्त होगा और प्रोग्राम इसके बाद वाले निर्देश पर जाएगा।'}`;
       case 'ARRAY_ACCESS':
-        return `अब array के index ${index ?? 'current'} पर मौजूद element को read किया जा रहा है। इसकी value ${valueAtIndex || 'current element'} है। ${step?.output?.length ? 'यह value output में भी दिखाई गई है।' : 'इस value को program आगे process करेगा।'}`;
+        return `अब सूची के स्थान क्रमांक ${index ?? 'मौजूदा'} पर रखा मान पढ़ा जा रहा है। वहाँ ${valueAtIndex || 'मौजूदा मान'} मौजूद है। ${Array.isArray(step?.output) && step.output.length ? 'यह मान नतीजे में भी जोड़ा गया है।' : 'प्रोग्राम इस मान का उपयोग अगले काम में करेगा।'}`;
       case 'LOOP_INCREMENT':
-        return `Loop का यह iteration पूरा हो गया है। अब ${variable} की value ${previous ?? 'पिछली value'} से बढ़कर ${valueText || 'अगली value'} हो गई है। अब program updated counter के साथ condition दोबारा check करेगा।`;
+        return `दोहराव का यह चक्र पूरा हो गया है। अब ${variable} की गिनती ${previous ?? 'पिछली गिनती'} से बढ़कर ${valueText || 'अगली गिनती'} हो गई है। इसके बाद प्रोग्राम नई गिनती के आधार पर शर्त फिर से जाँचेगा।`;
       case 'PROGRAM_END':
-        return 'Program का execution सफलतापूर्वक पूरा हो गया है। अब कोई अगला statement execute नहीं होगा। ऊपर output में final result देख सकते हैं।';
+        return 'प्रोग्राम का काम सफलतापूर्वक पूरा हो गया है। अब कोई नया निर्देश नहीं चलेगा। अंतिम नतीजा ऊपर दिए गए परिणाम वाले भाग में देख सकते हैं।';
       default: {
         const change = current !== undefined && current !== null
-          ? `${variable} की नई value ${valueText} है।`
+          ? `${variable} का नया मान ${valueText} हो गया है।`
           : '';
-        const detail = state.focusInfo || state.label || '';
+        const detail = state.focusInfo || state.label || step?.explanation || '';
         return detail
-          ? `इस step में program ${detail}। ${change} अब 3D view में दिख रहे बदलाव को ध्यान से देखिए।`
-          : `अब program की अगली instruction execute हो रही है। ${change} इस step के बाद execution state में जो बदलाव आया है, उसे 3D view में देखिए।`;
+          ? `इस चरण में ${detail}। ${change} अब त्रि-आयामी दृश्य में हुए बदलाव को देखिए।`
+          : `अब प्रोग्राम का अगला निर्देश चल रहा है। ${change} ध्यान दीजिए कि इस निर्देश के बाद प्रोग्राम की स्थिति में क्या बदलाव आया है।`;
       }
     }
   }
@@ -93,7 +93,7 @@ export default function ExecutionNarration({
   const spokenLanguage = narration.voiceLanguage;
   const summary = voiceStep
     ? (line
-      ? `Line ${line}. ${explainSourceLine(sourceLine, spokenLanguage, voiceStep)}`
+      ? `${spokenLanguage === 'hi-IN' ? `पंक्ति ${line}। ` : `Line ${line}. `}${explainSourceLine(sourceLine, spokenLanguage, voiceStep)}`
       : `${spokenLanguage === 'hi-IN' ? 'चरण' : 'Step'} ${safeVoiceIndex + 1}. ${explainSourceLine('', spokenLanguage, voiceStep)}`)
     : 'Run a program to hear step-by-step narration.';
 
@@ -118,7 +118,7 @@ export default function ExecutionNarration({
     const activeLine = activeStep.lineNumber ?? activeStep.line ?? null;
     const activeSource = activeLine ? String(code || '').split('\n')[Number(activeLine) - 1] || '' : '';
     const text = activeLine
-      ? `Line ${activeLine}. ${explainSourceLine(activeSource, spokenLanguage, activeStep)}`
+      ? `${spokenLanguage === 'hi-IN' ? `पंक्ति ${activeLine}। ` : `Line ${activeLine}. `}${explainSourceLine(activeSource, spokenLanguage, activeStep)}`
       : `${spokenLanguage === 'hi-IN' ? 'चरण' : 'Step'} ${safeVoiceIndex + 1}. ${explainSourceLine('', spokenLanguage, activeStep)}`;
     narration.speak(text, {
       lang: spokenLanguage,
@@ -225,12 +225,12 @@ export default function ExecutionNarration({
           ) : narration.paused ? (
             <button type="button" className={button} onClick={resumeVoice}><Play size={14} />Resume</button>
           ) : (
-            <button type="button" className={button} disabled={!trace.length || !narration.supported} onClick={startVoice}><Play size={14} />Play</button>
+            <button type="button" className={button} disabled={!trace.length || !narration.supported || !narration.voiceAvailable} onClick={startVoice}><Play size={14} />Play</button>
           )}
           <button type="button" className={button} disabled={!trace.length || safeVoiceIndex >= trace.length - 1} onClick={() => moveVoice(1)} title="Next narration step"><SkipForward size={14} />Next</button>
           <button type="button" className={button} disabled={!narration.speaking && !narration.paused && !voicePlaying} onClick={stopVoice}><Square size={13} />Stop</button>
         </div>
-        {!narration.supported && <p className="mt-2 text-xs text-amber-500">Speech synthesis is unavailable in this browser.</p>}<p className="mt-2 text-[10px] opacity-60">Uses an Indian English or Hindi voice when your browser or operating system provides one.</p>
+        {!narration.supported && <p className="mt-2 text-xs text-amber-500">Speech synthesis is unavailable in this browser.</p>}{narration.voiceLanguage === 'hi-IN' && !narration.voiceAvailable && <p className="mt-2 text-xs text-amber-500">इस डिवाइस पर हिन्दी आवाज़ उपलब्ध नहीं है। Windows Settings में Hindi language और Hindi text-to-speech voice जोड़ें, फिर browser दोबारा खोलें।</p>}<p className="mt-2 text-[10px] opacity-60">Uses the selected language voice installed in your browser or operating system.</p>
       </section>
     </div>,
     document.body
