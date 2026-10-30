@@ -30,15 +30,27 @@ const LANGUAGE_SOURCE_FIELDS = Object.freeze({
   c: 'cCode',
 });
 
+function isGenericPlaceholderImplementation(source) {
+  const code = String(source || '').replace(/\\s+/g, ' ').trim();
+  if (!code) return true;
+
+  // These patterns were found in the audited catalog: unrelated problems
+  // shared a generic "sum the input" body instead of their named algorithm.
+  if (/return\\s+sum\\s*\\(\\s*(?:nums|arr|array|a)\\s*\\)/i.test(code)) return true;
+  if (/accumulate\\s*\\(\\s*(?:nums|arr|array)\\.begin\\s*\\(\\s*\\)\\s*,\\s*(?:nums|arr|array)\\.end\\s*\\(\\s*\\)/i.test(code)) return true;
+  if (/for\\s*\\(\\s*(?:int|auto)\\s+\\w+\\s*:\\s*(?:nums|arr|array)\\s*\\)[\\s\\S]*?return\\s+(?:sum|total)\\s*;/i.test(code)) return true;
+  return false;
+}
+
 export function getProblemSupportedLanguages(problem) {
   return Object.entries(LANGUAGE_SOURCE_FIELDS)
-    .filter(([, field]) => typeof problem?.[field] === 'string' && problem[field].trim())
+    .filter(([, field]) => typeof problem?.[field] === 'string' && problem[field].trim() && !isGenericPlaceholderImplementation(problem[field]))
     .map(([language]) => language);
 }
 
 export function isProblemLanguageSupported(problem, language) {
   const field = LANGUAGE_SOURCE_FIELDS[String(language || '').toLowerCase()];
-  return Boolean(field && typeof problem?.[field] === 'string' && problem[field].trim());
+  return Boolean(field && typeof problem?.[field] === 'string' && problem[field].trim() && !isGenericPlaceholderImplementation(problem[field]));
 }
 
 export function buildStarterCode(problem, language = 'java') {
