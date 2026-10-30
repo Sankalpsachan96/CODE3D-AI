@@ -168,17 +168,18 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
 
   const handleLaunchStriverProblem = (p) => {
     if (!hasStriverLanguageSource(p, striverLanguage)) return;
+    const title = p.title || 'DSA problem';
     const code = striverLanguage === 'python'
-      ? \`# \${p.title}\ndef solve():\n    # Write your solution here\n    pass\n\`
+      ? '# ' + title + '\ndef solve():\n    # Write your solution here\n    pass\n'
       : striverLanguage === 'javascript'
-        ? \`// \${p.title}\nfunction solve() {\n  // Write your solution here\n}\n\`
+        ? '// ' + title + '\nfunction solve() {\n  // Write your solution here\n}\n'
         : striverLanguage === 'c'
-          ? \`// \${p.title}\n#include <stdio.h>\nint main(void) {\n    // Write your solution here\n    return 0;\n}\n\`
+          ? '// ' + title + '\n#include <stdio.h>\nint main(void) {\n    // Write your solution here\n    return 0;\n}\n'
           : striverLanguage === 'cpp'
-            ? \`// \${p.title}\n#include <bits/stdc++.h>\nusing namespace std;\nclass Solution { public: /* Write your solution here */ };\n\`
-            : \`// \${p.title}\nclass Solution {\n    // Write your solution here\n}\n\`;
+            ? '// ' + title + '\n#include <bits/stdc++.h>\nusing namespace std;\nclass Solution { public: /* Write your solution here */ };\n'
+            : '// ' + title + '\nclass Solution {\n    // Write your solution here\n}\n';
     onSelectConcept({
-      id: \`striver-\${p.id}\`,
+      id: 'striver-' + p.id,
       striverId: p.id,
       title: p.title,
       shortTitle: p.shortTitle,
@@ -189,7 +190,7 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
       archetype: p.archetype,
       timeComplexity: p.timeComplexity,
       spaceComplexity: p.spaceComplexity,
-      description: \`\${p.day}: \${p.title} - \${p.description}\`,
+      description: p.day + ': ' + p.title + ' - ' + p.description,
       defaultInput: p.defaultInput,
       code,
       language: striverLanguage,
