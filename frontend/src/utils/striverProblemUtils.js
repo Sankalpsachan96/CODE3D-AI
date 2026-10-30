@@ -22,9 +22,31 @@ function braceEnd(code, openIndex) {
   return -1;
 }
 
+const LANGUAGE_SOURCE_FIELDS = Object.freeze({
+  java: 'javaCode',
+  cpp: 'cppCode',
+  python: 'pythonCode',
+  javascript: 'javascriptCode',
+  c: 'cCode',
+});
+
+export function getProblemSupportedLanguages(problem) {
+  return Object.entries(LANGUAGE_SOURCE_FIELDS)
+    .filter(([, field]) => typeof problem?.[field] === 'string' && problem[field].trim())
+    .map(([language]) => language);
+}
+
+export function isProblemLanguageSupported(problem, language) {
+  const field = LANGUAGE_SOURCE_FIELDS[String(language || '').toLowerCase()];
+  return Boolean(field && typeof problem?.[field] === 'string' && problem[field].trim());
+}
+
 export function buildStarterCode(problem, language = 'java') {
-  const source = language === 'python' ? problem.pythonCode : language === 'cpp' ? problem.cppCode : language === 'javascript' ? problem.javascriptCode || problem.pythonCode : problem.javaCode;
-  if (!source) return '';
+  const normalizedLanguage = String(language || '').toLowerCase();
+  const sourceField = LANGUAGE_SOURCE_FIELDS[normalizedLanguage];
+  // Never inject source written for a different language into the editor.
+  if (!sourceField || !isProblemLanguageSupported(problem, normalizedLanguage)) return '';
+  const source = problem[sourceField];
 
   if (language === 'python') {
     const lines = source.split(/\r?\n/);
