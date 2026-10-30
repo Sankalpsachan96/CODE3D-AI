@@ -31,6 +31,7 @@ async function askGroq(messages, schema, temperature = 0.8) {
       lastError = error;
     }
   }
+  if (lastError?.code === 'AI_NOT_CONFIGURED') throw lastError;
   const error = new Error(lastError?.message || 'AI could not generate a valid challenge. Please try again.');
   error.code = 'AI_CHALLENGE_FAILED';
   throw error;
