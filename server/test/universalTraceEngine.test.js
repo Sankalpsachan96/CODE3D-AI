@@ -946,7 +946,7 @@ head.next = second;`],
     assert.deepEqual(result.events.at(-1).edges, [[0, 1]]);
     assert.equal(result.events.filter((event) => event.type === 'insert').length, 2);
     assert.ok(result.events.some((event) => event.type === 'link'));
-    const lines = code.split(/\\r?\\n/);
+    const lines = code.split(/\r?\n/);
     for (const event of result.events) {
       assert.ok(Number.isInteger(event.line), `${language} ${event.type} should map to a source line`);
       assert.ok(event.line >= 1 && event.line <= lines.length);
@@ -977,7 +977,7 @@ std::cout << values.front();`, 'queue_operations', [20], 'front'],
     assert.deepEqual(result.events.filter((event) => event.type === (name === 'stack' ? 'push' : 'enqueue')).map((event) => event.value), [10, 20]);
     assert.equal(result.events.filter((event) => event.type === (name === 'stack' ? 'pop' : 'dequeue')).length, 1);
     assert.ok(result.events.some((event) => event.type === terminalEvent));
-    const lines = code.split(/\\r?\\n/);
+    const lines = code.split(/\r?\n/);
     for (const event of result.events) {
       assert.ok(Number.isInteger(event.line), `${name} ${event.type} should map to a source line`);
       assert.ok(event.line >= 1 && event.line <= lines.length);
