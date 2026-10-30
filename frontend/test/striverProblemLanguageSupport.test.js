@@ -50,3 +50,16 @@ test('a genuine language-specific implementation is accepted', () => {
   assert.notEqual(buildStarterCode(withCAndJs, 'c'), withCAndJs.cCode);
   assert.notEqual(buildStarterCode(withCAndJs, 'javascript'), withCAndJs.javascriptCode);
 });
+
+test('generic sum placeholders are not advertised as supported algorithms', () => {
+  const placeholder = {
+    title: 'Dijkstra',
+    pythonCode: 'class Solution:\\n    def shortestPath(self, nums):\\n        return sum(nums)',
+    cppCode: 'class Solution { public: int shortestPath(vector<int>& nums) { return accumulate(nums.begin(), nums.end(), 0); } };',
+  };
+  assert.deepEqual(getProblemSupportedLanguages(placeholder), []);
+  assert.equal(isProblemLanguageSupported(placeholder, 'python'), false);
+  assert.equal(isProblemLanguageSupported(placeholder, 'cpp'), false);
+  assert.equal(buildStarterCode(placeholder, 'python'), '');
+  assert.equal(buildStarterCode(placeholder, 'cpp'), '');
+});
