@@ -105,7 +105,7 @@ export default function TreeVisualizer3D({ dataStructureState }) {
   const { isBright } = useTheme();
   const [hoveredNodeId, setHoveredNodeId] = useState(null);
 
-  const { activeIndex = null, nodes: rawNodes = [], values = [], edges: rawEdges = [] } = dataStructureState || {};
+  const { type = '', activeIndex = null, nodes: rawNodes = [], values = [], edges: rawEdges = [] } = dataStructureState || {};
 
   // Compute clean tree nodes with guaranteed parent-child pointers
   const treeNodes = useMemo(() => {
@@ -142,8 +142,13 @@ export default function TreeVisualizer3D({ dataStructureState }) {
         };
       });
     }
-    return buildBstFromValues(values);
-  }, [rawNodes, values, rawEdges]);
+    // A flat value list does not encode a general binary tree's shape.
+    // Reconstruct ordering only when the trace explicitly identifies a BST.
+    const normalizedType = String(type).toLowerCase().replace(/_/g, '-');
+    return ['bst', 'binary-search-tree'].includes(normalizedType)
+      ? buildBstFromValues(values)
+      : [];
+  }, [type, rawNodes, values, rawEdges]);
 
   // Deterministic tidy layout: inorder gives stable horizontal ordering and
   // depth gives a strict horizontal level. This avoids modifier/contour drift
