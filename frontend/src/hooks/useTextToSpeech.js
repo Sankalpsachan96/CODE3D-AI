@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * Browser-native speech controller. Uses voices installed by the user's browser/OS:
+ * Browser-native speech controller. Prefers the requested Indian locale (en-IN or hi-IN) when that voice is installed by the user's browser/OS:
  * no speech API key, server request, or provider quota is involved.
  */
 export function useTextToSpeech() {
@@ -9,11 +9,13 @@ export function useTextToSpeech() {
   const [enabled, setEnabled] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [voiceLanguage, setVoiceLanguage] = useState('en-US');
+  const [voiceLanguage, setVoiceLanguage] = useState('en-IN');
   const [rate, setRate] = useState(1);
   const [voices, setVoices] = useState([]);
   const [voiceName, setVoiceName] = useState('');
   const generation = useRef(0);
+  const languagePrefix = voiceLanguage.toLowerCase().split('-')[0];
+  const voiceAvailable = voices.some((voice) => voice.lang?.toLowerCase().startsWith(languagePrefix));
 
   useEffect(() => {
     const available = typeof window !== 'undefined' &&
@@ -60,13 +62,18 @@ export function useTextToSpeech() {
     const language = options.lang || voiceLanguage;
     utterance.lang = language;
     utterance.rate = Math.max(0.7, Math.min(1.3, Number(options.rate ?? rate) || 1));
-    const selectedVoice = voices.find((voice) => voice.name === (options.voiceName || voiceName));
+    const normalizedLanguage = String(language).toLowerCase();
+    const languagePrefix = normalizedLanguage.split('-')[0];
+    const matchingVoices = voices.filter((voice) => voice.lang?.toLowerCase().startsWith(languagePrefix));
+    const explicitVoice = options.voiceName
+      ? voices.find((voice) => voice.name === options.voiceName && voice.lang?.toLowerCase().startsWith(languagePrefix))
+      : null;
+    const exactLocaleVoice = matchingVoices.find((voice) => voice.lang?.toLowerCase() === normalizedLanguage);
+    const indianLocaleVoice = matchingVoices.find((voice) => voice.lang?.toLowerCase() === (languagePrefix === 'en' ? 'en-in' : 'hi-in'));
+    const selectedVoice = explicitVoice || exactLocaleVoice || indianLocaleVoice || matchingVoices[0];
+    // Never let Hindi narration silently fall back to an English voice.
+    if (languagePrefix === 'hi' && !selectedVoice) return false;
     if (selectedVoice) utterance.voice = selectedVoice;
-    else {
-      const languageVoice = voices.find((voice) => voice.lang?.toLowerCase() === language.toLowerCase()) ||
-        voices.find((voice) => voice.lang?.toLowerCase().startsWith(language.slice(0, 2).toLowerCase()));
-      if (languageVoice) utterance.voice = languageVoice;
-    }
     utterance.onstart = () => {
       if (generation.current === requestId) { setSpeaking(true); setPaused(false); }
     };
@@ -113,7 +120,7 @@ export function useTextToSpeech() {
   }, []);
 
   return {
-    supported, enabled, speaking, paused, voiceLanguage, rate, voices, voiceName,
+    supported, enabled, speaking, paused, voiceLanguage, rate, voices, voiceName, voiceAvailable,
     setVoiceLanguage, setRate, setVoiceName, toggleEnabled, speak, pause, resume, stop,
   };
 }
