@@ -16,12 +16,12 @@ function starterFor(problem, language) {
   if (/return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(normalized) || /accumulate\s*\(/i.test(normalized)) return '';
   if (language === 'python') {
     const match = source.match(/^\s*def\s+([A-Za-z_]\w*)\s*\(([^)]*)\)\s*:/m);
-    return match ? \`def \${match[1]}(\${match[2]}):\\n    # Write your solution here\\n    pass\\n\` : \`# \${title}\\ndef solve():\\n    # Write your solution here\\n    pass\\n\`;
+    return match ? `def ${match[1]}(${match[2]}):\n    # Write your solution here\n    pass\n` : `# ${title}\ndef solve():\n    # Write your solution here\n    pass\n`;
   }
-  if (language === 'javascript') return \`// \${title}\\nfunction solve() {\\n  // Write your solution here\\n}\\n\`;
-  if (language === 'c') return \`// \${title}\\n#include <stdio.h>\\n\\nint main(void) {\\n    // Write your solution here\\n    return 0;\\n}\\n\`;
-  if (language === 'cpp') return \`// \${title}\\n#include <bits/stdc++.h>\\nusing namespace std;\\n\\nclass Solution {\\npublic:\\n    // Write your solution here\\n};\\n\`;
-  return \`// \${title}\\nclass Solution {\\n    // Write your solution here\\n}\\n\`;
+  if (language === 'javascript') return `// ${title}\nfunction solve() {\n  // Write your solution here\n}\n`;
+  if (language === 'c') return `// ${title}\n#include <stdio.h>\n\nint main(void) {\n    // Write your solution here\n    return 0;\n}\n`;
+  if (language === 'cpp') return `// ${title}\n#include <bits/stdc++.h>\nusing namespace std;\n\nclass Solution {\npublic:\n    // Write your solution here\n};\n`;
+  return `// ${title}\nclass Solution {\n    // Write your solution here\n}\n`;
 }
 
 function normalizeSheetProblem(entry) {
@@ -102,17 +102,17 @@ export default function SheetsPage({ onSelectProblem }) {
 
   const handleSelectSheet = (slug) => {
     setSelectedSheetSlug(slug);
-    navigate(slug === 'striver-sde' ? '/sheets' : \`/sheets/\${slug}\`, { replace: true });
+    navigate(slug === 'striver-sde' ? '/sheets' : `/sheets/${slug}`, { replace: true });
   };
 
   const handleLaunch = (problem) => {
     const code = starterFor(problem, language);
     if (!code) {
-      setError(\`\${language.toUpperCase()} starter template is not available for this problem. Choose a language with a source entry.\`);
+      setError(`${language.toUpperCase()} starter template is not available for this problem. Choose a language with a source entry.`);
       return;
     }
     onSelectProblem?.({
-      id: \`sheet-\${selectedSheetSlug}-\${problem.id}\`,
+      id: `sheet-${selectedSheetSlug}-${problem.id}`,
       striverId: problem.id,
       title: problem.title,
       day: problem.day,
@@ -130,23 +130,23 @@ export default function SheetsPage({ onSelectProblem }) {
   };
 
   return (
-    <div className={\`flex-1 overflow-y-auto p-4 md:p-8 transition-colors \${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}\`}>
+    <div className={`flex-1 overflow-y-auto p-4 md:p-8 transition-colors ${isBright ? 'bg-slate-50 text-slate-900' : 'bg-[#070b14] text-slate-100'}`}>
       <div className="max-w-7xl mx-auto space-y-6">
         <header className="space-y-2">
           <span className="inline-flex items-center gap-2 text-xs font-mono text-amber-500"><BookOpen size={14}/> Curated DSA Sheets</span>
           <h1 className="text-2xl md:text-3xl font-extrabold">Curated Sheets &amp; Striver SDE Roadmaps</h1>
-          <p className={\`text-xs max-w-2xl \${isBright ? 'text-slate-600' : 'text-slate-400'}\`}>Choose a sheet, load its actual problem list, select your editor language, and open a clean starter template.</p>
+          <p className={`text-xs max-w-2xl ${isBright ? 'text-slate-600' : 'text-slate-400'}`}>Choose a sheet, load its actual problem list, select your editor language, and open a clean starter template.</p>
         </header>
 
         <div className="flex flex-wrap items-center gap-2">
           {sheets.map((sheet) => (
-            <button key={sheet.slug} onClick={() => handleSelectSheet(sheet.slug)} className={\`px-4 py-2 rounded-xl text-xs font-semibold border \${selectedSheetSlug === sheet.slug ? 'bg-amber-500 text-white border-amber-500' : isBright ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-700'}\`}>
+            <button key={sheet.slug} onClick={() => handleSelectSheet(sheet.slug)} className={`px-4 py-2 rounded-xl text-xs font-semibold border ${selectedSheetSlug === sheet.slug ? 'bg-amber-500 text-white border-amber-500' : isBright ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-700'}`}>
               {sheet.name} <span className="opacity-70">({sheet._count?.problems ?? sheet.totalProblems ?? 0})</span>
             </button>
           ))}
           <label className="ml-auto flex items-center gap-2 text-xs">
             <span>Editor language</span>
-            <select value={language} onChange={e => setLanguage(e.target.value)} className={\`rounded-lg border px-3 py-2 \${isBright ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}\`}>
+            <select value={language} onChange={e => setLanguage(e.target.value)} className={`rounded-lg border px-3 py-2 ${isBright ? 'bg-white border-slate-300' : 'bg-slate-900 border-slate-700'}`}>
               {LANGUAGES.map(lang => <option key={lang} value={lang}>{lang.toUpperCase()}</option>)}
             </select>
           </label>
@@ -159,11 +159,11 @@ export default function SheetsPage({ onSelectProblem }) {
             {problems.length === 0 ? <p className="rounded-xl border border-dashed border-slate-500/40 p-8 text-center text-sm opacity-60">This sheet has no linked problems yet. No placeholder problem list is being shown.</p> : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {problems.map(problem => (
-                  <article key={problem.id} className={\`p-4 rounded-xl border flex flex-col justify-between \${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'}\`}>
+                  <article key={problem.id} className={`p-4 rounded-xl border flex flex-col justify-between ${isBright ? 'bg-white border-slate-200' : 'bg-slate-900/60 border-slate-800'}`}>
                     <div>
                       <div className="flex items-center justify-between mb-2"><span className="text-[10px] font-mono text-amber-500">{problem.day}</span><span className="text-[10px]">{problem.difficulty}</span></div>
                       <h3 className="text-sm font-bold mb-1">{problem.title}</h3>
-                      <p className={\`text-xs line-clamp-3 mb-3 \${isBright ? 'text-slate-600' : 'text-slate-400'}\`}>{problem.description}</p>
+                      <p className={`text-xs line-clamp-3 mb-3 ${isBright ? 'text-slate-600' : 'text-slate-400'}`}>{problem.description}</p>
                     </div>
                     <div className="pt-2 border-t border-slate-500/20 flex items-center justify-between gap-2">
                       <span className="text-[11px] font-mono opacity-60">{problem.timeComplexity}</span>
