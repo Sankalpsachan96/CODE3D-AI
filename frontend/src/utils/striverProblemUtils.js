@@ -31,14 +31,13 @@ const LANGUAGE_SOURCE_FIELDS = Object.freeze({
 });
 
 function isGenericPlaceholderImplementation(source) {
-  const code = String(source || '').replace(/\\s+/g, ' ').trim();
+  const code = String(source || '').replace(/\s+/g, ' ').trim();
   if (!code) return true;
 
-  // These patterns were found in the audited catalog: unrelated problems
-  // shared a generic "sum the input" body instead of their named algorithm.
-  if (/return\\s+sum\\s*\\(\\s*(?:nums|arr|array|a)\\s*\\)/i.test(code)) return true;
-  if (/accumulate\\s*\\(\\s*(?:nums|arr|array)\\.begin\\s*\\(\\s*\\)\\s*,\\s*(?:nums|arr|array)\\.end\\s*\\(\\s*\\)/i.test(code)) return true;
-  if (/for\\s*\\(\\s*(?:int|auto)\\s+\\w+\\s*:\\s*(?:nums|arr|array)\\s*\\)[\\s\\S]*?return\\s+(?:sum|total)\\s*;/i.test(code)) return true;
+  // Reject the generic sum-only bodies found across unrelated catalog problems.
+  if (/return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(code)) return true;
+  if (/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(code)) return true;
+  if (/for\s*\(\s*(?:int|auto)\s+\w+\s*:\s*(?:nums|arr|array)\s*\)[\s\S]*?return\s+(?:sum|total)\s*;/i.test(code)) return true;
   return false;
 }
 
