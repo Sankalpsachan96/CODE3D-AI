@@ -1327,3 +1327,31 @@ export async function judgeStriverProblem({
 
   return data;
 }
+
+
+// Groq-powered Predict & Repair challenge APIs. The provider key stays server-side.
+export async function generateArenaChallenge({ mode, language, difficulty = 'All levels', previousTitles = [] }) {
+  const res = await smartFetch('/ai/challenge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mode, language, difficulty, previousTitles }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success || !data.challenge) {
+    throw new Error(data.message || 'Unable to generate an AI challenge.');
+  }
+  return data.challenge;
+}
+
+export async function gradeArenaRepair({ language, challenge, submittedCode }) {
+  const res = await smartFetch('/ai/challenge/grade', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ language, challenge, submittedCode }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || 'Unable to grade this repair.');
+  }
+  return data;
+}
