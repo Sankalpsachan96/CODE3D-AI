@@ -29,10 +29,10 @@ const STATUS_KEY = 'code3d_striver_status_v2';
 const hasStriverLanguageSource = (problem, language) => {
   const field = { java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode' }[language];
   const source = field ? problem?.[field] : '';
-  const normalized = String(source || '').replace(/\\s+/g, ' ').trim();
+  const normalized = String(source || '').replace(/\s+/g, ' ').trim();
   return Boolean(normalized)
-    && !/return\\s+sum\\s*\\(\\s*(?:nums|arr|array|a)\\s*\\)/i.test(normalized)
-    && !/accumulate\\s*\\(\\s*(?:nums|arr|array)\\.begin\\s*\\(\\s*\\)\\s*,\\s*(?:nums|arr|array)\\.end\\s*\\(\\s*\\)/i.test(normalized);
+    && !/return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(normalized)
+    && !/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(normalized);
 };
 
 export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
@@ -167,23 +167,18 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   }, [selectedDay, selectedDifficulty, striverSearch]);
 
   const handleLaunchStriverProblem = (p) => {
-    const sourceField = { java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode' }[striverLanguage];
-    const source = sourceField ? p[sourceField] : '';
-    const normalized = String(source || '').replace(/\\s+/g, ' ').trim();
-    const isPlaceholder = /return\\s+sum\\s*\\(\\s*(?:nums|arr|array|a)\\s*\\)/i.test(normalized)
-      || /accumulate\\s*\\(\\s*(?:nums|arr|array)\\.begin\\s*\\(\\s*\\)\\s*,\\s*(?:nums|arr|array)\\.end\\s*\\(\\s*\\)/i.test(normalized);
-    if (!source || isPlaceholder) return;
+    if (!hasStriverLanguageSource(p, striverLanguage)) return;
     const code = striverLanguage === 'python'
-      ? `# ${p.title}\\ndef solve():\\n    # Write your solution here\\n    pass\\n`
+      ? \`# \${p.title}\ndef solve():\n    # Write your solution here\n    pass\n\`
       : striverLanguage === 'javascript'
-        ? `// ${p.title}\\nfunction solve() {\\n  // Write your solution here\\n}\\n`
+        ? \`// \${p.title}\nfunction solve() {\n  // Write your solution here\n}\n\`
         : striverLanguage === 'c'
-          ? `// ${p.title}\\n#include <stdio.h>\\nint main(void) {\\n    // Write your solution here\\n    return 0;\\n}\\n`
+          ? \`// \${p.title}\n#include <stdio.h>\nint main(void) {\n    // Write your solution here\n    return 0;\n}\n\`
           : striverLanguage === 'cpp'
-            ? `// ${p.title}\\n#include <bits/stdc++.h>\\nusing namespace std;\\nclass Solution { public: /* Write your solution here */ };\\n`
-            : `// ${p.title}\\nclass Solution {\\n    // Write your solution here\\n}\\n`;
+            ? \`// \${p.title}\n#include <bits/stdc++.h>\nusing namespace std;\nclass Solution { public: /* Write your solution here */ };\n\`
+            : \`// \${p.title}\nclass Solution {\n    // Write your solution here\n}\n\`;
     onSelectConcept({
-      id: `striver-${p.id}`,
+      id: \`striver-\${p.id}\`,
       striverId: p.id,
       title: p.title,
       shortTitle: p.shortTitle,
@@ -194,7 +189,7 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
       archetype: p.archetype,
       timeComplexity: p.timeComplexity,
       spaceComplexity: p.spaceComplexity,
-      description: `${p.day}: ${p.title} - ${p.description}`,
+      description: \`\${p.day}: \${p.title} - \${p.description}\`,
       defaultInput: p.defaultInput,
       code,
       language: striverLanguage,
