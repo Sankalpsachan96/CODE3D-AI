@@ -28,6 +28,18 @@ int main() {
 }`,
   },
   {
+    value: 'c',
+    label: 'C',
+    starter: `#include <stdio.h>
+
+int main(void) {
+    int a = 10;
+    int b = 20;
+    printf("%d\\n", a + b);
+    return 0;
+}`,
+  },
+  {
     value: 'python',
     label: 'Python',
     starter: `a = 10

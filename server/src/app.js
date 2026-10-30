@@ -92,7 +92,8 @@ const aiLimiter = rateLimit({
 });
 
 app.use('/api', generalLimiter);
-app.use('/api/executions', executionLimiter);
+// Protect every public alias that reaches the shared execution controller.
+app.use(['/api/executions', '/api/execute'], executionLimiter);
 app.use('/api/ai/explain', aiLimiter);
 app.use('/api/ai/challenge', aiLimiter);
 
