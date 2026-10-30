@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { Volume2, VolumeX, Pause, Play, Square, SkipBack, SkipForward, X } from 'lucide-react';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 
-function explainSourceLine(sourceLine, language, step) {
+function explainSourceLine(sourceLine, language, step, compact = false) {
   const line = String(sourceLine || '').trim().replace(/\/\/.*/, '').trim();
   const hindi = language === 'hi-IN';
   const event = String(step?.eventType || '').toUpperCase();
@@ -15,6 +15,30 @@ function explainSourceLine(sourceLine, language, step) {
   const valueText = current !== undefined && current !== null ? String(current) : '';
   const index = state.activeIndex;
   const valueAtIndex = valueText || (Array.isArray(state.values) && Number.isInteger(index) ? String(state.values[index]) : '');
+
+  // Short, focused narration for Together Mode; never controls 3D playback speed.
+  if (compact) {
+    if (hindi) {
+      switch (event) {
+        case 'ARRAY_CREATION': return `सूची ${state.name || ''} बनाई गई है और इसमें ${valueText || (Array.isArray(state.values) ? state.values.join(', ') : 'दिए गए मान')} रखे गए हैं।`;
+        case 'LOOP_INIT': return `लूप की गिनती ${valueText || 'शून्य'} से शुरू हो रही है।`;
+        case 'CONDITION_CHECK': return `शर्त का परिणाम ${condition.result ? 'सही है, इसलिए लूप चलेगा' : 'गलत है, इसलिए लूप रुकेगा'}।`;
+        case 'ARRAY_ACCESS': return `सूची के स्थान ${index ?? 'मौजूदा'} से मान ${valueAtIndex || 'पढ़ा जा रहा है'} लिया गया है।`;
+        case 'LOOP_INCREMENT': return `गिनती ${previous ?? 'पिछली संख्या'} से बढ़कर ${valueText || 'अगली संख्या'} हो गई है।`;
+        case 'PROGRAM_END': return 'प्रोग्राम पूरा हो गया है और अंतिम परिणाम तैयार है।';
+        default: return `${step?.explanation || state.focusInfo || state.label || 'प्रोग्राम का अगला चरण पूरा हुआ है।'} ${current !== undefined && current !== null ? `अब मान ${valueText} है।` : ''}`;
+      }
+    }
+    switch (event) {
+      case 'ARRAY_CREATION': return `The program creates ${state.name || 'an array'} with ${valueText || (Array.isArray(state.values) ? state.values.join(', ') : 'the given values')}.`;
+      case 'LOOP_INIT': return `The loop counter ${variable} starts at ${valueText || 'zero'}.`;
+      case 'CONDITION_CHECK': return `The condition ${condition.expression || 'is checked'} and evaluates ${condition.result ? 'TRUE, so the loop continues' : 'FALSE, so the loop stops'}.`;
+      case 'ARRAY_ACCESS': return `The program reads ${valueAtIndex || 'the current value'} at array index ${index ?? 'current'}.`;
+      case 'LOOP_INCREMENT': return `The counter changes from ${previous ?? 'its previous value'} to ${valueText || 'the next value'}.`;
+      case 'PROGRAM_END': return 'Execution is complete and the final result is ready.';
+      default: return `${step?.explanation || state.focusInfo || state.label || 'The next program operation is complete.'} ${current !== undefined && current !== null ? `${variable} is now ${valueText}.` : ''}`;
+    }
+  }
 
   if (hindi) {
     switch (event) {
@@ -77,11 +101,15 @@ export default function ExecutionNarration({
   isBright = false,
   code = '',
   language = 'en-IN',
+  onTogetherPlay = () => {},
+  onTogetherPause = () => {},
+  togetherDisabled = false,
 }) {
   const narration = useTextToSpeech();
   const [open, setOpen] = useState(false);
   const [voiceStepIndex, setVoiceStepIndex] = useState(0);
   const [voicePlaying, setVoicePlaying] = useState(false);
+  const [togetherMode, setTogetherMode] = useState(false);
   const previousTrace = useRef(trace);
   const safeVoiceIndex = trace.length ? Math.min(voiceStepIndex, trace.length - 1) : 0;
   const voiceStep = trace[safeVoiceIndex] || null;
@@ -90,8 +118,8 @@ export default function ExecutionNarration({
   const spokenLanguage = narration.voiceLanguage;
   const summary = voiceStep
     ? (line
-      ? `${spokenLanguage === 'hi-IN' ? `पंक्ति ${line}। ` : `Line ${line}. `}${explainSourceLine(sourceLine, spokenLanguage, voiceStep)}`
-      : `${spokenLanguage === 'hi-IN' ? 'चरण' : 'Step'} ${safeVoiceIndex + 1}. ${explainSourceLine('', spokenLanguage, voiceStep)}`)
+      ? `${spokenLanguage === 'hi-IN' ? `पंक्ति ${line}। ` : `Line ${line}. `}${explainSourceLine(sourceLine, spokenLanguage, voiceStep, togetherMode)}`
+      : `${spokenLanguage === 'hi-IN' ? 'चरण' : 'Step'} ${safeVoiceIndex + 1}. ${explainSourceLine('', spokenLanguage, voiceStep, togetherMode)}`)
     : 'Run a program to hear step-by-step narration.';
 
   useEffect(() => {
@@ -115,8 +143,8 @@ export default function ExecutionNarration({
     const activeLine = activeStep.lineNumber ?? activeStep.line ?? null;
     const activeSource = activeLine ? String(code || '').split('\n')[Number(activeLine) - 1] || '' : '';
     const text = activeLine
-      ? `${spokenLanguage === 'hi-IN' ? `पंक्ति ${activeLine}। ` : `Line ${activeLine}. `}${explainSourceLine(activeSource, spokenLanguage, activeStep)}`
-      : `${spokenLanguage === 'hi-IN' ? 'चरण' : 'Step'} ${safeVoiceIndex + 1}. ${explainSourceLine('', spokenLanguage, activeStep)}`;
+      ? `${spokenLanguage === 'hi-IN' ? `पंक्ति ${activeLine}। ` : `Line ${activeLine}. `}${explainSourceLine(activeSource, spokenLanguage, activeStep, togetherMode)}`
+      : `${spokenLanguage === 'hi-IN' ? 'चरण' : 'Step'} ${safeVoiceIndex + 1}. ${explainSourceLine('', spokenLanguage, activeStep, togetherMode)}`;
     narration.speak(text, {
       lang: spokenLanguage,
       onEnd: () => {
@@ -144,14 +172,27 @@ export default function ExecutionNarration({
     if (voiceStepIndex >= trace.length - 1 && trace.length) setVoiceStepIndex(0);
     setVoicePlaying(true);
   };
-  const pauseVoice = () => narration.pause();
+  const pauseVoice = () => {
+    narration.pause();
+    if (togetherMode) onTogetherPause();
+  };
   const resumeVoice = () => {
     narration.resume();
     setVoicePlaying(true);
+    if (togetherMode) onTogetherPlay();
+  };
+  const startTogether = () => {
+    if (togetherDisabled || !trace.length) return;
+    if (!narration.enabled) narration.toggleEnabled();
+    if (voiceStepIndex >= trace.length - 1) setVoiceStepIndex(0);
+    setTogetherMode(true);
+    setVoicePlaying(true);
+    onTogetherPlay();
   };
   const stopVoice = () => {
     setVoicePlaying(false);
     narration.stop();
+    if (togetherMode) onTogetherPause();
   };
   const moveVoice = (delta) => {
     narration.stop();
@@ -216,6 +257,17 @@ export default function ExecutionNarration({
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button type="button" className={`${button} ${togetherMode ? 'border-cyan-500 bg-cyan-500/10' : ''}`}
+            aria-pressed={togetherMode} onClick={() => setTogetherMode((value) => !value)}>
+            <Play size={13} />Together Mode
+          </button>
+          {togetherMode && (
+            <button type="button" className={`${button} border-cyan-500 bg-cyan-500/10`}
+              disabled={!trace.length || togetherDisabled} onClick={startTogether}
+              title="Start 3D execution and concise narration together">
+              <Play size={13} />Play Together
+            </button>
+          )}
           <button type="button" className={button} disabled={!trace.length || safeVoiceIndex <= 0} onClick={() => moveVoice(-1)} title="Previous narration step"><SkipBack size={14} />Previous</button>
           {narration.speaking && !narration.paused ? (
             <button type="button" className={button} onClick={pauseVoice}><Pause size={14} />Pause</button>
@@ -227,6 +279,8 @@ export default function ExecutionNarration({
           <button type="button" className={button} disabled={!trace.length || safeVoiceIndex >= trace.length - 1} onClick={() => moveVoice(1)} title="Next narration step"><SkipForward size={14} />Next</button>
           <button type="button" className={button} disabled={!narration.speaking && !narration.paused && !voicePlaying} onClick={stopVoice}><Square size={13} />Stop</button>
         </div>
+        {togetherMode && <p className="mt-2 text-[10px] opacity-70">Together Mode uses shorter narration. 3D keeps its selected speed; voice continues independently if it falls behind.</p>}
+        {togetherDisabled && togetherMode && <p className="mt-2 text-xs text-amber-500">Run the latest code first, then start Together Mode.</p>}
         {!narration.supported && <p className="mt-2 text-xs text-amber-500">Speech synthesis is unavailable in this browser.</p>}{narration.voiceLanguage === 'hi-IN' && !narration.voiceAvailable && <p className="mt-2 text-xs text-amber-500">इस डिवाइस पर हिन्दी आवाज़ उपलब्ध नहीं है। Windows Settings में Hindi language और Hindi text-to-speech voice जोड़ें, फिर browser दोबारा खोलें।</p>}<p className="mt-2 text-[10px] opacity-60">Uses the selected language voice installed in your browser or operating system.</p>
       </section>
     </div>,
