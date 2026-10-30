@@ -64,6 +64,23 @@ test('API Endpoints Test Suite', async (t) => {
     assert.strictEqual(res.data.finalVariables.sum, 15);
   });
 
+  await t.test('all execution aliases share the dedicated 30-per-minute limiter', async () => {
+    // The earlier /api/executions/run request in this suite consumes request 1.
+    for (let i = 0; i < 29; i += 1) {
+      const res = await request('/api/execute', {
+        method: 'POST',
+        body: { code: '', language: 'javascript' },
+      });
+      assert.notStrictEqual(res.status, 429);
+    }
+    const blockedAlias = await request('/api/execute/run', {
+      method: 'POST',
+      body: { code: '', language: 'javascript' },
+    });
+    assert.strictEqual(blockedAlias.status, 429);
+    assert.strictEqual(blockedAlias.data.error, 'EXECUTION_RATE_LIMIT');
+  });
+
   await t.test('POST /api/auth/register rejects duplicate email', async () => {
     const res = await request('/api/auth/register', {
       method: 'POST',
@@ -181,7 +198,7 @@ test('API Endpoints Test Suite', async (t) => {
       method: 'POST',
       headers: { Authorization: `Bearer ${userAToken}` },
       body: {
-        quizMode: 'find_bug',
+        mode: 'find_bug',
         category: 'arrays',
         score: 4,
         totalQuestions: 5,
@@ -190,6 +207,7 @@ test('API Endpoints Test Suite', async (t) => {
     });
     assert.strictEqual(saveRes.status, 201);
     assert.strictEqual(saveRes.data.success, true);
+    assert.strictEqual(saveRes.data.attempt.mode, 'find_bug');
 
     const getRes = await request('/api/quiz/attempts', {
       headers: { Authorization: `Bearer ${userAToken}` },
