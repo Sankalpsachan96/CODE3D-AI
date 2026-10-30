@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   HelpCircle,
   CheckCircle,
@@ -12,6 +12,7 @@ import {
 import { recordQuizHistory } from '../services/apiService';
 import { generateAIQuiz } from '../services/groqQuizService';
 import { useTheme } from '../context/ThemeContext';
+import { addAnswerToScore, getFinalQuizScore } from '../utils/quizScoring.js';
 
 export default function QuizArena() {
   const { isBright } = useTheme();
@@ -33,6 +34,7 @@ export default function QuizArena() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const quizRequestId = useRef(0);
 
   /*
    * Generate a new AI quiz whenever
@@ -43,7 +45,12 @@ export default function QuizArena() {
     generateQuiz();
   }, [quizStarted, selectedConcept]);
 
+  useEffect(() => () => {
+    quizRequestId.current += 1;
+  }, []);
+
   const generateQuiz = async () => {
+    const requestId = ++quizRequestId.current;
     setLoading(true);
     setError('');
 
@@ -61,8 +68,10 @@ export default function QuizArena() {
           10
         );
 
+      if (requestId !== quizRequestId.current) return;
       setQuestions(generatedQuestions);
     } catch (err) {
+      if (requestId !== quizRequestId.current) return;
       console.error(
         'AI Quiz Error:',
         err
@@ -73,7 +82,7 @@ export default function QuizArena() {
           'Unable to generate quiz.'
       );
     } finally {
-      setLoading(false);
+      if (requestId === quizRequestId.current) setLoading(false);
     }
   };
 
@@ -112,7 +121,7 @@ const handleSubmit = () => {
     selectedOption === currentQuestion.correctIndex
   ) {
     setScore((previousScore) =>
-      previousScore + 1
+      addAnswerToScore(previousScore, currentQuestion, selectedOption)
     );
   }
 };
@@ -144,17 +153,7 @@ const handleNext = () => {
  * Finish quiz and save history.
  */
   const finishQuiz = () => {
-    const finalScore =
-      score +
-      (
-        selectedOption !== null &&
-        questions[currentQIndex] &&
-        selectedOption ===
-          questions[currentQIndex]
-            .correctIndex
-          ? 1
-          : 0
-      );
+    const finalScore = getFinalQuizScore(score);
 
     setScore(finalScore);
     setQuizFinished(true);
@@ -181,6 +180,7 @@ const handleNext = () => {
   };
 
   const handleChangeTopic = (value) => {
+    quizRequestId.current += 1;
     setSelectedConcept(value);
     setQuizStarted(false);
     setQuestions([]);
