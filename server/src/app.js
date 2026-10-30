@@ -93,6 +93,7 @@ const aiLimiter = rateLimit({
 app.use('/api', generalLimiter);
 app.use('/api/executions', executionLimiter);
 app.use('/api/ai/explain', aiLimiter);
+app.use('/api/ai/challenge', aiLimiter);
 
 // Lightweight deployment health check (does not require database access).
 app.get('/health', (req, res) => {
