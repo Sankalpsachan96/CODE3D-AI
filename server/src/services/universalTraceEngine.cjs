@@ -676,16 +676,13 @@ function detectLinearSearch(code) {
   if (!info) return false;
 
   const lower = code.toLowerCase();
+  const indexedLoop =
+    /for\s*\(/i.test(code) ||
+    /\bfor\s+\w+\s+in\s+range\s*\(/i.test(code);
+  const indexedComparison = /\w+\s*\[\s*\w+\s*\]\s*==/i.test(code);
 
-  return (
-    /linear\s*search/.test(lower) ||
-    (
-      /for\s*\(/i.test(code) &&
-      /\w+\s*\[\s*\w+\s*\]\s*==/i.test(code)
-    )
-  );
+  return /linear\s*search/.test(lower) || (indexedLoop && indexedComparison);
 }
-
 function generateLinearSearchTrace(code) {
   const info = getPrimaryArray(code);
   if (!info) return unsupported("linear_search", "array");
