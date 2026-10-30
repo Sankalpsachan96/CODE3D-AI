@@ -23,8 +23,9 @@ import {
   Code2
 } from 'lucide-react';
 
-const STORAGE_KEY = 'code3d_striver_solved_v1';
-const STATUS_KEY = 'code3d_striver_status_v2';
+const LEGACY_SOLVED_KEY = 'code3d_striver_solved_v1';
+const LEGACY_STATUS_KEY = 'code3d_striver_status_v2';
+const STATUS_KEY = 'code3d_striver_status_v3';
 
 const hasStriverLanguageSource = (problem, language) => {
   const field = { java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode' }[language];
@@ -66,15 +67,19 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
     }
   }, [initialTab]);
 
-  // Load solved state from localStorage
+  // Read one shared status store used by the Hub and Striver drawer.
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setSolvedMap(JSON.parse(saved));
-      }
-      const statusSaved = localStorage.getItem(STATUS_KEY);
-      if (statusSaved) setStatusMap(JSON.parse(statusSaved));
+      const shared = JSON.parse(localStorage.getItem(STATUS_KEY) || '{}');
+      const legacySolved = JSON.parse(localStorage.getItem(LEGACY_SOLVED_KEY) || '{}');
+      const legacyStatus = JSON.parse(localStorage.getItem(LEGACY_STATUS_KEY) || '{}');
+      const migrated = { ...legacyStatus, ...shared };
+      Object.entries(legacySolved).forEach(([id, solved]) => {
+        if (solved && !migrated[id]) migrated[id] = { status: 'SOLVED' };
+      });
+      setStatusMap(migrated);
+      setSolvedMap(Object.fromEntries(Object.entries(migrated).map(([id, value]) => [id, value?.status === 'SOLVED'])));
+      localStorage.setItem(STATUS_KEY, JSON.stringify(migrated));
     } catch (e) {
       console.warn('Could not load solved state:', e);
     }
@@ -82,11 +87,11 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
 
   const toggleSolved = (problemId, e) => {
     e.stopPropagation();
-    setSolvedMap((prev) => {
-      const updated = { ...prev, [problemId]: !prev[problemId] };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (err) {}
+    setStatusMap((prev) => {
+      const nextSolved = prev[problemId]?.status !== 'SOLVED';
+      const updated = { ...prev, [problemId]: { ...prev[problemId], status: nextSolved ? 'SOLVED' : 'ATTEMPTED' } };
+      try { localStorage.setItem(STATUS_KEY, JSON.stringify(updated)); } catch {}
+      setSolvedMap(Object.fromEntries(Object.entries(updated).map(([id, value]) => [id, value?.status === 'SOLVED'])));
       return updated;
     });
   };
