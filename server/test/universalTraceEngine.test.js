@@ -720,7 +720,7 @@ test('selection and insertion sort produce complete modeled traces in all five e
       assert.ok(result.events.some((event) => event.type === 'compare'), `${suffix} ${algorithm} should compare values`);
       assert.ok(result.events.some((event) => event.type === expectedMutation || event.type === 'insert'), `${suffix} ${algorithm} should expose mutations`);
       assert.deepEqual(result.events.at(-1).array, [1, 2, 3, 4], `${suffix} ${algorithm} should finish sorted`);
-      const sourceLines = code.split(/\\r?\\n/);
+      const sourceLines = code.split(/\r?\n/);
       for (const event of result.events) {
         assert.ok(Number.isInteger(event.line), `${suffix} ${algorithm} ${event.type} should map to a source line`);
         assert.ok(event.line >= 1 && event.line <= sourceLines.length, `${suffix} ${algorithm} line should be in range`);
@@ -785,7 +785,7 @@ for i in range(len(values)):
     assert.equal(search.supported, true, `${language} linear search should be supported`);
     assert.equal(search.events.find((event) => event.type === 'found')?.index, 2, `${language} should find target at index 2`);
     assert.deepEqual(search.events.filter((event) => event.type === 'compare').map((event) => event.matched), [false, false, true]);
-    const lines = code.split(/\\r?\\n/);
+    const lines = code.split(/\r?\n/);
     for (const event of search.events) {
       assert.ok(Number.isInteger(event.line), `${language} ${event.type} should map to a source line`);
       assert.ok(event.line >= 1 && event.line <= lines.length, `${language} ${event.type} source line should be in range`);
