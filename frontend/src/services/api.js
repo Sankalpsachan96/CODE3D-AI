@@ -6,7 +6,9 @@
 
 const LOCAL_BACKEND_URL = 'http://localhost:5000/api';
 const LIVE_RENDER_URL = 'https://code3d-ai-oscc.onrender.com/api';
-const REQUEST_TIMEOUT_MS = 20000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 20000;
+// Render Free may need 50s+ to wake after inactivity. Auth must outlive cold start.
+const AUTH_REQUEST_TIMEOUT_MS = 90000;
 
 const isLocalhost = typeof window !== 'undefined' &&
   (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
@@ -26,7 +28,9 @@ export async function apiRequest(endpoint, options = {}) {
   };
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(new Error('API request timed out')), REQUEST_TIMEOUT_MS);
+  const isAuthRequest = /^\/auth\/(login|register|me|logout)(?:\?|$)/.test(endpoint);
+  const timeoutMs = isAuthRequest ? AUTH_REQUEST_TIMEOUT_MS : DEFAULT_REQUEST_TIMEOUT_MS;
+  const timeoutId = setTimeout(() => controller.abort(new Error('API request timed out')), timeoutMs);
   const externalSignal = options.signal;
   const abortFromCaller = () => controller.abort(externalSignal?.reason);
 
@@ -59,7 +63,7 @@ export async function apiRequest(endpoint, options = {}) {
     if (err.status) throw err;
     if (controller.signal.aborted) {
       if (externalSignal?.aborted) throw new Error('Request was cancelled.');
-      throw new Error('Backend did not respond within 20 seconds. Please retry; if this continues, check the server/database logs.');
+      throw new Error(`Backend did not respond within ${Math.round(timeoutMs / 1000)} seconds. Render Free may be waking up; wait a moment and retry. If it keeps happening, check server/database logs.`);
     }
 
     console.warn(`API call to ${url} failed network connection:`, err.message);
