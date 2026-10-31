@@ -133,7 +133,7 @@ function buildPythonInstrumentedSource(source, input = "") {
   const hasLeetCodeMaxDepth = /^\s*class\s+Solution\b/m.test(source)
     && /^\s+def\s+maxDepth\s*\(\s*self\s*,\s*root\s*\)/m.test(source)
     && !/if\s+__name__\s*==\s*["']__main__["']/.test(source)
-    && !/Solution\s*\(\s*\)\s*\.\s*maxDepth\s*\(/.test(source);
+    && !source.includes("Solution().maxDepth(");
   const runnerLines = hasLeetCodeMaxDepth ? [
     "def __code3d_run_tree_solution(namespace, raw_input):",
     "    import json",
