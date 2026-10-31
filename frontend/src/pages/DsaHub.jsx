@@ -5,6 +5,7 @@ import { ALGORITHM_CATALOG, generateAlgorithmSteps } from '../algorithms/index';
 import AlgorithmCard from '../components/AlgorithmCard';
 import AlgorithmDetailModal from '../components/AlgorithmDetailModal';
 import { useTheme } from '../context/ThemeContext';
+import { getStriverProgress, updateStriverProgress } from '../services/dsa';
 import {
   Layers,
   Play,
@@ -80,6 +81,28 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
       setStatusMap(migrated);
       setSolvedMap(Object.fromEntries(Object.entries(migrated).map(([id, value]) => [id, value?.status === 'SOLVED'])));
       localStorage.setItem(STATUS_KEY, JSON.stringify(migrated));
+      // Merge server progress into local state; local entries remain available
+      // when offline and are uploaded on the next authenticated session.
+      getStriverProgress().then(({ progress = [] } = {}) => {
+        const merged = { ...migrated };
+        progress.forEach((item) => {
+          const id = String(item.problemKey);
+          const localTime = Date.parse(merged[id]?.updatedAt || 0) || 0;
+          const serverTime = Date.parse(item.lastAttemptedAt || 0) || 0;
+          if (!merged[id] || serverTime >= localTime) {
+            merged[id] = { status: item.status, updatedAt: item.lastAttemptedAt };
+          }
+        });
+        setStatusMap(merged);
+        setSolvedMap(Object.fromEntries(Object.entries(merged).map(([id, value]) => [id, value?.status === 'SOLVED'])));
+        localStorage.setItem(STATUS_KEY, JSON.stringify(merged));
+      }).catch(() => {});
+      // Retry unsynced local entries after login/network recovery.
+      Object.entries(migrated).forEach(([id, value]) => {
+        if (/^[1-9][0-9]{0,5}$/.test(id) && value?.status) {
+          updateStriverProgress({ problemKey: id, status: value.status }).catch(() => {});
+        }
+      });
     } catch (e) {
       console.warn('Could not load solved state:', e);
     }
@@ -88,10 +111,13 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   const toggleSolved = (problemId, e) => {
     e.stopPropagation();
     const nextSolved = statusMap[problemId]?.status !== 'SOLVED';
-    const updated = { ...statusMap, [problemId]: { ...statusMap[problemId], status: nextSolved ? 'SOLVED' : 'ATTEMPTED' } };
+    const updated = { ...statusMap, [problemId]: { ...statusMap[problemId], status: nextSolved ? 'SOLVED' : 'ATTEMPTED', updatedAt: new Date().toISOString() } };
     setStatusMap(updated);
     setSolvedMap(Object.fromEntries(Object.entries(updated).map(([id, value]) => [id, value?.status === 'SOLVED'])));
     try { localStorage.setItem(STATUS_KEY, JSON.stringify(updated)); } catch {}
+    updateStriverProgress({ problemKey: String(problemId), status: nextSolved ? 'SOLVED' : 'ATTEMPTED' }).catch(() => {
+      // Local-first progress remains queued in the shared status store for the next sync.
+    });
   };
 
   const solvedCount = useMemo(() => {
