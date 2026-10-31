@@ -34,7 +34,8 @@ const hasStriverLanguageSource = (problem, language) => {
   const normalized = String(source || '').replace(/\s+/g, ' ').trim();
   return Boolean(normalized)
     && !/return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(normalized)
-    && !/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(normalized);
+    && !/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(normalized)
+    && !/for\s*\(\s*(?:int|auto)\s+\w+\s*:\s*(?:nums|arr|array)\s*\)[\s\S]*?return\s+(?:sum|total)\s*;/i.test(normalized);
 };
 
 export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
