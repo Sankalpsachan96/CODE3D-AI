@@ -161,7 +161,6 @@ export async function register(req, res) {
         email: userObj.email,
         role: userObj.role || 'USER',
       },
-      sessionToken,
     });
   } catch (err) {
     console.error('Registration error:', err);
@@ -270,7 +269,6 @@ export async function login(req, res) {
         email: foundUser.email,
         role: foundUser.role || 'USER',
       },
-      sessionToken,
     });
   } catch (err) {
     console.error('Login error:', err);
