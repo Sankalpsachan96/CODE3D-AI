@@ -117,6 +117,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// Public API root: a lightweight discovery response for browser checks.
+// Keep this before the router so GET /api does not fall through to the 404 handler.
+app.get('/api', (req, res) => {
+  res.status(200).json({
+    success: true,
+    service: 'code3d-ai-api',
+    status: 'ok',
+    message: 'Code Vision 3D API is running.',
+    health: '/api/health',
+    execution: '/api/execute',
+  });
+});
+
 // API Routes
 app.use('/api', apiRouter);
 
