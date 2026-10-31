@@ -37,8 +37,9 @@ export async function ensureStriverProgressSchema() {
     const prisma = getPrisma();
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS user_striver_progress (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        -- Prisma String IDs are stored as TEXT in this schema, not native UUID.
+        id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         problem_key VARCHAR(32) NOT NULL,
         status VARCHAR(16) NOT NULL CHECK (status IN ('ATTEMPTED', 'SOLVED', 'REVISION')),
         attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
