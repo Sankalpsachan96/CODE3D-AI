@@ -65,6 +65,23 @@ test('API Endpoints Test Suite', async (t) => {
     assert.strictEqual(res.data.finalVariables.sum, 15);
   });
 
+  await t.test('all execution aliases share the dedicated 30-per-minute limiter', async () => {
+    // The successful /api/executions/run request above consumes request 1.
+    for (let i = 0; i < 29; i += 1) {
+      const allowed = await request('/api/execute', {
+        method: 'POST',
+        body: { code: '', language: 'javascript' },
+      });
+      assert.notStrictEqual(allowed.status, 429);
+    }
+    const blocked = await request('/api/execute/run', {
+      method: 'POST',
+      body: { code: '', language: 'javascript' },
+    });
+    assert.strictEqual(blocked.status, 429);
+    assert.strictEqual(blocked.data.error, 'EXECUTION_RATE_LIMIT');
+  });
+
   await t.test('POST /api/auth/register rejects duplicate email', async () => {
     const res = await request('/api/auth/register', {
       method: 'POST',
