@@ -258,8 +258,15 @@ export async function updateStriverProgress(req, res) {
 
     const now = new Date();
     if (isDbOnline()) {
-      const progress = await getPrisma().userStriverProgress.upsert({
-        where: { userId_problemKey: { userId, problemKey } },
+      const prisma = getPrisma();
+      const where = { userId_problemKey: { userId, problemKey } };
+      const existing = await prisma.userStriverProgress.findUnique({ where });
+      // Sync retries are idempotent: loading the page must not inflate attempts.
+      if (existing?.status === status) {
+        return res.json({ success: true, progress: existing });
+      }
+      const progress = await prisma.userStriverProgress.upsert({
+        where,
         update: {
           status,
           attemptCount: { increment: 1 },
