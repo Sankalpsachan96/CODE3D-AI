@@ -70,8 +70,8 @@ export async function checkBackendHealth({ allowFallback = true } = {}) {
   // Health is exposed at /api/health. Normalize configured values so an
   // environment variable ending in /api cannot accidentally produce
   // /api/api/health (or a root URL that misses the /api prefix).
-  const configuredBase = String(BACKEND_BASE_URL || LIVE_RENDER_URL).replace(/\\/+$/, '');
-  const backendOrigin = configuredBase.replace(/\\/api$/i, '');
+  const configuredBase = String(BACKEND_BASE_URL || LIVE_RENDER_URL).replace(/\/+$/, '');
+  const backendOrigin = configuredBase.replace(/\/api$/i, '');
   const healthUrl = `${backendOrigin}/api/health`;
 
   const controller = new AbortController();
@@ -94,7 +94,7 @@ export async function checkBackendHealth({ allowFallback = true } = {}) {
   } catch (err) {
     if (allowFallback && isSafeFallbackUrl(CONFIGURED_FALLBACK_URL)) {
       try {
-        const fallbackBase = CONFIGURED_FALLBACK_URL.replace(/\\/+$/, '').replace(/\\/api$/i, '');
+        const fallbackBase = CONFIGURED_FALLBACK_URL.replace(/\/+$/, '').replace(/\/api$/i, '');
         const fallbackResponse = await fetch(`${fallbackBase}/api/health`, {
           method: 'GET',
           credentials: 'include',
