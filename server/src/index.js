@@ -10,15 +10,11 @@ const { default: app } = await import('./app.js');
 
 const PORT = parseInt(process.env.PORT || '5000', 10);
 
-async function startServer() {
-  await checkDatabaseConnection();
-  await ensureStriverProgressSchema();
-  // Populate memory fallback and idempotently seed the DSA catalog in PostgreSQL.
-  await seedDatabase();
-  await purgeLegacyDemoAccounts();
-
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`
+// Start accepting HTTP traffic before optional database bootstrapping. Previously,
+// a slow/unreachable Neon connection or seed operation prevented app.listen()
+// from running at all, so every frontend request eventually hit its 20s timeout.
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`
 ======================================================
 🚀 CODE3D-AI Full-Stack Execution Server Online
 ======================================================
@@ -29,10 +25,30 @@ async function startServer() {
 Supported: Java, C++, Python, JavaScript, C
 ======================================================
 `);
-  });
+});
+
+server.on('error', (err) => {
+  console.error('HTTP server error:', err.message);
+  process.exitCode = 1;
+});
+
+// Database setup is deliberately non-blocking for HTTP availability. The auth
+// controller already has a bounded in-memory fallback when the DB is offline.
+async function initializeBackendData() {
+  const connected = await checkDatabaseConnection();
+
+  if (connected) {
+    await ensureStriverProgressSchema();
+  } else {
+    console.warn('[startup] Database unavailable; API remains online in fallback mode.');
+  }
+
+  // These operations may depend on PostgreSQL; run them after HTTP is listening.
+  await seedDatabase();
+  await purgeLegacyDemoAccounts();
+  console.log('[startup] Backend data initialization finished.');
 }
 
-startServer().catch((err) => {
-  console.error('Fatal server startup error:', err);
-  process.exit(1);
+initializeBackendData().catch((err) => {
+  console.error('[startup] Non-fatal backend data initialization error:', err.message);
 });
