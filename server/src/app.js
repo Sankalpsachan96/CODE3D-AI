@@ -105,6 +105,18 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Minimal auth-route timing diagnostics. Never log credentials, cookies, or request bodies.
+app.use((req, res, next) => {
+  if (req.path === '/auth/login' && req.method === 'POST') {
+    const startedAt = Date.now();
+    console.info('[auth] login request received');
+    res.on('finish', () => {
+      console.info(`[auth] login response completed: status=${res.statusCode}, durationMs=${Date.now() - startedAt}`);
+    });
+  }
+  next();
+});
+
 // API Routes
 app.use('/api', apiRouter);
 
