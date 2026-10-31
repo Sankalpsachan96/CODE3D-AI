@@ -39,14 +39,14 @@ function isGenericPlaceholderImplementation(source) {
   if (/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(code)) return true;
   if (/for\s*\(\s*(?:int|auto)\s+\w+\s*:\s*(?:nums|arr|array)\s*\)[\s\S]*?return\s+(?:sum|total)\s*;/i.test(code)) return true;
 
-  // Reject accumulator-only templates masquerading as problem solutions.
-  const accumulator = code.match(/\b(?:int|long|float|double)?\s*(sum|ans|total)\s*=\s*0\s*;?/i);
-  if (accumulator) {
-    const name = accumulator[1];
-    const increments = new RegExp('\\b' + name + '\\s*\\+=\\s*\\w+', 'i');
-    const returns = new RegExp('\\breturn\\s+' + name + '\\s*;?', 'i');
-    const iteratesInput = /(?:for\s*\([^)]*(?:nums|arr|array)[^)]*\)|for\s+\w+\s+in\s+(?:nums|arr|array)|range\s*\(\s*(?:len\s*\(\s*)?(?:nums|arr|array))/i.test(code);
-    if (increments.test(code) && returns.test(code) && iteratesInput) return true;
+  // Reject the exact foreach-every-element sum template, but do not
+  // confuse legitimate DP/merge-count accumulators (e.g. Reverse Pairs).
+  const foreach = code.match(/for\s*\(\s*(?:(?:int|long|auto)\s+)?(\w+)\s*:\s*(nums|arr|array)\s*\)|for\s+(\w+)\s+in\s+(nums|arr|array)/i);
+  if (accumulator && foreach) {
+    const variable = foreach[1] || foreach[3];
+    const increments = new RegExp('\\b' + accumulator[1] + '\\s*\\+=\\s*' + variable + '\\b', 'i');
+    const returns = new RegExp('\\breturn\\s+' + accumulator[1] + '\\s*;?', 'i');
+    if (increments.test(code) && returns.test(code)) return true;
   }
   return false;
 }
