@@ -100,7 +100,12 @@ function getRuntimeAvailability() {
     cpp: commandAvailable("g++"),
     c: commandAvailable("gcc"),
     python: Boolean(getPythonCommand()),
-    java: commandAvailable("javac") && commandAvailable("java"),
+    // "java" reports whether the selected execution route can accept Java:
+    // local OpenJDK OR a configured Judge0 route (executeCode routes to Judge0
+    // whenever Bubblewrap is unavailable). Keep localJava separate so the UI
+    // does not incorrectly disable Java just because OpenJDK is absent on Render.
+    localJava: commandAvailable("javac") && commandAvailable("java"),
+    java: (commandAvailable("javac") && commandAvailable("java")) || remoteJudge0Configured,
     // "sandbox" means the local Bubblewrap sandbox actually passed its namespace probe.
     // A configured remote provider is reported separately; configuration alone does not
     // prove that provider is reachable or accepting submissions.
