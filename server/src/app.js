@@ -96,6 +96,18 @@ app.use('/api/executions', executionLimiter);
 app.use('/api/ai/explain', aiLimiter);
 app.use('/api/ai/challenge', aiLimiter);
 
+// Friendly service root for direct browser checks at the Render domain.
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    service: 'code3d-ai-api',
+    status: 'ok',
+    message: 'Code Vision 3D backend is running.',
+    api: '/api',
+    health: '/api/health',
+  });
+});
+
 // Lightweight deployment health check (does not require database access).
 app.get('/health', (req, res) => {
   res.status(200).json({
