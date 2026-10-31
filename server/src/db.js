@@ -29,6 +29,37 @@ export async function checkDatabaseConnection() {
   }
 }
 
+// Idempotent additive repair for the Striver progress table. Uses PostgreSQL's
+// built-in gen_random_uuid() so production does not depend on uuid-ossp.
+export async function ensureStriverProgressSchema() {
+  if (!isDatabaseConnected) return false;
+  try {
+    const prisma = getPrisma();
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS user_striver_progress (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        problem_key VARCHAR(32) NOT NULL,
+        status VARCHAR(16) NOT NULL CHECK (status IN ('ATTEMPTED', 'SOLVED', 'REVISION')),
+        attempt_count INTEGER NOT NULL DEFAULT 0 CHECK (attempt_count >= 0),
+        first_attempted_at TIMESTAMPTZ,
+        last_attempted_at TIMESTAMPTZ,
+        solved_at TIMESTAMPTZ,
+        CONSTRAINT user_striver_progress_user_problem_unique UNIQUE (user_id, problem_key)
+      )
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS idx_user_striver_progress_user_id
+      ON user_striver_progress(user_id)
+    `);
+    console.log('✅ Striver progress schema verified.');
+    return true;
+  } catch (err) {
+    console.error('❌ Striver progress schema repair failed:', err.message);
+    return false;
+  }
+}
+
 export function isDbOnline() {
   return isDatabaseConnected;
 }
