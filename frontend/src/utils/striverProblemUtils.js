@@ -23,30 +23,73 @@ function braceEnd(code, openIndex) {
 }
 
 const LANGUAGE_SOURCE_FIELDS = Object.freeze({
-  java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode',
+  java: 'javaCode',
+  cpp: 'cppCode',
+  python: 'pythonCode',
+  javascript: 'javascriptCode',
+  c: 'cCode',
 });
 
 function isGenericPlaceholderImplementation(source) {
   const code = String(source || '').replace(/\s+/g, ' ').trim();
-  return !code
-    || /return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(code)
-    || /accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(code);
+  if (!code) return true;
+
+  // Reject the generic sum-only bodies found across unrelated catalog problems.
+  if (/return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(code)) return true;
+  if (/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(code)) return true;
+  if (/for\s*\(\s*(?:int|auto)\s+\w+\s*:\s*(?:nums|arr|array)\s*\)[\s\S]*?return\s+(?:sum|total)\s*;/i.test(code)) return true;
+
+  // Reject the exact foreach-every-element sum template, but do not
+  // confuse legitimate DP/merge-count accumulators (e.g. Reverse Pairs).
+  const accumulator = code.match(/\b(?:int|long|float|double)?\s*(sum|ans|total)\s*=\s*0\s*;?/i);
+  const foreach = code.match(/for\s*\(\s*(?:(?:int|long|auto)\s+)?(\w+)\s*:\s*(nums|arr|array)\s*\)|for\s+(\w+)\s+in\s+(nums|arr|array)/i);
+  if (accumulator && foreach) {
+    const variable = foreach[1] || foreach[3];
+    const increments = new RegExp('\\b' + accumulator[1] + '\\s*\\+=\\s*' + variable + '\\b', 'i');
+    const returns = new RegExp('\\breturn\\s+' + accumulator[1] + '\\s*;?', 'i');
+    if (increments.test(code) && returns.test(code)) return true;
+  }
+  return false;
+}
+
+export function getProblemSupportedLanguages(problem) {
+  return Object.entries(LANGUAGE_SOURCE_FIELDS)
+    .filter(([, field]) => typeof problem?.[field] === 'string' && problem[field].trim() && !isGenericPlaceholderImplementation(problem[field]))
+    .map(([language]) => language);
 }
 
 export function isProblemLanguageSupported(problem, language) {
   const field = LANGUAGE_SOURCE_FIELDS[String(language || '').toLowerCase()];
-  return Boolean(field && typeof problem?.[field] === 'string' && !isGenericPlaceholderImplementation(problem[field]));
+  return Boolean(field && typeof problem?.[field] === 'string' && problem[field].trim() && !isGenericPlaceholderImplementation(problem[field]));
 }
 
 export function buildStarterCode(problem, language = 'java') {
   const normalizedLanguage = String(language || '').toLowerCase();
-  if (!isProblemLanguageSupported(problem, normalizedLanguage)) return '';
-  const source = problem[LANGUAGE_SOURCE_FIELDS[normalizedLanguage]];
+  const sourceField = LANGUAGE_SOURCE_FIELDS[normalizedLanguage];
+  // Never inject source written for a different language into the editor.
+  if (!sourceField || !isProblemLanguageSupported(problem, normalizedLanguage)) return '';
+  const source = problem[sourceField];
 
-  if (normalizedLanguage === 'javascript') return `// ${problem.title}\nfunction solve() {\n  // Write your solution here\n}\n`;
-  if (normalizedLanguage === 'c') return `// ${problem.title}\n#include <stdio.h>\nint main(void) {\n    // Write your solution here\n    return 0;\n}\n`;
+  if (normalizedLanguage === 'javascript') {
+    return `// ${problem.title}
+function solve() {
+  // Write your solution here
+}
+`;
+  }
 
-  if (normalizedLanguage === 'python') {
+  if (normalizedLanguage === 'c') {
+    return `// ${problem.title}
+#include <stdio.h>
+
+int main(void) {
+    // Write your solution here
+    return 0;
+}
+`;
+  }
+
+  if (language === 'python') {
     const lines = source.split(/\r?\n/);
     const defIndex = lines.findIndex((line) => /^\s*def\s+/.test(line));
     if (defIndex >= 0) {

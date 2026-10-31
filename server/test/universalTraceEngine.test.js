@@ -924,3 +924,63 @@ const start = 0;
     assert.equal(result.events.at(-1).visited.length, 4);
   }
 });
+
+test('linked-list node creation and next-pointer links produce mapped traces in Java and JavaScript', () => {
+  const cases = [
+    ['java', `class Node { int value; Node next; }
+Node head = new Node(10);
+Node second = new Node(20);
+head.next = second;`],
+    ['javascript', `class Node { constructor(value) { this.value = value; this.next = null; } }
+const head = new Node(10);
+const second = new Node(20);
+head.next = second;`],
+  ];
+
+  for (const [language, code] of cases) {
+    const result = universalTrace.generateTrace(code, language, { success: true, output: '' });
+    assert.equal(result.algorithm, 'linked_list', `${language} should detect a linked list`);
+    assert.equal(result.supported, true);
+    assert.deepEqual(result.events.at(-1).values, [10, 20]);
+    assert.deepEqual(result.events.at(-1).edges, [[0, 1]]);
+    assert.equal(result.events.filter((event) => event.type === 'insert').length, 2);
+    assert.ok(result.events.some((event) => event.type === 'link'));
+    const lines = code.split(/\r?\n/);
+    for (const event of result.events) {
+      assert.ok(Number.isInteger(event.line), `${language} ${event.type} should map to a source line`);
+      assert.ok(event.line >= 1 && event.line <= lines.length);
+      assert.ok(lines[event.line - 1].trim());
+    }
+  }
+});
+
+test('C++ stack and queue adapters preserve LIFO/FIFO state and map each operation to source', () => {
+  const cases = [
+    ['stack', `std::stack<int> values;
+values.push(10);
+values.push(20);
+values.pop();
+std::cout << values.top();`, 'stack_operations', [10], 'peek'],
+    ['queue', `std::queue<int> values;
+values.push(10);
+values.push(20);
+values.pop();
+std::cout << values.front();`, 'queue_operations', [20], 'front'],
+  ];
+
+  for (const [name, code, algorithm, expected, terminalEvent] of cases) {
+    const result = universalTrace.generateTrace(code, 'cpp', { success: true, output: '' });
+    assert.equal(result.algorithm, algorithm, `${name} should use its specialized adapter`);
+    assert.equal(result.supported, true);
+    assert.deepEqual(result.events.at(-1).values, expected);
+    assert.deepEqual(result.events.filter((event) => event.type === (name === 'stack' ? 'push' : 'enqueue')).map((event) => event.value), [10, 20]);
+    assert.equal(result.events.filter((event) => event.type === (name === 'stack' ? 'pop' : 'dequeue')).length, 1);
+    assert.ok(result.events.some((event) => event.type === terminalEvent));
+    const lines = code.split(/\r?\n/);
+    for (const event of result.events) {
+      assert.ok(Number.isInteger(event.line), `${name} ${event.type} should map to a source line`);
+      assert.ok(event.line >= 1 && event.line <= lines.length);
+      assert.ok(lines[event.line - 1].trim());
+    }
+  }
+});

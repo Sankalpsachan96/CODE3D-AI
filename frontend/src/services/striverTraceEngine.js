@@ -83,7 +83,11 @@ export function generateStriverTrace({ id, title, archetype, input = '', languag
     });
   }
 
-  if (/dp|dynamic-programming|kadane|lis/.test(arch)) {
+  // Do not fabricate a Kadane-like recurrence for unrelated DP problems.
+  // A semantic trace must come from a problem-specific transition model.
+  if (/dp|dynamic-programming/.test(arch)) return [];
+
+  if (/kadane|lis/.test(arch)) {
     const dp = base.map((v, i) => i === 0 ? v : Math.max(v, (base[i - 1] || 0) + v));
     return dp.slice(0, 5).map((value, i) => step(i + 1, i + 1, name, 'DP_UPDATE', { variables: { index: i, value }, dataStructureState: { type: 'dp', values: dp, activeIndex: i, label: name, focusInfo: `DP state at index ${i}` } }, `${name}: update the dynamic-programming state.`));
   }
@@ -144,7 +148,10 @@ export function generateStriverTrace({ id, title, archetype, input = '', languag
     return chars.map((char, i) => step(i + 1, i + 1, name, 'TRIE_STEP', { variables: { char }, dataStructureState: { type: 'trie', values: chars.slice(0, i + 1), activeIndex: i, label: name, focusInfo: `Process character ${char}` } }, `${name}: process trie character ${char}.`));
   }
 
-  if (/matrix|grid/.test(arch)) {
+  // Never show a hard-coded 3x3 matrix as if it were runtime state.
+  if (/matrix|grid/.test(arch)) return [];
+
+  if (false) {
     const matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]];
     return matrix.flatMap((row, r) => row.map((value, c) => step(r * 3 + c + 1, r + 1, name, 'MATRIX_VISIT', { variables: { row: r, col: c, value }, dataStructureState: { type: 'matrix', values: matrix, activeIndex: r * 3 + c, pointers: { row: r, col: c }, label: name, focusInfo: `Process matrix[${r}][${c}] = ${value}` } }, `${name}: process matrix cell (${r}, ${c}).`))).slice(0, 9);
   }

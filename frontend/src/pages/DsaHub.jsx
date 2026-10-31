@@ -6,6 +6,7 @@ import AlgorithmCard from '../components/AlgorithmCard';
 import AlgorithmDetailModal from '../components/AlgorithmDetailModal';
 import { useTheme } from '../context/ThemeContext';
 import { getStriverProgress, updateStriverProgress } from '../services/dsa';
+import { isProblemLanguageSupported } from '../utils/striverProblemUtils';
 import {
   Layers,
   Play,
@@ -28,14 +29,7 @@ const LEGACY_SOLVED_KEY = 'code3d_striver_solved_v1';
 const LEGACY_STATUS_KEY = 'code3d_striver_status_v2';
 const STATUS_KEY = 'code3d_striver_status_v3';
 
-const hasStriverLanguageSource = (problem, language) => {
-  const field = { java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode' }[language];
-  const source = field ? problem?.[field] : '';
-  const normalized = String(source || '').replace(/\s+/g, ' ').trim();
-  return Boolean(normalized)
-    && !/return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(normalized)
-    && !/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(normalized);
-};
+const hasStriverLanguageSource = (problem, language) => isProblemLanguageSupported(problem, language);
 
 export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   const { isBright } = useTheme();

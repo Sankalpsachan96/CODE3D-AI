@@ -44,7 +44,8 @@ test('API Endpoints Test Suite', async (t) => {
     });
     assert.strictEqual(res.status, 201);
     assert.strictEqual(res.data.success, true);
-    assert.ok(res.data.sessionToken);
+    assert.equal(Object.hasOwn(res.data, 'sessionToken'), false);
+    assert.ok(res.cookie?.includes('code3d_session='));
     sessionCookie = res.cookie ? res.cookie.split(';')[0] : '';
   });
 
@@ -62,6 +63,23 @@ test('API Endpoints Test Suite', async (t) => {
     assert.strictEqual(res.data.success, true);
     assert.strictEqual(res.data.status, 'COMPLETED');
     assert.strictEqual(res.data.finalVariables.sum, 15);
+  });
+
+  await t.test('all execution aliases share the dedicated 30-per-minute limiter', async () => {
+    // The successful /api/executions/run request above consumes request 1.
+    for (let i = 0; i < 29; i += 1) {
+      const allowed = await request('/api/execute', {
+        method: 'POST',
+        body: { code: '', language: 'javascript' },
+      });
+      assert.notStrictEqual(allowed.status, 429);
+    }
+    const blocked = await request('/api/execute/run', {
+      method: 'POST',
+      body: { code: '', language: 'javascript' },
+    });
+    assert.strictEqual(blocked.status, 429);
+    assert.strictEqual(blocked.data.error, 'EXECUTION_RATE_LIMIT');
   });
 
   await t.test('POST /api/auth/register rejects duplicate email', async () => {
@@ -106,7 +124,8 @@ test('API Endpoints Test Suite', async (t) => {
     });
     assert.strictEqual(valid.status, 200);
     assert.strictEqual(valid.data.success, true);
-    assert.ok(valid.data.sessionToken);
+    assert.equal(Object.hasOwn(valid.data, 'sessionToken'), false);
+    assert.ok(valid.cookie?.includes('code3d_session='));
 
     // Invalid password
     const invalid = await request('/api/auth/login', {
@@ -120,8 +139,8 @@ test('API Endpoints Test Suite', async (t) => {
     assert.strictEqual(invalid.data.error, 'INVALID_CREDENTIALS');
   });
 
-  let userAToken = '';
-  let userBToken = '';
+  let userACookie = '';
+  let userBCookie = '';
   let userAProjectId = '';
 
   await t.test('POST /api/projects creates user-scoped project and validates ownership', async () => {
@@ -134,7 +153,8 @@ test('API Endpoints Test Suite', async (t) => {
         password: 'password123',
       },
     });
-    userAToken = resA.data.sessionToken;
+    userACookie = resA.cookie?.split(';')[0] || '';
+    assert.equal(Object.hasOwn(resA.data, 'sessionToken'), false);
 
     // Register User B
     const resB = await request('/api/auth/register', {
@@ -145,12 +165,13 @@ test('API Endpoints Test Suite', async (t) => {
         password: 'password123',
       },
     });
-    userBToken = resB.data.sessionToken;
+    userBCookie = resB.cookie?.split(';')[0] || '';
+    assert.equal(Object.hasOwn(resB.data, 'sessionToken'), false);
 
     // User A creates project
     const projRes = await request('/api/projects', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${userAToken}` },
+      headers: { Cookie: userACookie },
       body: {
         name: 'Binary Search Tree 3D',
         code: 'class BST {}',
@@ -164,14 +185,14 @@ test('API Endpoints Test Suite', async (t) => {
 
     // User A can access project
     const getResA = await request(`/api/projects/${userAProjectId}`, {
-      headers: { Authorization: `Bearer ${userAToken}` },
+      headers: { Cookie: userACookie },
     });
     assert.strictEqual(getResA.status, 200);
     assert.strictEqual(getResA.data.project.name, 'Binary Search Tree 3D');
 
     // User B CANNOT access User A's project (Ownership Isolation)
     const getResB = await request(`/api/projects/${userAProjectId}`, {
-      headers: { Authorization: `Bearer ${userBToken}` },
+      headers: { Cookie: userBCookie },
     });
     assert.strictEqual(getResB.status, 404); // returns 404 or 403
   });
@@ -179,7 +200,7 @@ test('API Endpoints Test Suite', async (t) => {
   await t.test('POST /api/quiz/attempts saves and retrieves user attempts', async () => {
     const saveRes = await request('/api/quiz/attempts', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${userAToken}` },
+      headers: { Cookie: userACookie },
       body: {
         quizMode: 'find_bug',
         category: 'arrays',
@@ -192,7 +213,7 @@ test('API Endpoints Test Suite', async (t) => {
     assert.strictEqual(saveRes.data.success, true);
 
     const getRes = await request('/api/quiz/attempts', {
-      headers: { Authorization: `Bearer ${userAToken}` },
+      headers: { Cookie: userACookie },
     });
     assert.strictEqual(getRes.status, 200);
     assert.ok(getRes.data.attempts.length >= 1);
@@ -201,7 +222,7 @@ test('API Endpoints Test Suite', async (t) => {
   await t.test('POST /api/auth/logout invalidates session', async () => {
     const logoutRes = await request('/api/auth/logout', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${userAToken}` },
+      headers: { Cookie: userACookie },
     });
     assert.strictEqual(logoutRes.status, 200);
     assert.strictEqual(logoutRes.data.success, true);
