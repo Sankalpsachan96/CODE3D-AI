@@ -153,3 +153,48 @@ test('Judge0 polling retries transient network failures without resubmitting cod
   assert.equal(submissions, 1, 'a transient poll failure must not duplicate code submissions');
   assert.equal(polls, 2);
 });
+
+
+test('Python LeetCode maxDepth solution runs with a default sample tree and captures recursion', async (t) => {
+  const { spawnSync } = await import('node:child_process');
+  const solution = `class Solution:
+    def maxDepth(self, root):
+        if root is None:
+            return 0
+        leftHeight = self.maxDepth(root.left)
+        rightHeight = self.maxDepth(root.right)
+        return 1 + max(leftHeight, rightHeight)
+`;
+  const instrumented = universalExecutor.buildPythonInstrumentedSource(solution);
+  const result = spawnSync('python3', ['-c', instrumented], { encoding: 'utf8', timeout: 5000 });
+  if (result.error?.code === 'ENOENT') {
+    t.skip('python3 is unavailable in this test environment');
+    return;
+  }
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.trim(), '3');
+  const marker = '__CODE3D_RUNTIME_TRACE__';
+  const traceLine = result.stderr.split(/\\r?\\n/).find((line) => line.startsWith(marker));
+  assert.ok(traceLine, 'runtime trace marker should be present');
+  const events = JSON.parse(traceLine.slice(marker.length));
+  assert.ok(events.some((event) => event.callStack?.includes('maxDepth')), 'trace should include recursive maxDepth calls');
+  assert.ok(events.some((event) => event.variables?.root?.left), 'trace should include the actual tree node state');
+});
+
+test('Python LeetCode maxDepth solution accepts JSON level-order tree input', async (t) => {
+  const { spawnSync } = await import('node:child_process');
+  const solution = `class Solution:
+    def maxDepth(self, root):
+        if root is None:
+            return 0
+        return 1 + max(self.maxDepth(root.left), self.maxDepth(root.right))
+`;
+  const instrumented = universalExecutor.buildPythonInstrumentedSource(solution, '[1, 2, null, 3]');
+  const result = spawnSync('python3', ['-c', instrumented], { encoding: 'utf8', timeout: 5000 });
+  if (result.error?.code === 'ENOENT') {
+    t.skip('python3 is unavailable in this test environment');
+    return;
+  }
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.stdout.trim(), '3');
+});
