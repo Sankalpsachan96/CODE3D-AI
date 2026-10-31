@@ -42,13 +42,17 @@ export default function LoginPage() {
     }
 
     setIsSubmitting(true);
-    const res = await login({ usernameOrEmail, password });
-    setIsSubmitting(false);
-
-    if (res.success) {
-      navigate('/app');
-    } else {
-      setError(res.message || 'Login failed. Please check your credentials.');
+    try {
+      const res = await login({ usernameOrEmail, password });
+      if (res.success) {
+        navigate('/app');
+      } else {
+        setError(res.message || 'Login failed. Please check your credentials.');
+      }
+    } catch (err) {
+      setError(err?.message || 'Login failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
