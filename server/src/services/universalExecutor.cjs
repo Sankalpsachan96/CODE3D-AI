@@ -130,10 +130,10 @@ const RUNTIME_TRACE_MARKER = "__CODE3D_RUNTIME_TRACE__";
 function buildPythonInstrumentedSource(source, input = "") {
   const encoded = Buffer.from(source, "utf8").toString("base64");
   const encodedInput = Buffer.from(String(input || ""), "utf8").toString("base64");
-  const hasLeetCodeMaxDepth = /^\\s*class\\s+Solution\\b/m.test(source)
-    && /^\\s+def\\s+maxDepth\\s*\\(\\s*self\\s*,\\s*root\\s*\\)/m.test(source)
-    && !/if\\s+__name__\\s*==\\s*["']__main__["']/.test(source)
-    && !/Solution\\s*\\(\\s*\\)\\s*\\.\\s*maxDepth\\s*\\(/.test(source);
+  const hasLeetCodeMaxDepth = /^\s*class\s+Solution\b/m.test(source)
+    && /^\s+def\s+maxDepth\s*\\(\s*self\s*,\s*root\s*\\)/m.test(source)
+    && !/if\s+__name__\s*==\s*["']__main__["']/.test(source)
+    && !/Solution\s*\\(\s*\\)\s*\\.\s*maxDepth\s*\\(/.test(source);
   const runnerLines = hasLeetCodeMaxDepth ? [
     "def __code3d_run_tree_solution(namespace, raw_input):",
     "    import json",
