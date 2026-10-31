@@ -127,54 +127,92 @@ function getRuntimeAvailability() {
 }
 
 const RUNTIME_TRACE_MARKER = "__CODE3D_RUNTIME_TRACE__";
-function buildPythonInstrumentedSource(source) {
+function buildPythonInstrumentedSource(source, input = "") {
   const encoded = Buffer.from(source, "utf8").toString("base64");
+  const encodedInput = Buffer.from(String(input || ""), "utf8").toString("base64");
+  const hasLeetCodeMaxDepth = /^\s*class\s+Solution\b/m.test(source)
+    && /^\s+def\s+maxDepth\s*\(\s*self\s*,\s*root\s*\)/m.test(source)
+    && !/if\s+__name__\s*==\s*["']__main__["']/.test(source)
+    && !/Solution\s*\(\s*\)\s*\.\s*maxDepth\s*\(/.test(source);
+  const runnerLines = hasLeetCodeMaxDepth ? [
+    "def __code3d_run_tree_solution(namespace, raw_input):",
+    " import json",
+    " from collections import deque",
+    " values = json.loads(raw_input) if raw_input.strip() else [3, 9, 20, None, None, 15, 7]",
+    " if isinstance(values, dict): values = values.get('root', [])",
+    " if not isinstance(values, list): raise ValueError('Tree input must be a JSON level-order array, for example [3,9,20,null,null,15,7].')",
+    " Node = namespace.get('TreeNode')",
+    " if Node is None:",
+    "  class Node:",
+    "   def __init__(self, val=0, left=None, right=None): self.val, self.left, self.right = val, left, right",
+    " if not values or values[0] is None: root = None",
+    " else:",
+    "  root = Node(values[0]); queue = deque([root]); index = 1",
+    "  while queue and index < len(values):",
+    "   current = queue.popleft()",
+    "   if current is None: continue",
+    "   if index < len(values) and values[index] is not None:",
+    "    current.left = Node(values[index]); queue.append(current.left)",
+    "   index += 1",
+    "   if index < len(values) and values[index] is not None:",
+    "    current.right = Node(values[index]); queue.append(current.right)",
+    "   index += 1",
+    " result = namespace['Solution']().maxDepth(root)",
+    " print(result)",
+  ] : [];
   return [
-    "import sys, json, base64"
-    ,"__code3d_source = base64.b64decode(\"" + encoded + "\").decode(\"utf-8\")"
-    ,"__code3d_events = []"
-    ,"__code3d_steps = 0"
-    ,"__code3d_frames = []"
-    ,"def __code3d_safe(value, depth=0, seen=None):"
-    ," if seen is None: seen = set()"
-    ," if depth > 4: return '<max-depth>'"
-    ," if value is None or isinstance(value, (bool, int, float)): return value"
-    ," if isinstance(value, str): return value if len(value) <= 200 else value[:200] + \"…\""
-    ," is_container = isinstance(value, (list, tuple, dict)) or hasattr(value, \"__dict__\")"
-    ," if not is_container: return '<' + type(value).__name__ + '>'"
-    ," identity = id(value)"
-    ," if identity in seen: return '<cycle>'"
-    ," seen.add(identity)"
-    ," try:"
-    ,"  if isinstance(value, (list, tuple)): return [__code3d_safe(v, depth + 1, seen) for v in value[:40]]"
-    ,"  if isinstance(value, dict): return {str(k)[:80]: __code3d_safe(v, depth + 1, seen) for k, v in list(value.items())[:40] if not str(k).startswith(\"__code3d_\")}"
-    ,"  fields = vars(value)"
-    ,"  result = {\"__type__\": type(value).__name__}"
-    ,"  for k, v in list(fields.items())[:50]:"
-    ,"   if not str(k).startswith(\"__\"): result[str(k)[:80]] = __code3d_safe(v, depth + 1, seen)"
-    ,"  return result"
-    ," except Exception:"
-    ,"  return '<' + type(value).__name__ + '>'"
-    ," finally:"
-    ,"  seen.discard(identity)"
-    ,"def __code3d_trace(frame, event, arg):"
-    ," global __code3d_steps"
-    ," if frame.f_code.co_filename == \"<user_code>\" and event == \"call\": __code3d_frames.append(frame.f_code.co_name)"
-    ," if frame.f_code.co_filename == \"<user_code>\" and event == \"return\": "
-    ,"  if __code3d_frames: __code3d_frames.pop()"
-    ," if event == \"line\" and frame.f_code.co_filename == \"<user_code>\":"
-    ,"  __code3d_steps += 1"
-    ,"  if __code3d_steps <= 120: __code3d_events.append({\"step\": __code3d_steps, \"line\": frame.f_lineno, \"event\": \"runtime_line\", \"variables\": {k: __code3d_safe(v) for k, v in frame.f_locals.items() if not k.startswith(\"__code3d_\") and not k.startswith(\"__\")}, \"callStack\": list(__code3d_frames), \"message\": \"Runtime snapshot captured at this executed line.\"})"
-    ,"  elif __code3d_steps == 121: __code3d_events.append({\"step\": 121, \"line\": frame.f_lineno, \"event\": \"trace_limit\", \"variables\": {k: __code3d_safe(v) for k, v in frame.f_locals.items() if not k.startswith(\"__code3d_\") and not k.startswith(\"__\")}, \"message\": \"Runtime trace capped at 120 line events; program output still reflects the complete run.\"})"
-    ," return __code3d_trace"
-    ,"try:"
-    ," sys.settrace(__code3d_trace)"
-    ," exec(compile(__code3d_source, \"<user_code>\", \"exec\"), {\"__name__\": \"__main__\"})"
-    ,"except SystemExit:"
-    ," pass"
-    ,"finally:"
-    ," sys.settrace(None)"
-    ," print(\"" + RUNTIME_TRACE_MARKER + "\" + json.dumps(__code3d_events, separators=(\",\", \":\")), file=sys.stderr)"
+    "import sys, json, base64",
+    "__code3d_source = base64.b64decode(\"" + encoded + "\").decode(\"utf-8\")",
+    "__code3d_input = base64.b64decode(\"" + encodedInput + "\").decode(\"utf-8\")",
+    "__code3d_events = []",
+    "__code3d_steps = 0",
+    "__code3d_frames = []",
+    "def __code3d_safe(value, depth=0, seen=None):",
+    " if seen is None: seen = set()",
+    " if depth > 4: return '<max-depth>'",
+    " if value is None or isinstance(value, (bool, int, float)): return value",
+    " if isinstance(value, str): return value if len(value) <= 200 else value[:200] + \"…\"",
+    " is_container = isinstance(value, (list, tuple, dict)) or hasattr(value, \"__dict__\")",
+    " if not is_container: return '<' + type(value).__name__ + '>'",
+    " identity = id(value)",
+    " if identity in seen: return '<cycle>'",
+    " seen.add(identity)",
+    " try:",
+    "  if isinstance(value, (list, tuple)): return [__code3d_safe(v, depth + 1, seen) for v in value[:40]]",
+    "  if isinstance(value, dict): return {str(k)[:80]: __code3d_safe(v, depth + 1, seen) for k, v in list(value.items())[:40] if not str(k).startswith(\"__code3d_\")}",
+    "  fields = vars(value)",
+    "  result = {\"__type__\": type(value).__name__}",
+    "  for k, v in list(fields.items())[:50]:",
+    "   if not str(k).startswith(\"__\"): result[str(k)[:80]] = __code3d_safe(v, depth + 1, seen)",
+    "  return result",
+    " except Exception:",
+    "  return '<' + type(value).__name__ + '>'",
+    " finally:",
+    "  seen.discard(identity)",
+    "def __code3d_trace(frame, event, arg):",
+    " global __code3d_steps",
+    " if frame.f_code.co_filename == \"<user_code>\" and event == \"call\": __code3d_frames.append(frame.f_code.co_name)",
+    " if frame.f_code.co_filename == \"<user_code>\" and event == \"return\":",
+    "  if __code3d_frames: __code3d_frames.pop()",
+    " if event == \"line\" and frame.f_code.co_filename == \"<user_code>\":",
+    "  __code3d_steps += 1",
+    "  if __code3d_steps <= 120: __code3d_events.append({\"step\": __code3d_steps, \"line\": frame.f_lineno, \"event\": \"runtime_line\", \"variables\": {k: __code3d_safe(v) for k, v in frame.f_locals.items() if not k.startswith(\"__code3d_\") and not k.startswith(\"__\")}, \"callStack\": list(__code3d_frames), \"message\": \"Runtime snapshot captured at this executed line.\"})",
+    "  elif __code3d_steps == 121: __code3d_events.append({\"step\": 121, \"line\": frame.f_lineno, \"event\": \"trace_limit\", \"variables\": {k: __code3d_safe(v) for k, v in frame.f_locals.items() if not k.startswith(\"__code3d_\") and not k.startswith(\"__\")}, \"message\": \"Runtime trace capped at 120 line events; program output still reflects the complete run.\"})",
+    " return __code3d_trace",
+    "try:",
+    " sys.settrace(__code3d_trace)",
+    " __code3d_globals = {\"__name__\": \"__main__\"}",
+    " exec(compile(__code3d_source, \"<user_code>\", \"exec\"), __code3d_globals)",
+    ...(runnerLines.length ? [
+      " __code3d_run_tree_solution = None",
+      ...runnerLines,
+      " __code3d_run_tree_solution(__code3d_globals, __code3d_input)",
+    ] : []),
+    "except SystemExit:",
+    " pass",
+    "finally:",
+    " sys.settrace(None)",
+    " print(\"" + RUNTIME_TRACE_MARKER + "\" + json.dumps(__code3d_events, separators=(\",\", \":\")), file=sys.stderr)",
   ].join("\n");
 }
 function extractPythonRuntimeTrace(stderr) {
@@ -695,7 +733,7 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
       headers,
       body: JSON.stringify({
         language_id: languageId,
-        source_code: languageKey === "python" ? buildPythonInstrumentedSource(code)
+        source_code: languageKey === "python" ? buildPythonInstrumentedSource(code, input)
           : languageKey === "javascript" ? buildJavaScriptTraceRunnerSource(code)
           : code,
         stdin: input,
@@ -1249,7 +1287,7 @@ async function executePython(code, input = "", signal) {
   const sourceFile = path.join(tempDirectory, "main.py");
 
   try {
-    fs.writeFileSync(sourceFile, buildPythonInstrumentedSource(code), "utf8");
+    fs.writeFileSync(sourceFile, buildPythonInstrumentedSource(code, input), "utf8");
 
     const startTime = Date.now();
 
