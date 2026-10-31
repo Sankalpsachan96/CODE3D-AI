@@ -17,6 +17,7 @@ import SortingVisualizer3D from './SortingVisualizer3D';
 import MatrixVisualizer3D from './MatrixVisualizer3D';
 import RecursionVisualizer3D from './RecursionVisualizer3D';
 import UniversalExecutionVisualizer3D from './UniversalExecutionVisualizer3D';
+import TrieVisualizer3D from './TrieVisualizer3D';
 
 export const visualizerRegistry = {
   array: ArrayVisualizer3D,
@@ -47,8 +48,8 @@ export const visualizerRegistry = {
   avl: TreeVisualizer3D,
   'avl-tree': TreeVisualizer3D,
   'red-black-tree': TreeVisualizer3D,
-  trie: TreeVisualizer3D,
-  'trie-string': TreeVisualizer3D,
+  trie: TrieVisualizer3D,
+  'trie-string': TrieVisualizer3D,
   heap: HeapVisualizer3D,
   heaps: HeapVisualizer3D,
   graph: GraphVisualizer3D,

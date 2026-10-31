@@ -35,3 +35,17 @@ export async function updateProgress({ problemId, status }) {
     body: JSON.stringify({ problemId, status }),
   });
 }
+
+
+// Authenticated progress for the bundled Striver catalog (IDs are stable
+// catalog keys, not UUIDs from the database-backed DsaProblem table).
+export async function getStriverProgress() {
+  return await apiRequest('/dsa/striver-progress');
+}
+
+export async function updateStriverProgress({ problemKey, status }) {
+  return await apiRequest('/dsa/striver-progress', {
+    method: 'POST',
+    body: JSON.stringify({ problemKey: String(problemKey), status }),
+  });
+}

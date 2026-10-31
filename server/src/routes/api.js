@@ -101,6 +101,8 @@ router.get('/dsa/sheets', dsaController.getSheets);
 router.get('/dsa/sheets/:slug', dsaController.getSheetBySlug);
 router.get('/dsa/progress', requireAuth, dsaController.getProgress);
 router.post('/dsa/progress', requireAuth, dsaController.updateProgress);
+router.get('/dsa/striver-progress', requireAuth, dsaController.getStriverProgress);
+router.post('/dsa/striver-progress', requireAuth, dsaController.updateStriverProgress);
 
 // ------------------------------------------------------------
 // Dashboard / settings

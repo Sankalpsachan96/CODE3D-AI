@@ -5,6 +5,7 @@ import { ALGORITHM_CATALOG, generateAlgorithmSteps } from '../algorithms/index';
 import AlgorithmCard from '../components/AlgorithmCard';
 import AlgorithmDetailModal from '../components/AlgorithmDetailModal';
 import { useTheme } from '../context/ThemeContext';
+import { getStriverProgress, updateStriverProgress } from '../services/dsa';
 import {
   Layers,
   Play,
@@ -23,8 +24,18 @@ import {
   Code2
 } from 'lucide-react';
 
-const STORAGE_KEY = 'code3d_striver_solved_v1';
-const STATUS_KEY = 'code3d_striver_status_v2';
+const LEGACY_SOLVED_KEY = 'code3d_striver_solved_v1';
+const LEGACY_STATUS_KEY = 'code3d_striver_status_v2';
+const STATUS_KEY = 'code3d_striver_status_v3';
+
+const hasStriverLanguageSource = (problem, language) => {
+  const field = { java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode' }[language];
+  const source = field ? problem?.[field] : '';
+  const normalized = String(source || '').replace(/\s+/g, ' ').trim();
+  return Boolean(normalized)
+    && !/return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(normalized)
+    && !/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(normalized);
+};
 
 export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   const { isBright } = useTheme();
@@ -46,6 +57,7 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   const [selectedDay, setSelectedDay] = useState('All Days (180+)');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [striverSearch, setStriverSearch] = useState('');
+  const [striverLanguage, setStriverLanguage] = useState('java');
   const [solvedMap, setSolvedMap] = useState({});
   const [statusMap, setStatusMap] = useState({});
 
@@ -56,15 +68,41 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
     }
   }, [initialTab]);
 
-  // Load solved state from localStorage
+  // Read one shared status store used by the Hub and Striver drawer.
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setSolvedMap(JSON.parse(saved));
-      }
-      const statusSaved = localStorage.getItem(STATUS_KEY);
-      if (statusSaved) setStatusMap(JSON.parse(statusSaved));
+      const shared = JSON.parse(localStorage.getItem(STATUS_KEY) || '{}');
+      const legacySolved = JSON.parse(localStorage.getItem(LEGACY_SOLVED_KEY) || '{}');
+      const legacyStatus = JSON.parse(localStorage.getItem(LEGACY_STATUS_KEY) || '{}');
+      const migrated = { ...legacyStatus, ...shared };
+      Object.entries(legacySolved).forEach(([id, solved]) => {
+        if (solved && !migrated[id]) migrated[id] = { status: 'SOLVED' };
+      });
+      setStatusMap(migrated);
+      setSolvedMap(Object.fromEntries(Object.entries(migrated).map(([id, value]) => [id, value?.status === 'SOLVED'])));
+      localStorage.setItem(STATUS_KEY, JSON.stringify(migrated));
+      // Merge server progress into local state; local entries remain available
+      // when offline and are uploaded on the next authenticated session.
+      getStriverProgress().then(({ progress = [] } = {}) => {
+        const merged = { ...migrated };
+        progress.forEach((item) => {
+          const id = String(item.problemKey);
+          const localTime = Date.parse(merged[id]?.updatedAt || 0) || 0;
+          const serverTime = Date.parse(item.lastAttemptedAt || 0) || 0;
+          if (!merged[id] || serverTime >= localTime) {
+            merged[id] = { status: item.status, updatedAt: item.lastAttemptedAt };
+          }
+        });
+        setStatusMap(merged);
+        setSolvedMap(Object.fromEntries(Object.entries(merged).map(([id, value]) => [id, value?.status === 'SOLVED'])));
+        localStorage.setItem(STATUS_KEY, JSON.stringify(merged));
+      }).catch(() => {});
+      // Retry unsynced local entries after login/network recovery.
+      Object.entries(migrated).forEach(([id, value]) => {
+        if (/^[1-9][0-9]{0,5}$/.test(id) && value?.status) {
+          updateStriverProgress({ problemKey: id, status: value.status }).catch(() => {});
+        }
+      });
     } catch (e) {
       console.warn('Could not load solved state:', e);
     }
@@ -72,12 +110,13 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
 
   const toggleSolved = (problemId, e) => {
     e.stopPropagation();
-    setSolvedMap((prev) => {
-      const updated = { ...prev, [problemId]: !prev[problemId] };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (err) {}
-      return updated;
+    const nextSolved = statusMap[problemId]?.status !== 'SOLVED';
+    const updated = { ...statusMap, [problemId]: { ...statusMap[problemId], status: nextSolved ? 'SOLVED' : 'ATTEMPTED', updatedAt: new Date().toISOString() } };
+    setStatusMap(updated);
+    setSolvedMap(Object.fromEntries(Object.entries(updated).map(([id, value]) => [id, value?.status === 'SOLVED'])));
+    try { localStorage.setItem(STATUS_KEY, JSON.stringify(updated)); } catch {}
+    updateStriverProgress({ problemKey: String(problemId), status: nextSolved ? 'SOLVED' : 'ATTEMPTED' }).catch(() => {
+      // Local-first progress remains queued in the shared status store for the next sync.
     });
   };
 
@@ -157,8 +196,19 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
   }, [selectedDay, selectedDifficulty, striverSearch]);
 
   const handleLaunchStriverProblem = (p) => {
+    if (!hasStriverLanguageSource(p, striverLanguage)) return;
+    const title = p.title || 'DSA problem';
+    const code = striverLanguage === 'python'
+      ? '# ' + title + '\ndef solve():\n    # Write your solution here\n    pass\n'
+      : striverLanguage === 'javascript'
+        ? '// ' + title + '\nfunction solve() {\n  // Write your solution here\n}\n'
+        : striverLanguage === 'c'
+          ? '// ' + title + '\n#include <stdio.h>\nint main(void) {\n    // Write your solution here\n    return 0;\n}\n'
+          : striverLanguage === 'cpp'
+            ? '// ' + title + '\n#include <bits/stdc++.h>\nusing namespace std;\nclass Solution { public: /* Write your solution here */ };\n'
+            : '// ' + title + '\nclass Solution {\n    // Write your solution here\n}\n';
     onSelectConcept({
-      id: `striver-${p.id}`,
+      id: 'striver-' + p.id,
       striverId: p.id,
       title: p.title,
       shortTitle: p.shortTitle,
@@ -169,10 +219,11 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
       archetype: p.archetype,
       timeComplexity: p.timeComplexity,
       spaceComplexity: p.spaceComplexity,
-      description: `${p.day}: ${p.title} - ${p.description}`,
+      description: p.day + ': ' + p.title + ' - ' + p.description,
       defaultInput: p.defaultInput,
-      code: p.javaCode,
-      language: 'java',
+      code,
+      language: striverLanguage,
+      trace: null,
     });
   };
 
@@ -446,6 +497,12 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
                 ))}
               </div>
 
+              <label className="flex items-center gap-2 text-xs">
+                <span className="opacity-70">Language</span>
+                <select value={striverLanguage} onChange={(e) => setStriverLanguage(e.target.value)} className={`rounded-lg border px-2 py-1.5 ${isBright ? 'bg-slate-50 border-slate-300' : 'bg-slate-950 border-slate-700'}`}>
+                  {['java', 'cpp', 'python', 'javascript', 'c'].map((lang) => <option key={lang} value={lang}>{lang.toUpperCase()}</option>)}
+                </select>
+              </label>
               {/* Search Bar */}
               <div className="relative w-full sm:w-64">
                 <Search size={14} className={`absolute left-3 top-2.5 ${isBright ? 'text-slate-400' : 'text-slate-500'}`} />
@@ -551,7 +608,9 @@ export default function DsaHub({ onSelectConcept, initialTab = 'algorithms' }) {
 
                         <button
                           onClick={() => handleLaunchStriverProblem(p)}
-                          className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-sm transition active:scale-95 cursor-pointer"
+                          disabled={!hasStriverLanguageSource(p, striverLanguage)}
+                          title={!hasStriverLanguageSource(p, striverLanguage) ? `No verified ${striverLanguage.toUpperCase()} source is available for this problem.` : 'Open a clean starter in the editor'}
+                          className="flex items-center gap-1 px-3 py-1 rounded-md text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           <Zap size={12} className="fill-slate-950" />
                           <span>Visualize 3D</span>

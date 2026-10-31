@@ -54,6 +54,7 @@ model User {
   progress            UserProblemProgress[]
   notes               UserProblemNote[]
   submissions         UserSubmission[]
+  striverProgress     UserStriverProgress[]
 
   @@map("users")
 }
@@ -362,4 +363,25 @@ model UserSubmission {
   @@index([userId])
   @@index([problemId])
   @@map("user_submissions")
+}
+
+
+// Progress for the bundled Striver sheet uses stable catalog IDs, not DsaProblem
+// UUIDs. Keeping it separate prevents invalid foreign keys and survives catalog
+// updates without requiring every external problem to be seeded in PostgreSQL.
+model UserStriverProgress {
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  problemKey       String   @map("problem_key")
+  status           String
+  attemptCount     Int      @default(0) @map("attempt_count")
+  firstAttemptedAt DateTime? @map("first_attempted_at")
+  lastAttemptedAt  DateTime? @map("last_attempted_at")
+  solvedAt         DateTime? @map("solved_at")
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemKey])
+  @@index([userId])
+  @@map("user_striver_progress")
 }

@@ -22,11 +22,31 @@ function braceEnd(code, openIndex) {
   return -1;
 }
 
-export function buildStarterCode(problem, language = 'java') {
-  const source = language === 'python' ? problem.pythonCode : language === 'cpp' ? problem.cppCode : language === 'javascript' ? problem.javascriptCode || problem.pythonCode : problem.javaCode;
-  if (!source) return '';
+const LANGUAGE_SOURCE_FIELDS = Object.freeze({
+  java: 'javaCode', cpp: 'cppCode', python: 'pythonCode', javascript: 'javascriptCode', c: 'cCode',
+});
 
-  if (language === 'python') {
+function isGenericPlaceholderImplementation(source) {
+  const code = String(source || '').replace(/\s+/g, ' ').trim();
+  return !code
+    || /return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(code)
+    || /accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(code);
+}
+
+export function isProblemLanguageSupported(problem, language) {
+  const field = LANGUAGE_SOURCE_FIELDS[String(language || '').toLowerCase()];
+  return Boolean(field && typeof problem?.[field] === 'string' && !isGenericPlaceholderImplementation(problem[field]));
+}
+
+export function buildStarterCode(problem, language = 'java') {
+  const normalizedLanguage = String(language || '').toLowerCase();
+  if (!isProblemLanguageSupported(problem, normalizedLanguage)) return '';
+  const source = problem[LANGUAGE_SOURCE_FIELDS[normalizedLanguage]];
+
+  if (normalizedLanguage === 'javascript') return `// ${problem.title}\nfunction solve() {\n  // Write your solution here\n}\n`;
+  if (normalizedLanguage === 'c') return `// ${problem.title}\n#include <stdio.h>\nint main(void) {\n    // Write your solution here\n    return 0;\n}\n`;
+
+  if (normalizedLanguage === 'python') {
     const lines = source.split(/\r?\n/);
     const defIndex = lines.findIndex((line) => /^\s*def\s+/.test(line));
     if (defIndex >= 0) {

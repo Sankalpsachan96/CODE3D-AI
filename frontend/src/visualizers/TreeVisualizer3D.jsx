@@ -142,8 +142,9 @@ export default function TreeVisualizer3D({ dataStructureState }) {
         };
       });
     }
-    return buildBstFromValues(values);
-  }, [rawNodes, values, rawEdges]);
+    const explicitType = String(dataStructureState?.type || dataStructureState?.structureType || '').toLowerCase();
+    return ['bst', 'binary-search-tree'].includes(explicitType) ? buildBstFromValues(values) : [];
+  }, [rawNodes, values, rawEdges, dataStructureState?.type, dataStructureState?.structureType]);
 
   // Deterministic tidy layout: inorder gives stable horizontal ordering and
   // depth gives a strict horizontal level. This avoids modifier/contour drift
