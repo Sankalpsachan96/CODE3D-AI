@@ -224,3 +224,69 @@ export async function updateProgress(req, res) {
     return res.status(500).json({ success: false, message: 'Failed to update progress.' });
   }
 }
+
+
+// Stable Striver catalog progress is stored separately from database-backed
+// DsaProblem rows because the bundled 182-problem catalog has its own IDs.
+const STRIVER_STATUSES = new Set(['ATTEMPTED', 'SOLVED', 'REVISION']);
+
+export async function getStriverProgress(req, res) {
+  try {
+    const userId = req.user.id;
+    if (isDbOnline()) {
+      const progress = await getPrisma().userStriverProgress.findMany({ where: { userId } });
+      return res.json({ success: true, progress });
+    }
+    const progress = [];
+    for (const [key, value] of memoryProgress.entries()) {
+      if (key.startsWith(`${userId}:striver:`)) progress.push(value);
+    }
+    return res.json({ success: true, progress });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to retrieve Striver progress.' });
+  }
+}
+
+export async function updateStriverProgress(req, res) {
+  try {
+    const userId = req.user.id;
+    const problemKey = String(req.body?.problemKey ?? '').trim();
+    const status = String(req.body?.status ?? '').toUpperCase();
+    if (!/^[1-9][0-9]{0,5}$/.test(problemKey) || !STRIVER_STATUSES.has(status)) {
+      return res.status(400).json({ success: false, message: 'A valid Striver problemKey and status are required.' });
+    }
+
+    const now = new Date();
+    if (isDbOnline()) {
+      const progress = await getPrisma().userStriverProgress.upsert({
+        where: { userId_problemKey: { userId, problemKey } },
+        update: {
+          status,
+          attemptCount: { increment: 1 },
+          lastAttemptedAt: now,
+          solvedAt: status === 'SOLVED' ? now : null,
+        },
+        create: {
+          userId, problemKey, status, attemptCount: 1,
+          firstAttemptedAt: now, lastAttemptedAt: now,
+          solvedAt: status === 'SOLVED' ? now : null,
+        },
+      });
+      return res.json({ success: true, progress });
+    }
+
+    const key = `${userId}:striver:${problemKey}`;
+    const previous = memoryProgress.get(key);
+    const progress = {
+      userId, problemKey, status,
+      attemptCount: (previous?.attemptCount || 0) + 1,
+      firstAttemptedAt: previous?.firstAttemptedAt || now,
+      lastAttemptedAt: now,
+      solvedAt: status === 'SOLVED' ? now : null,
+    };
+    memoryProgress.set(key, progress);
+    return res.json({ success: true, progress });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to update Striver progress.' });
+  }
+}
