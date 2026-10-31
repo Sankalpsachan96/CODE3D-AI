@@ -38,6 +38,16 @@ function isGenericPlaceholderImplementation(source) {
   if (/return\s+sum\s*\(\s*(?:nums|arr|array|a)\s*\)/i.test(code)) return true;
   if (/accumulate\s*\(\s*(?:nums|arr|array)\.begin\s*\(\s*\)\s*,\s*(?:nums|arr|array)\.end\s*\(\s*\)/i.test(code)) return true;
   if (/for\s*\(\s*(?:int|auto)\s+\w+\s*:\s*(?:nums|arr|array)\s*\)[\s\S]*?return\s+(?:sum|total)\s*;/i.test(code)) return true;
+
+  // Reject accumulator-only templates masquerading as problem solutions.
+  const accumulator = code.match(/\b(?:int|long|float|double)?\s*(sum|ans|total)\s*=\s*0\s*;?/i);
+  if (accumulator) {
+    const name = accumulator[1];
+    const increments = new RegExp('\\b' + name + '\\s*\\+=\\s*\\w+', 'i');
+    const returns = new RegExp('\\breturn\\s+' + name + '\\s*;?', 'i');
+    const iteratesInput = /(?:for\s*\([^)]*(?:nums|arr|array)[^)]*\)|for\s+\w+\s+in\s+(?:nums|arr|array)|range\s*\(\s*(?:len\s*\(\s*)?(?:nums|arr|array))/i.test(code);
+    if (increments.test(code) && returns.test(code) && iteratesInput) return true;
+  }
   return false;
 }
 
