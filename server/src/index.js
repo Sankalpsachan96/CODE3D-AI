@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { checkDatabaseConnection } from './db.js';
+import { checkDatabaseConnection, ensureStriverProgressSchema } from './db.js';
 import { purgeLegacyDemoAccounts } from './controllers/authController.js';
 import { seedDatabase } from './seed.js';
 
@@ -12,6 +12,7 @@ const PORT = parseInt(process.env.PORT || '5000', 10);
 
 async function startServer() {
   await checkDatabaseConnection();
+  await ensureStriverProgressSchema();
   // Populate memory fallback and idempotently seed the DSA catalog in PostgreSQL.
   await seedDatabase();
   await purgeLegacyDemoAccounts();
