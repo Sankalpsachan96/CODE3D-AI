@@ -75,7 +75,9 @@ export async function checkBackendHealth({ allowFallback = true } = {}) {
   const healthUrl = `${backendOrigin}/api/health`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  // A sleeping Render Free instance can take 50s+ to wake. Let the health
+  // probe finish so the navbar does not falsely report Local mode.
+  const timeoutId = setTimeout(() => controller.abort(), 70000);
 
   try {
     const res = await fetch(healthUrl, {
@@ -96,7 +98,8 @@ export async function checkBackendHealth({ allowFallback = true } = {}) {
         const fallbackResponse = await fetch(`${fallbackBase}/api/health`, {
           method: 'GET',
           credentials: 'include',
-          cache: 'no-store'
+          cache: 'no-store',
+          signal: controller.signal
         });
         if (fallbackResponse.ok) {
           const fallbackData = await fallbackResponse.json().catch(() => null);
