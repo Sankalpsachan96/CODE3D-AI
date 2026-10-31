@@ -79,3 +79,77 @@ test('Real universal executor: all supported languages produce real stdout', asy
     });
   }
 });
+
+
+test('Judge0 RapidAPI credentials use the required host and key headers', async () => {
+  const requests = [];
+  const fetchImpl = async (url, init = {}) => {
+    requests.push({ url, headers: init.headers || {} });
+    if (init.method === 'POST') {
+      return new Response(JSON.stringify({ token: 'rapid-token' }), { status: 201, headers: { 'content-type': 'application/json' } });
+    }
+    return new Response(JSON.stringify({
+      status: { id: 3, description: 'Accepted' },
+      stdout: Buffer.from('6\\n').toString('base64'),
+      stderr: '',
+      time: '0.01',
+      memory: 1024,
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+
+  const result = await universalExecutor.executeWithJudge0(
+    'javascript',
+    'console.log(6)',
+    '',
+    {
+      judge0Url: 'https://judge0-ce.p.rapidapi.com',
+      judge0ApiKey: 'test-key',
+      judge0ApiHost: 'judge0-ce.p.rapidapi.com',
+      fetchImpl,
+      pollIntervalMs: 1,
+      deadlineMs: 1000,
+    },
+  );
+
+  assert.equal(result.success, true, result.error);
+  assert.equal(result.output.trim(), '6');
+  assert.equal(requests[0].headers['X-RapidAPI-Key'], 'test-key');
+  assert.equal(requests[0].headers['X-RapidAPI-Host'], 'judge0-ce.p.rapidapi.com');
+});
+
+test('Judge0 polling retries transient network failures without resubmitting code', async () => {
+  let submissions = 0;
+  let polls = 0;
+  const fetchImpl = async (_url, init = {}) => {
+    if (init.method === 'POST') {
+      submissions += 1;
+      return new Response(JSON.stringify({ token: 'retry-token' }), { status: 201, headers: { 'content-type': 'application/json' } });
+    }
+    polls += 1;
+    if (polls === 1) throw new TypeError('fetch failed');
+    return new Response(JSON.stringify({
+      status: { id: 3, description: 'Accepted' },
+      stdout: Buffer.from('42\\n').toString('base64'),
+      stderr: '',
+      time: '0.01',
+      memory: 1024,
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+
+  const result = await universalExecutor.executeWithJudge0(
+    'python',
+    'print(42)',
+    '',
+    {
+      judge0Url: 'https://judge0.example.test',
+      fetchImpl,
+      pollIntervalMs: 1,
+      deadlineMs: 2000,
+    },
+  );
+
+  assert.equal(result.success, true, result.error);
+  assert.equal(result.output.trim(), '42');
+  assert.equal(submissions, 1, 'a transient poll failure must not duplicate code submissions');
+  assert.equal(polls, 2);
+});
