@@ -84,9 +84,17 @@ const JUDGE0_LANGUAGES = {
 };
 
 function getJudge0Config(options = {}) {
+  const url = String(options.judge0Url ?? process.env.JUDGE0_URL ?? "").trim().replace(/\/+$/, "");
+  let inferredHost = "";
+  try {
+    const hostname = new URL(url).hostname;
+    if (hostname.endsWith(".rapidapi.com")) inferredHost = hostname;
+  } catch {}
   return {
-    url: String(options.judge0Url ?? process.env.JUDGE0_URL ?? "").trim().replace(/\/+$/, ""),
+    url,
     apiKey: options.judge0ApiKey ?? process.env.JUDGE0_API_KEY ?? "",
+    apiHost: String(options.judge0ApiHost ?? process.env.JUDGE0_API_HOST ?? inferredHost).trim(),
+    authHeader: String(options.judge0AuthHeader ?? process.env.JUDGE0_AUTH_HEADER ?? "").trim(),
   };
 }
 
@@ -614,7 +622,7 @@ async function runWithGdb(binaryFile, sourceFile, tempDirectory, input, signal) 
 
 async function executeWithJudge0(language, code, input = "", options = {}) {
   const { signal, fetchImpl = fetch } = options;
-  const { url: judge0Url, apiKey } = getJudge0Config(options);
+  const { url: judge0Url, apiKey, apiHost, authHeader } = getJudge0Config(options);
   if (!judge0Url) {
     return {
       success: false, stage: "sandbox", output: "",
@@ -635,10 +643,16 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
 
   const startedAt = Date.now();
   const headers = { "Content-Type": "application/json", Accept: "application/json" };
-  if (apiKey) headers["X-Auth-Token"] = apiKey;
-  const requestTimeout = Number.isFinite(options.requestTimeoutMs) ? options.requestTimeoutMs : 12000;
-  const pollInterval = Number.isFinite(options.pollIntervalMs) ? options.pollIntervalMs : 500;
-  const deadlineMs = Number.isFinite(options.deadlineMs) ? options.deadlineMs : 20000;
+  if (apiKey) {
+    if (authHeader) headers[authHeader] = apiKey;
+    else if (apiHost) {
+      headers["X-RapidAPI-Key"] = apiKey;
+      headers["X-RapidAPI-Host"] = apiHost;
+    } else headers["X-Auth-Token"] = apiKey;
+  }
+  const requestTimeout = Number.isFinite(options.requestTimeoutMs) ? options.requestTimeoutMs : 10000;
+  const pollInterval = Number.isFinite(options.pollIntervalMs) ? options.pollIntervalMs : 600;
+  const deadlineMs = Number.isFinite(options.deadlineMs) ? options.deadlineMs : 45000;
   let token;
 
   const failure = (stage, error, executionTime) => ({
@@ -714,10 +728,36 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
         return failure("cancelled", "Execution was cancelled. Judge0 cancellation was requested; the provider may continue the submission if deletion is unavailable.", Date.now() - startedAt);
       }
       await waitForPoll(pollInterval);
-      const pollResponse = await fetchImpl(
-        `${judge0Url}/submissions/${encodeURIComponent(token)}?base64_encoded=true&fields=stdout,stderr,compile_output,message,status,time,memory`,
-        { headers, signal: AbortSignal.any([...(signal ? [signal] : []), AbortSignal.timeout(requestTimeout)]) }
-      );
+      const pollUrl = `${judge0Url}/submissions/${encodeURIComponent(token)}?base64_encoded=true&fields=stdout,stderr,compile_output,message,status,time,memory`;
+      let pollResponse;
+      let lastPollError;
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        try {
+          pollResponse = await fetchImpl(pollUrl, {
+            headers,
+            signal: AbortSignal.any([
+              ...(signal ? [signal] : []),
+              AbortSignal.timeout(Math.max(1000, Math.min(requestTimeout, deadline - Date.now()))),
+            ]),
+          });
+          if (pollResponse.status === 429 || pollResponse.status >= 500) {
+            if (attempt < 3 && Date.now() < deadline) {
+              const retryAfter = Number(pollResponse.headers?.get?.("retry-after"));
+              const delay = Number.isFinite(retryAfter) && retryAfter > 0
+                ? Math.min(retryAfter * 1000, 3000)
+                : [300, 700, 1200][attempt];
+              await waitForPoll(Math.min(delay, Math.max(0, deadline - Date.now())));
+              continue;
+            }
+          }
+          break;
+        } catch (error) {
+          lastPollError = error;
+          if (signal?.aborted || error?.name === "AbortError" || Date.now() >= deadline || attempt === 3) throw error;
+          await waitForPoll(Math.min([300, 700, 1200][attempt], Math.max(0, deadline - Date.now())));
+        }
+      }
+      if (!pollResponse) throw lastPollError || new Error("Judge0 status polling failed without a response.");
       if (!pollResponse.ok) {
         const details = await responseDetails(pollResponse);
         if (pollResponse.status === 429) throw Object.assign(new Error("Judge0 is rate limiting status checks. Retry shortly."), { stage: "rate_limit" });
@@ -767,9 +807,10 @@ async function executeWithJudge0(language, code, input = "", options = {}) {
       await cancelRemoteSubmission();
       return failure("cancelled", "Execution was cancelled. Judge0 cancellation was requested; the provider may continue the submission if deletion is unavailable.", Date.now() - startedAt);
     }
+    const networkCode = error?.cause?.code || error?.code || error?.name || "unknown";
     return {
       success: false, stage: error.stage || "sandbox", output: "",
-      error: error.stage ? error.message : `Could not reach the configured Judge0 service (${error.name === "TimeoutError" ? "request timed out" : "network or provider error"}). Code was not executed locally.`,
+      error: error.stage ? error.message : `Could not reach the configured Judge0 service (${error.name === "TimeoutError" ? "request timed out" : `network error: ${networkCode}`}). Check JUDGE0_URL and provider authentication settings. Code was not executed locally.`,
       executionTime: Date.now() - startedAt,
     };
   }
