@@ -67,14 +67,46 @@ async function smartFetch(endpoint, options = {}, { allowFallback = true } = {})
 }
 
 export async function checkBackendHealth({ allowFallback = true } = {}) {
-  try {
-    const res = await smartFetch('/health', {
-      method: 'GET'
-    }, { allowFallback });
+  // Health is exposed at /api/health. Normalize configured values so an
+  // environment variable ending in /api cannot accidentally produce
+  // /api/api/health (or a root URL that misses the /api prefix).
+  const configuredBase = String(BACKEND_BASE_URL || LIVE_RENDER_URL).replace(/\\/+$/, '');
+  const backendOrigin = configuredBase.replace(/\\/api$/i, '');
+  const healthUrl = `${backendOrigin}/api/health`;
 
-    return res.ok;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const res = await fetch(healthUrl, {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: { Accept: 'application/json' }
+    });
+
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => null);
+    return data?.status === 'ok' && data?.online === true;
   } catch (err) {
+    if (allowFallback && isSafeFallbackUrl(CONFIGURED_FALLBACK_URL)) {
+      try {
+        const fallbackBase = CONFIGURED_FALLBACK_URL.replace(/\\/+$/, '').replace(/\\/api$/i, '');
+        const fallbackResponse = await fetch(`${fallbackBase}/api/health`, {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store'
+        });
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json().catch(() => null);
+          return fallbackData?.status === 'ok' && fallbackData?.online === true;
+        }
+      } catch (_) {}
+    }
     return false;
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
