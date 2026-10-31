@@ -9,6 +9,17 @@ test('known generic Python catalog placeholders are never advertised as runnable
   for (const problem of blocked) assert.equal(isProblemLanguageSupported(problem, 'python'), false, problem.title);
 });
 
+test('generic accumulator-only solutions are never advertised as runnable', () => {
+  for (const language of ['java', 'python', 'cpp', 'javascript', 'c']) {
+    for (const problem of STRIVER_PROBLEMS) {
+      const source = problem[language + 'Code'];
+      if (source && /return\s+(?:sum|ans|total)\s*;?/i.test(source) && /(?:for\s*\(|for\s+\w+\s+in\s+)/i.test(source)) {
+        assert.equal(isProblemLanguageSupported(problem, language), false, problem.title + ' (' + language + ')');
+      }
+    }
+  }
+});
+
 test('the Striver catalog has no silent cross-language support', () => {
   for (const problem of STRIVER_PROBLEMS) {
     if (!problem.javascriptCode) assert.equal(isProblemLanguageSupported(problem, 'javascript'), false, problem.title);
