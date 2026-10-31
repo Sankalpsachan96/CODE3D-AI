@@ -79,7 +79,9 @@ export default function Navbar({ activeTab, setActiveTab }) {
 
     const id = setInterval(() => {
       checkBackendHealth().then(setBackendOnline);
-    }, 15000);
+    // Keep the free Render instance warm while the app is actively open,
+    // without firing overlapping probes during a slow cold start.
+    }, 10 * 60 * 1000);
 
     return () => clearInterval(id);
   }, []);
