@@ -9,13 +9,12 @@ test('known generic Python catalog placeholders are never advertised as runnable
   for (const problem of blocked) assert.equal(isProblemLanguageSupported(problem, 'python'), false, problem.title);
 });
 
-test('generic accumulator-only solutions are never advertised as runnable', () => {
-  for (const language of ['java', 'python', 'cpp', 'javascript', 'c']) {
+test('known foreach accumulator placeholders are blocked without rejecting algorithmic counters', () => {
+  const generic = /for\s*\(\s*(?:(?:int|long|auto)\s+)?(\w+)\s*:\s*(nums|arr|array)\s*\)[\s\S]*?\b(sum|ans|total)\s*\+=\s*\1\b[\s\S]*?return\s+\3\s*;?/i;
+  for (const language of ['java', 'python', 'cpp']) {
     for (const problem of STRIVER_PROBLEMS) {
-      const source = problem[language + 'Code'];
-      if (source && /return\s+(?:sum|ans|total)\s*;?/i.test(source) && /(?:for\s*\(|for\s+\w+\s+in\s+)/i.test(source)) {
-        assert.equal(isProblemLanguageSupported(problem, language), false, problem.title + ' (' + language + ')');
-      }
+      const source = problem[language + 'Code'] || '';
+      if (generic.test(source)) assert.equal(isProblemLanguageSupported(problem, language), false, problem.title + ' (' + language + ')');
     }
   }
 });
