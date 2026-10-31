@@ -90,7 +90,7 @@ test('Judge0 RapidAPI credentials use the required host and key headers', async 
     }
     return new Response(JSON.stringify({
       status: { id: 3, description: 'Accepted' },
-      stdout: Buffer.from('6\\n').toString('base64'),
+      stdout: Buffer.from('6\n').toString('base64'),
       stderr: '',
       time: '0.01',
       memory: 1024,
@@ -129,7 +129,7 @@ test('Judge0 polling retries transient network failures without resubmitting cod
     if (polls === 1) throw new TypeError('fetch failed');
     return new Response(JSON.stringify({
       status: { id: 3, description: 'Accepted' },
-      stdout: Buffer.from('42\\n').toString('base64'),
+      stdout: Buffer.from('42\n').toString('base64'),
       stderr: '',
       time: '0.01',
       memory: 1024,
