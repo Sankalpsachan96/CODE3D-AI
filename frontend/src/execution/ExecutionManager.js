@@ -23,7 +23,7 @@ export class ExecutionManager {
    * @param {boolean} [params.preferBackend] - Attempt backend execution first
    * @returns {Promise<{ success: boolean, steps: Array, error?: object, language: string, detectedDsa: string, detectedAlgorithm: string }>}
    */
-  async run({ code, language = 'java', input = '', archetype = null, preferBackend = false, strictBackend = false }) {
+  async run({ code, language = 'java', input = '', archetype = null, preferBackend = true, strictBackend = true }) {
     if (!code || !code.trim()) {
       return {
         success: false,
@@ -40,20 +40,28 @@ export class ExecutionManager {
         const remoteRes = await executeRemoteCode({ code, language, input, title: archetype || 'Custom Run', universal: strictBackend });
         if (remoteRes && remoteRes.success && remoteRes.steps && remoteRes.steps.length > 0) {
           result = remoteRes;
-        } else if (strictBackend && remoteRes && remoteRes.success === false) {
+        } else if (strictBackend) {
           return {
             success: false,
             language,
             steps: [],
             error: {
-              message: remoteRes.message || remoteRes.error || 'Execution failed.',
-              line: remoteRes.errorLine || 1,
-              code: remoteRes.errorCode || 'EXECUTION_ERROR',
+              message: remoteRes?.message || remoteRes?.error || 'Backend execution did not return a verified runtime trace.',
+              line: remoteRes?.errorLine || 1,
+              code: remoteRes?.errorCode || 'BACKEND_TRACE_UNAVAILABLE',
             },
           };
         }
       } catch (err) {
-        // Fallback to local engine
+        if (strictBackend) {
+          return {
+            success: false,
+            language,
+            steps: [],
+            error: { message: 'Backend execution is unavailable. No simulated result was substituted.', line: 1, code: 'BACKEND_UNAVAILABLE' },
+          };
+        }
+        // Explicit non-strict callers may fall back to the local engine.
       }
     }
 
