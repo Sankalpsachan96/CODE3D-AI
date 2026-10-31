@@ -75,15 +75,30 @@ export default function Navbar({ activeTab, setActiveTab }) {
    * ================================
    */
   useEffect(() => {
-    checkBackendHealth().then(setBackendOnline);
+    let cancelled = false;
+    let timer = null;
+    let retryDelay = 15000;
 
-    const id = setInterval(() => {
-      checkBackendHealth().then(setBackendOnline);
-    // Keep the free Render instance warm while the app is actively open,
-    // without firing overlapping probes during a slow cold start.
-    }, 10 * 60 * 1000);
+    const probeBackend = async () => {
+      const online = await checkBackendHealth();
+      if (cancelled) return;
 
-    return () => clearInterval(id);
+      setBackendOnline(online);
+
+      // Render Free can sleep. If the first request hits a cold-start timeout,
+      // retry soon instead of leaving the navbar stuck in Local mode for 10 min.
+      // Once online, back off to a low-frequency check to avoid needless traffic.
+      const nextDelay = online ? 10 * 60 * 1000 : retryDelay;
+      retryDelay = online ? 15000 : Math.min(retryDelay * 2, 60000);
+      timer = setTimeout(probeBackend, nextDelay);
+    };
+
+    probeBackend();
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
   }, []);
 
   /*
