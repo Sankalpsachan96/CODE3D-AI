@@ -205,7 +205,7 @@ function buildPythonInstrumentedSource(source, input = "") {
     " exec(compile(__code3d_source, \"<user_code>\", \"exec\"), __code3d_globals)",
     ...(runnerLines.length ? [
       " __code3d_run_tree_solution = None",
-      ...runnerLines,
+      ...runnerLines.map((line) => ` ${line}`),
       " __code3d_run_tree_solution(__code3d_globals, __code3d_input)",
     ] : []),
     "except SystemExit:",
