@@ -41,7 +41,7 @@ function isGenericPlaceholderImplementation(source) {
 
   // Reject the exact foreach-every-element sum template, but do not
   // confuse legitimate DP/merge-count accumulators (e.g. Reverse Pairs).
-  const accumulator = code.match(/\\b(?:int|long|float|double)?\\s*(sum|ans|total)\\s*=\\s*0\\s*;?/i);
+  const accumulator = code.match(/\b(?:int|long|float|double)?\s*(sum|ans|total)\s*=\s*0\s*;?/i);
   const foreach = code.match(/for\s*\(\s*(?:(?:int|long|auto)\s+)?(\w+)\s*:\s*(nums|arr|array)\s*\)|for\s+(\w+)\s+in\s+(nums|arr|array)/i);
   if (accumulator && foreach) {
     const variable = foreach[1] || foreach[3];
