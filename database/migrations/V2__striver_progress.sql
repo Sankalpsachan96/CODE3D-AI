@@ -1,7 +1,7 @@
 -- Add durable progress for the bundled Striver catalog. This is deliberately
 -- additive and does not alter or rewrite the existing V1 migration.
 CREATE TABLE IF NOT EXISTS user_striver_progress (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   problem_key VARCHAR(32) NOT NULL,
   status VARCHAR(16) NOT NULL CHECK (status IN ('ATTEMPTED', 'SOLVED', 'REVISION')),
